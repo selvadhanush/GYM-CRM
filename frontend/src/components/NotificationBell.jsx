@@ -1,0 +1,190 @@
+import { useState, useEffect, useRef } from 'react';
+import API from '../services/api';
+import { Bell, Clock, CreditCard, Megaphone, CheckCircle2 } from 'lucide-react';
+
+const typeIcon = { expiry: <Clock size={16} />, payment: <CreditCard size={16} />, announcement: <Megaphone size={16} /> };
+const typeColor = { expiry: '#f59e0b', payment: '#ef4444', announcement: 'var(--primary-color)' };
+
+const NotificationBell = () => {
+    const [notifications, setNotifications] = useState([]);
+    const [open, setOpen] = useState(false);
+    const ref = useRef(null);
+
+    const fetchNotifications = async () => {
+        try {
+            const { data } = await API.get('/notifications');
+            setNotifications(data);
+        } catch (err) {
+            // silently fail - not critical
+        }
+    };
+
+    useEffect(() => {
+        fetchNotifications();
+        const interval = setInterval(fetchNotifications, 60000); // refresh every 60s
+        return () => clearInterval(interval);
+    }, []);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleMarkRead = async (id) => {
+        try {
+            await API.put(`/notifications/${id}`);
+            setNotifications(prev =>
+                prev.map(n => n._id === id ? { ...n, read: true } : n)
+            );
+        } catch (err) { }
+    };
+
+    const handleMarkAllRead = async () => {
+        const unread = notifications.filter(n => !n.read);
+        await Promise.all(unread.map(n => API.put(`/notifications/${n._id}`)));
+        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    };
+
+    const unreadCount = notifications.filter(n => !n.read).length;
+
+    return (
+        <div ref={ref} style={{ position: 'relative' }}>
+            <button
+                onClick={() => setOpen(o => !o)}
+                style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '1.4rem',
+                    position: 'relative',
+                    padding: '0.4rem',
+                    borderRadius: '50%',
+                    transition: 'background 0.2s',
+                    color: 'var(--text-primary)'
+                }}
+                title="Notifications"
+                aria-label="Notifications"
+            >
+                <Bell size={20} strokeWidth={2.5} />
+                {unreadCount > 0 && (
+                    <span style={{
+                        position: 'absolute',
+                        top: '-2px',
+                        right: '-2px',
+                        background: 'var(--danger-color, #ef4444)',
+                        color: '#fff',
+                        borderRadius: '50%',
+                        fontSize: '0.65rem',
+                        fontWeight: '700',
+                        width: '18px',
+                        height: '18px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: '2px solid var(--bg-secondary, #1e1e2e)'
+                    }}>
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                )}
+            </button>
+
+            {open && (
+                <div style={{
+                    position: 'absolute',
+                    right: 0,
+                    top: 'calc(100% + 8px)',
+                    width: '340px',
+                    background: 'var(--bg-secondary, #1e1e2e)',
+                    border: '1px solid var(--border-color, #2d2d3d)',
+                    borderRadius: '12px',
+                    boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+                    zIndex: 1000,
+                    overflow: 'hidden',
+                    animation: 'fadeIn 0.15s ease'
+                }}>
+                    {/* Header */}
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '1rem 1.25rem',
+                        borderBottom: '1px solid var(--border-color, #2d2d3d)'
+                    }}>
+                        <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '700' }}>
+                            Notifications {unreadCount > 0 && <span style={{ color: 'var(--primary-color)' }}>({unreadCount})</span>}
+                        </h4>
+                        {unreadCount > 0 && (
+                            <button
+                                onClick={handleMarkAllRead}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--primary-color)' }}
+                            >
+                                Mark all read
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Notification List */}
+                    <div style={{ maxHeight: '360px', overflowY: 'auto' }}>
+                        {notifications.length === 0 ? (
+                            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                <div style={{ marginBottom: '0.5rem', color: 'var(--success)', display: 'flex', justifyContent: 'center' }}><CheckCircle2 size={48} strokeWidth={1.5} /></div>
+                                <p style={{ margin: 0, fontSize: '0.875rem' }}>You're all caught up!</p>
+                            </div>
+                        ) : (
+                            notifications.map(n => (
+                                <div
+                                    key={n._id}
+                                    onClick={() => handleMarkRead(n._id)}
+                                    style={{
+                                        display: 'flex',
+                                        gap: '0.75rem',
+                                        padding: '0.875rem 1.25rem',
+                                        borderBottom: '1px solid var(--border-color, #2d2d3d)',
+                                        cursor: 'pointer',
+                                        background: n.read ? 'transparent' : 'var(--primary-light)',
+                                        transition: 'background 0.2s',
+                                        alignItems: 'flex-start'
+                                    }}
+                                >
+                                    <div style={{
+                                        width: '32px',
+                                        height: '32px',
+                                        borderRadius: '50%',
+                                        background: `${typeColor[n.type]}22`,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '1rem',
+                                        flexShrink: 0
+                                    }}>
+                                        {typeIcon[n.type]}
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <p style={{ margin: 0, fontSize: '0.8rem', lineHeight: '1.4', color: n.read ? 'var(--text-secondary)' : 'var(--text-primary)' }}>
+                                            {n.message}
+                                        </p>
+                                        <p style={{ margin: '0.25rem 0 0', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                                            {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+                                    </div>
+                                    {!n.read && (
+                                        <div style={{
+                                            width: '8px', height: '8px', borderRadius: '50%',
+                                            background: 'var(--primary-color)', flexShrink: 0, marginTop: '4px'
+                                        }} />
+                                    )}
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default NotificationBell;
