@@ -1,16 +1,13 @@
-const mongoose = require('mongoose');
 const User = require('./models/User');
 const dotenv = require('dotenv');
-const dns = require('dns');
+const connectDB = require('./config/db');
 
-// Bypass DNS issues
-dns.setServers(['8.8.8.8', '8.8.4.4']);
 dotenv.config();
 
 const seed = async () => {
     try {
-        await mongoose.connect(process.env.MONGO_URI);
-        console.log('Connected to DB');
+        await connectDB();
+        console.log('Database connected for seeding...');
 
         const Gym = require('./models/Gym');
 

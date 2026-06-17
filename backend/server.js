@@ -61,6 +61,7 @@ app.use('/api/leads', require('./routes/leadRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/audit', require('./routes/auditRoutes'));
 app.use('/api/branches', require('./routes/branchRoutes'));
+app.use('/api/staff', require('./routes/staffRoutes'));
 
 // Test routes (Dev only)
 app.use('/api/test', require('./routes/testRoutes'));

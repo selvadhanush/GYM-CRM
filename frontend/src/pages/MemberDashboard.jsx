@@ -64,6 +64,28 @@ const MemberDashboard = () => {
             // 1. Create Order with the custom partial amount
             const { data: order } = await API.post('/member-portal/payment/create-order', { amount });
 
+            if (order.is_mock) {
+                // Bypass Razorpay popup for mock orders
+                try {
+                    const verifyRes = await API.post('/member-portal/payment/verify', {
+                        razorpay_order_id: order.id,
+                        razorpay_payment_id: `pay_mock_${Math.random().toString(36).substring(2, 11)}`,
+                        razorpay_signature: 'mock_signature',
+                        amount_paid: amount
+                    });
+                    const remaining = verifyRes.data.remainingDue || 0;
+                    if (remaining > 0) {
+                        alert(`✅ [MOCK PAYMENT] Payment of ₹${amount} successful!\n💳 Remaining due: ₹${remaining}`);
+                    } else {
+                        alert('✅ [MOCK PAYMENT] Payment successful! Your dues are fully cleared.');
+                    }
+                    fetchMemberData(); // Refresh UI
+                } catch (err) {
+                    alert('Mock payment verification failed.');
+                }
+                return;
+            }
+
             // 2. Open Razorpay Popup
             const options = {
                 key: import.meta.env.VITE_RAZORPAY_KEY_ID || '',

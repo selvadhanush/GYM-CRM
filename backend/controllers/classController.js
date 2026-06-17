@@ -30,7 +30,13 @@ const createClass = async (req, res) => {
             return res.status(400).json({ message: 'name, type, scheduleDate, startTime, endTime, maxSeats are required' });
         }
         const gymClass = await GymClass.create({
-            name, type, description, trainerName, scheduleDate, startTime, endTime,
+            name,
+            type,
+            description,
+            trainerName,
+            scheduleDate: new Date(scheduleDate),
+            startTime,
+            endTime,
             maxSeats: Number(maxSeats),
             gymId: req.user.gymId,
             bookings: []
@@ -77,7 +83,7 @@ const bookClass = async (req, res) => {
         if (!gymClass) return res.status(404).json({ message: 'Class not found' });
 
         const alreadyBooked = gymClass.bookings.some(
-            b => b.memberId.toString() === req.user.memberId.toString()
+            b => b && b.memberId && req.user.memberId && b.memberId.toString() === req.user.memberId.toString()
         );
         if (alreadyBooked) return res.status(400).json({ message: 'Already booked this class' });
 
@@ -86,7 +92,11 @@ const bookClass = async (req, res) => {
         }
 
         const member = await Member.findById(req.user.memberId).select('name');
-        gymClass.bookings.push({ memberId: req.user.memberId, memberName: member?.name || '' });
+        gymClass.bookings.push({ 
+            memberId: req.user.memberId, 
+            memberName: member?.name || '',
+            bookedAt: new Date()
+        });
         await gymClass.save();
 
         res.json({
@@ -107,7 +117,7 @@ const cancelBooking = async (req, res) => {
         if (!gymClass) return res.status(404).json({ message: 'Class not found' });
 
         const bookingIndex = gymClass.bookings.findIndex(
-            b => b.memberId.toString() === req.user.memberId.toString()
+            b => b && b.memberId && req.user.memberId && b.memberId.toString() === req.user.memberId.toString()
         );
         if (bookingIndex === -1) return res.status(400).json({ message: 'No booking found for this class' });
 
@@ -149,4 +159,81 @@ const getMemberClasses = async (req, res) => {
     }
 };
 
-module.exports = { getClasses, createClass, deleteClass, getClassBookings, bookClass, cancelBooking, getMemberClasses };
+// @desc    Admin books a class for a member
+// @route   POST /api/classes/:id/book
+// @access  Private/Admin or Trainer
+const adminBookClass = async (req, res) => {
+    try {
+        const { memberId } = req.body;
+        if (!memberId) {
+            return res.status(400).json({ message: 'Member ID is required' });
+        }
+
+        const gymClass = await GymClass.findById(req.params.id);
+        if (!gymClass) return res.status(404).json({ message: 'Class not found' });
+
+        const alreadyBooked = gymClass.bookings.some(
+            b => b && b.memberId && b.memberId.toString() === memberId.toString()
+        );
+        if (alreadyBooked) return res.status(400).json({ message: 'Member already booked for this class' });
+
+        if (gymClass.bookings.length >= gymClass.maxSeats) {
+            return res.status(400).json({ message: 'Class is full' });
+        }
+
+        const member = await Member.findById(memberId).select('name');
+        if (!member) return res.status(404).json({ message: 'Member not found' });
+
+        gymClass.bookings.push({ 
+            memberId: memberId, 
+            memberName: member.name,
+            bookedAt: new Date()
+        });
+        await gymClass.save();
+
+        res.json({
+            message: 'Class booked successfully by admin',
+            bookings: gymClass.bookings
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Error booking class', error: error.message });
+    }
+};
+
+// @desc    Admin cancels a member booking
+// @route   DELETE /api/classes/:id/bookings/:memberId
+// @access  Private/Admin or Trainer
+const adminCancelBooking = async (req, res) => {
+    try {
+        const { memberId } = req.params;
+        const gymClass = await GymClass.findById(req.params.id);
+        if (!gymClass) return res.status(404).json({ message: 'Class not found' });
+
+        const bookingIndex = gymClass.bookings.findIndex(
+            b => b && b.memberId && b.memberId.toString() === memberId.toString()
+        );
+        if (bookingIndex === -1) return res.status(400).json({ message: 'No booking found for this member' });
+
+        gymClass.bookings.splice(bookingIndex, 1);
+        await gymClass.save();
+
+        res.json({
+            message: 'Booking cancelled by admin',
+            bookings: gymClass.bookings
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Error cancelling booking', error: error.message });
+    }
+};
+
+module.exports = { 
+    getClasses, 
+    createClass, 
+    deleteClass, 
+    getClassBookings, 
+    bookClass, 
+    cancelBooking, 
+    getMemberClasses,
+    adminBookClass,
+    adminCancelBooking
+};

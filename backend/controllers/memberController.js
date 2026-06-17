@@ -1,55 +1,80 @@
 const Member = require('../models/Member');
 const Plan = require('../models/Plan');
 const User = require('../models/User');
+const { jsonToCsv } = require('../utils/csvUtils');
 
 // @desc    Create a new member
 // @route   POST /api/members
 // @access  Private/Admin
 const createMember = async (req, res) => {
-    const { name, phone, email, planId, joinDate, branchId } = req.body;
+    try {
+        const { name, phone, email, planId, joinDate, branchId } = req.body;
 
-    const plan = await Plan.findById(planId);
-    if (!plan) {
-        res.status(404);
-        throw new Error('Plan not found');
-    }
+        if (!name || !phone || !planId) {
+            res.status(400);
+            return res.json({ success: false, message: 'Name, phone, and plan are required' });
+        }
 
-    const startDate = joinDate ? new Date(joinDate) : new Date();
-    const expiryDate = new Date(startDate);
-    expiryDate.setDate(startDate.getDate() + plan.duration);
+        const plan = await Plan.findById(planId);
+        if (!plan) {
+            res.status(404);
+            return res.json({ success: false, message: 'Plan not found' });
+        }
 
-    const status = expiryDate < new Date() ? 'Expired' : 'Active';
+        // Check if a user with this email or generated email already exists to prevent unique constraint crash
+        const emailCheck = email ? email : `${phone}@gym.com`;
+        const existingUser = await User.findOne({ email: emailCheck });
+        if (existingUser) {
+            res.status(400);
+            return res.json({ 
+                success: false, 
+                message: `A user or member with the email or phone number (${emailCheck}) already exists` 
+            });
+        }
 
-    const member = await Member.create({
-        name,
-        phone,
-        email,
-        planId,
-        joinDate: startDate,
-        expiryDate,
-        status,
-        planPrice: plan.price,
-        paidAmount: 0,
-        gymId: req.user.gymId,
-        branchId: branchId || null
-    });
+        const startDate = joinDate ? new Date(joinDate) : new Date();
+        const expiryDate = new Date(startDate);
+        expiryDate.setDate(startDate.getDate() + plan.duration);
 
-    if (member) {
-        // Create a User record for the member to allow login
-        // Default password is their phone number
-        await User.create({
-            name: member.name,
-            email: member.email || `${member.phone}@gym.com`,
-            password: member.phone,
-            role: 'member',
+        const status = expiryDate < new Date() ? 'Expired' : 'Active';
+
+        const member = await Member.create({
+            name,
+            phone,
+            email: email || null,
+            planId,
+            joinDate: startDate,
+            expiryDate,
+            status,
+            planPrice: plan.price,
+            paidAmount: 0,
             gymId: req.user.gymId,
-            memberId: member._id
+            branchId: branchId || null
         });
 
-        res.status(201).json(member);
-    } else {
-        res.status(400);
-        throw new Error('Invalid member data');
+        if (member) {
+            // Create a User record for the member to allow login
+            // Default password is their phone number
+            await User.create({
+                name: member.name,
+                email: emailCheck,
+                password: member.phone,
+                role: 'member',
+                gymId: req.user.gymId,
+                memberId: member._id
+            });
+
+            res.status(201).json(member);
+        } else {
+            res.status(400).json({ success: false, message: 'Invalid member data' });
+        }
+    } catch (error) {
+        console.error("CREATE MEMBER ERROR:", error);
+        res.status(500).json({
+            success: false,
+            message: error.message,
+            stack: error.stack
+        });
     }
 };
 
@@ -61,13 +86,6 @@ const getMembers = async (req, res) => {
         const { status, page = 1, limit = 10, search = '' } = req.query;
 
         const query = { gymId: req.user.gymId };
-
-        // Auto-update status for members whose expiry date has passed
-        const now = new Date();
-        await Member.updateMany(
-            { gymId: req.user.gymId, status: 'Active', expiryDate: { $lt: now } },
-            { status: 'Expired' }
-        );
 
         if (status) query.status = status;
         if (search) {
@@ -103,32 +121,41 @@ const getMembers = async (req, res) => {
 // @route   GET /api/members/expiring-soon
 // @access  Private/Admin
 const getExpiringSoonMembers = async (req, res) => {
-    const today = new Date();
-    const nextWeek = new Date();
-    nextWeek.setDate(today.getDate() + 7);
+    try {
+        const today = new Date();
+        const nextWeek = new Date();
+        nextWeek.setDate(today.getDate() + 7);
 
-    const members = await Member.find({
-        gymId: req.user.gymId,
-        status: 'Active',
-        expiryDate: { $gte: today, $lte: nextWeek }
-    }).populate('planId', 'name price').lean();
+        const members = await Member.find({
+            gymId: req.user.gymId,
+            status: 'Active',
+            expiryDate: { $gte: today, $lte: nextWeek }
+        }).populate('planId', 'name price').lean();
 
-    res.json(members);
+        res.json(members);
+    } catch (error) {
+        console.error("GET EXPIRING SOON MEMBERS ERROR:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
 };
 
 // @desc    Get single member
 // @route   GET /api/members/:id
 // @access  Private/Admin
 const getMemberById = async (req, res) => {
-    const member = await Member.findOne({ _id: req.params.id, gymId: req.user.gymId })
-        .populate('planId', 'name price')
-        .lean();
+    try {
+        const member = await Member.findOne({ _id: req.params.id, gymId: req.user.gymId })
+            .populate('planId', 'name price')
+            .lean();
 
-    if (member) {
-        res.json(member);
-    } else {
-        res.status(404);
-        throw new Error('Member not found');
+        if (member) {
+            res.json(member);
+        } else {
+            res.status(404).json({ success: false, message: 'Member not found' });
+        }
+    } catch (error) {
+        console.error("GET MEMBER BY ID ERROR:", error);
+        res.status(500).json({ success: false, message: error.message });
     }
 };
 
@@ -136,38 +163,40 @@ const getMemberById = async (req, res) => {
 // @route   PUT /api/members/:id
 // @access  Private/Admin
 const updateMember = async (req, res) => {
-    const { name, phone, email, planId, status, joinDate, branchId } = req.body;
+    try {
+        const { name, phone, email, planId, status, joinDate, branchId } = req.body;
 
-    const member = await Member.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const member = await Member.findOne({ _id: req.params.id, gymId: req.user.gymId });
 
-    if (member) {
-        if (planId && planId !== member.planId.toString()) {
-            const plan = await Plan.findOne({ _id: planId, gymId: req.user.gymId });
-            if (!plan) {
-                res.status(404);
-                throw new Error('Plan not found');
+        if (member) {
+            if (planId && planId !== member.planId.toString()) {
+                const plan = await Plan.findOne({ _id: planId, gymId: req.user.gymId });
+                if (!plan) {
+                    return res.status(404).json({ success: false, message: 'Plan not found' });
+                }
+                member.planId = planId;
+                // Recalculate expiry if plan changes
+                const startDate = joinDate ? new Date(joinDate) : new Date(member.joinDate);
+                const expiryDate = new Date(startDate);
+                expiryDate.setDate(startDate.getDate() + plan.duration);
+                member.expiryDate = expiryDate;
+                member.status = expiryDate < new Date() ? 'Expired' : 'Active';
             }
-            member.planId = planId;
-            // Recalculate expiry if plan changes
-            const startDate = joinDate ? new Date(joinDate) : new Date(member.joinDate);
-            const expiryDate = new Date(startDate);
-            expiryDate.setDate(startDate.getDate() + plan.duration);
-            member.expiryDate = expiryDate;
-            member.status = expiryDate < new Date() ? 'Expired' : 'Active';
+
+            member.name = name || member.name;
+            member.phone = phone || member.phone;
+            member.email = email || member.email;
+            if (status) member.status = status;
+            if (branchId !== undefined) member.branchId = branchId || null;
+
+            const updatedMember = await member.save();
+            res.json(updatedMember);
+        } else {
+            res.status(404).json({ success: false, message: 'Member not found' });
         }
-
-        member.name = name || member.name;
-        member.phone = phone || member.phone;
-        member.email = email || member.email;
-        if (status) member.status = status;
-        // Allow explicitly setting branchId (null to unassign, id to assign)
-        if (branchId !== undefined) member.branchId = branchId || null;
-
-        const updatedMember = await member.save();
-        res.json(updatedMember);
-    } else {
-        res.status(404);
-        throw new Error('Member not found');
+    } catch (error) {
+        console.error("UPDATE MEMBER ERROR:", error);
+        res.status(500).json({ success: false, message: error.message });
     }
 };
 
@@ -175,39 +204,50 @@ const updateMember = async (req, res) => {
 // @route   DELETE /api/members/:id
 // @access  Private/Admin
 const deleteMember = async (req, res) => {
-    const member = await Member.findOne({ _id: req.params.id, gymId: req.user.gymId });
+    try {
+        const member = await Member.findOne({ _id: req.params.id, gymId: req.user.gymId });
 
-    if (member) {
-        await member.deleteOne();
-        res.json({ message: 'Member removed' });
-    } else {
-        res.status(404);
-        throw new Error('Member not found');
+        if (member) {
+            // Delete associated User record to prevent unique constraint conflicts
+            await User.deleteMany({ memberId: member.id });
+            
+            // Delete the member
+            await member.deleteOne();
+            res.json({ message: 'Member removed' });
+        } else {
+            res.status(404).json({ success: false, message: 'Member not found' });
+        }
+    } catch (error) {
+        console.error("DELETE MEMBER ERROR:", error);
+        res.status(500).json({ success: false, message: error.message });
     }
 };
-
-const { jsonToCsv } = require('../utils/csvUtils');
 
 // @desc    Export members as CSV
 // @route   GET /api/members/export/csv
 // @access  Private/Admin
 const exportMembersCSV = async (req, res) => {
-    const members = await Member.find({ gymId: req.user.gymId }).populate('planId', 'name').lean();
+    try {
+        const members = await Member.find({ gymId: req.user.gymId }).populate('planId', 'name').lean();
 
-    const formattedData = members.map(m => ({
-        Name: m.name,
-        Phone: m.phone,
-        Email: m.email || '',
-        Plan: m.planId?.name || '',
-        Expiry: m.expiryDate.toISOString().split('T')[0],
-        Status: m.status
-    }));
+        const formattedData = members.map(m => ({
+            Name: m.name,
+            Phone: m.phone,
+            Email: m.email || '',
+            Plan: m.planId?.name || '',
+            Expiry: m.expiryDate ? m.expiryDate.toISOString().split('T')[0] : '',
+            Status: m.status
+        }));
 
-    const csv = jsonToCsv(formattedData, ['Name', 'Phone', 'Email', 'Plan', 'Expiry', 'Status']);
+        const csv = jsonToCsv(formattedData, ['Name', 'Phone', 'Email', 'Plan', 'Expiry', 'Status']);
 
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=members.csv');
-    res.status(200).send(csv);
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=members.csv');
+        res.status(200).send(csv);
+    } catch (error) {
+        console.error("EXPORT MEMBERS CSV ERROR:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
 };
 
 module.exports = {

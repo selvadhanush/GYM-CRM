@@ -25,6 +25,7 @@ const NAV_GROUPS = {
                 { name: 'Leads', path: '/leads', icon: Target },
                 { name: 'Plans', path: '/plans', icon: Package },
                 { name: 'Classes', path: '/classes', icon: Dumbbell },
+                { name: 'Staff', path: '/staff', icon: ShieldCheck },
             ]
         },
         {

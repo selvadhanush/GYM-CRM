@@ -19,6 +19,7 @@ import Leads from './pages/Leads';
 import Analytics from './pages/Analytics';
 import AuditLogs from './pages/AuditLogs';
 import Branches from './pages/Branches';
+import Staff from './pages/Staff';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -174,6 +175,14 @@ function App() {
           <ProtectedRoute roles={['admin']}>
             <Layout>
               <Branches />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/staff" element={
+          <ProtectedRoute roles={['admin']}>
+            <Layout>
+              <Staff />
             </Layout>
           </ProtectedRoute>
         } />
