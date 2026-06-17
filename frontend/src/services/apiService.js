@@ -77,3 +77,23 @@ export const getMemberAttendance = async (memberId) => {
     const { data } = await API.get(`/attendance/member/${memberId}`);
     return data;
 };
+
+export const getStaff = async () => {
+    const { data } = await API.get('/staff');
+    return data;
+};
+
+export const createStaff = async (staffData) => {
+    const { data } = await API.post('/staff', staffData);
+    return data;
+};
+
+export const updateStaff = async (id, staffData) => {
+    const { data } = await API.put(`/staff/${id}`, staffData);
+    return data;
+};
+
+export const deleteStaff = async (id) => {
+    const { data } = await API.delete(`/staff/${id}`);
+    return data;
+};

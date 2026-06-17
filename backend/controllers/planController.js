@@ -4,20 +4,33 @@ const Plan = require('../models/Plan');
 // @route   POST /api/plans
 // @access  Private/Admin
 const createPlan = async (req, res) => {
-    const { name, duration, price } = req.body;
+    try {
+        const { name, duration, price } = req.body;
 
-    const plan = await Plan.create({
-        name,
-        duration,
-        price,
-        gymId: req.user.gymId
-    });
+        if (!name || duration === undefined || price === undefined) {
+            res.status(400);
+            return res.json({ success: false, message: 'Name, duration, and price are required' });
+        }
 
-    if (plan) {
-        res.status(201).json(plan);
-    } else {
-        res.status(400);
-        throw new Error('Invalid plan data');
+        const plan = await Plan.create({
+            name,
+            duration: Number(duration),
+            price: Number(price),
+            gymId: req.user.gymId
+        });
+
+        if (plan) {
+            res.status(201).json(plan);
+        } else {
+            res.status(400).json({ success: false, message: 'Invalid plan data' });
+        }
+    } catch (error) {
+        console.error("PLAN CREATE ERROR:", error);
+        res.status(500).json({
+            success: false,
+            message: error.message,
+            stack: error.stack
+        });
     }
 };
 
@@ -25,21 +38,38 @@ const createPlan = async (req, res) => {
 // @route   GET /api/plans
 // @access  Private/Admin
 const getPlans = async (req, res) => {
-    const plans = await Plan.find({ gymId: req.user.gymId }).lean();
-    res.json(plans);
+    try {
+        const plans = await Plan.find({ gymId: req.user.gymId }).lean();
+        res.json(plans);
+    } catch (error) {
+        console.error("GET PLANS ERROR:", error);
+        res.status(500).json({
+            success: false,
+            message: error.message,
+            stack: error.stack
+        });
+    }
 };
 
 // @desc    Get single plan
 // @route   GET /api/plans/:id
 // @access  Private/Admin
 const getPlanById = async (req, res) => {
-    const plan = await Plan.findOne({ _id: req.params.id, gymId: req.user.gymId });
+    try {
+        const plan = await Plan.findOne({ _id: req.params.id, gymId: req.user.gymId });
 
-    if (plan) {
-        res.json(plan);
-    } else {
-        res.status(404);
-        throw new Error('Plan not found');
+        if (plan) {
+            res.json(plan);
+        } else {
+            res.status(404).json({ success: false, message: 'Plan not found' });
+        }
+    } catch (error) {
+        console.error("GET PLAN BY ID ERROR:", error);
+        res.status(500).json({
+            success: false,
+            message: error.message,
+            stack: error.stack
+        });
     }
 };
 
@@ -47,20 +77,32 @@ const getPlanById = async (req, res) => {
 // @route   PUT /api/plans/:id
 // @access  Private/Admin
 const updatePlan = async (req, res) => {
-    const { name, duration, price } = req.body;
+    try {
+        const { name, duration, price } = req.body;
 
-    const plan = await Plan.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const plan = await Plan.findOne({ _id: req.params.id, gymId: req.user.gymId });
 
-    if (plan) {
-        plan.name = name || plan.name;
-        plan.duration = duration || plan.duration;
-        plan.price = price || plan.price;
+        if (plan) {
+            plan.name = name || plan.name;
+            if (duration !== undefined && duration !== '') {
+                plan.duration = Number(duration);
+            }
+            if (price !== undefined && price !== '') {
+                plan.price = Number(price);
+            }
 
-        const updatedPlan = await plan.save();
-        res.json(updatedPlan);
-    } else {
-        res.status(404);
-        throw new Error('Plan not found');
+            const updatedPlan = await plan.save();
+            res.json(updatedPlan);
+        } else {
+            res.status(404).json({ success: false, message: 'Plan not found' });
+        }
+    } catch (error) {
+        console.error("PLAN UPDATE ERROR:", error);
+        res.status(500).json({
+            success: false,
+            message: error.message,
+            stack: error.stack
+        });
     }
 };
 
@@ -68,14 +110,22 @@ const updatePlan = async (req, res) => {
 // @route   DELETE /api/plans/:id
 // @access  Private/Admin
 const deletePlan = async (req, res) => {
-    const plan = await Plan.findOne({ _id: req.params.id, gymId: req.user.gymId });
+    try {
+        const plan = await Plan.findOne({ _id: req.params.id, gymId: req.user.gymId });
 
-    if (plan) {
-        await plan.deleteOne();
-        res.json({ message: 'Plan removed' });
-    } else {
-        res.status(404);
-        throw new Error('Plan not found');
+        if (plan) {
+            await plan.deleteOne();
+            res.json({ message: 'Plan removed' });
+        } else {
+            res.status(404).json({ success: false, message: 'Plan not found' });
+        }
+    } catch (error) {
+        console.error("DELETE PLAN ERROR:", error);
+        res.status(500).json({
+            success: false,
+            message: error.message,
+            stack: error.stack
+        });
     }
 };
 

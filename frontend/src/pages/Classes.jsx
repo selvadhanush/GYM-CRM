@@ -7,6 +7,8 @@ const CLASS_TYPES = ['Yoga', 'Zumba', 'Strength', 'Cardio', 'HIIT', 'Pilates', '
 
 const Classes = () => {
     const [classes, setClasses] = useState([]);
+    const [members, setMembers] = useState([]);
+    const [selectedMemberId, setSelectedMemberId] = useState('');
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [bookingsModal, setBookingsModal] = useState(null);
@@ -26,7 +28,18 @@ const Classes = () => {
         } finally { setLoading(false); }
     };
 
-    useEffect(() => { fetchClasses(); }, []);
+    const fetchMembers = async () => {
+        try {
+            const { data } = await API.get('/members?limit=1000&status=Active');
+            setMembers(data.members || []);
+        } catch (err) {
+            console.error('Error fetching members:', err);
+        }
+    };
+
+    useEffect(() => {
+        fetchClasses();
+    }, []);
 
     const handleCreate = async (e) => {
         e.preventDefault();
@@ -56,8 +69,37 @@ const Classes = () => {
         try {
             const { data } = await API.get(`/classes/${gymClass._id}/bookings`);
             setBookingsModal(data);
+            fetchMembers();
         } catch (err) {
             alert('Failed to fetch bookings');
+        }
+    };
+
+    const handleAdminBook = async (e) => {
+        e.preventDefault();
+        if (!selectedMemberId) return;
+        try {
+            await API.post(`/classes/${bookingsModal._id}/book`, { memberId: selectedMemberId });
+            const { data } = await API.get(`/classes/${bookingsModal._id}/bookings`);
+            setBookingsModal(data);
+            setSelectedMemberId('');
+            fetchClasses();
+            alert('Member booked successfully!');
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to book member');
+        }
+    };
+
+    const handleAdminCancel = async (memberId) => {
+        if (!window.confirm('Remove this member from the class?')) return;
+        try {
+            await API.delete(`/classes/${bookingsModal._id}/bookings/${memberId}`);
+            const { data } = await API.get(`/classes/${bookingsModal._id}/bookings`);
+            setBookingsModal(data);
+            fetchClasses();
+            alert('Booking cancelled successfully.');
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to cancel booking');
         }
     };
 
@@ -185,16 +227,66 @@ const Classes = () => {
             </Modal>
 
             {/* Bookings Modal */}
-            <Modal isOpen={!!bookingsModal} onClose={() => setBookingsModal(null)} title={`👥 Bookings — ${bookingsModal?.name}`}>
+            <Modal isOpen={!!bookingsModal} onClose={() => { setBookingsModal(null); setSelectedMemberId(''); }} title={`👥 Bookings — ${bookingsModal?.name}`}>
+                
+                {/* Admin Booking Form */}
+                <form onSubmit={handleAdminBook} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', alignItems: 'flex-end' }}>
+                    <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
+                        <label style={{ fontSize: '0.8rem', fontWeight: '700' }}>Add Member to Class</label>
+                        <select 
+                            className="input" 
+                            value={selectedMemberId} 
+                            onChange={e => setSelectedMemberId(e.target.value)}
+                            required
+                        >
+                            <option value="">-- Select Member --</option>
+                            {members
+                                .filter(m => !bookingsModal?.bookings?.some(b => b.memberId?._id?.toString() === m._id?.toString() || b.memberId?.toString() === m._id?.toString()))
+                                .map(m => (
+                                    <option key={m._id} value={m._id}>{m.name} ({m.phone})</option>
+                                ))
+                            }
+                        </select>
+                    </div>
+                    <button type="submit" className="btn btn-primary" style={{ height: '42px', padding: '0 1.25rem' }}>
+                        Book Member
+                    </button>
+                </form>
+
+                {/* Bookings List Table */}
                 {bookingsModal?.bookings?.length > 0 ? (
-                    <table>
-                        <thead><tr><th>#</th><th>Member</th><th>Booked At</th></tr></thead>
+                    <table className="table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Member</th>
+                                <th>Booked At</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
                         <tbody>
                             {bookingsModal.bookings.map((b, i) => (
-                                <tr key={b._id}>
+                                <tr key={b._id || b.memberId?._id || b.memberId}>
                                     <td>{i + 1}</td>
                                     <td>{b.memberName || b.memberId?.name || 'Unknown'}</td>
-                                    <td>{new Date(b.bookedAt).toLocaleString()}</td>
+                                    <td>{b.bookedAt ? new Date(b.bookedAt).toLocaleString('en-IN') : 'N/A'}</td>
+                                    <td>
+                                        <button
+                                            onClick={() => handleAdminCancel(b.memberId?._id || b.memberId)}
+                                            className="btn"
+                                            style={{ 
+                                                padding: '0.25rem 0.5rem', 
+                                                background: 'rgba(239,68,68,0.1)', 
+                                                color: '#ef4444', 
+                                                border: '1px solid rgba(239,68,68,0.2)', 
+                                                borderRadius: '6px',
+                                                fontSize: '0.75rem',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            Remove
+                                        </button>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>

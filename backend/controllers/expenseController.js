@@ -10,10 +10,10 @@ const createExpense = async (req, res) => {
     const expense = await Expense.create({
         gymId: req.user.gymId,
         title,
-        amount,
+        amount: Number(amount),
         category,
         description,
-        date: date || new Date()
+        date: date ? new Date(date) : new Date()
     });
 
     if (expense) {

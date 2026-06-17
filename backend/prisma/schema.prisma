@@ -1,0 +1,168 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Gym {
+  id        String   @id @default(uuid())
+  name      String
+  address   String?
+  phone     String?
+  email     String?
+  status    String   @default("Active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("admin")
+  gymId     String
+  memberId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Plan {
+  id             String   @id @default(uuid())
+  name           String
+  duration       Int      // duration in days
+  price          Float
+  gymId          String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Member {
+  id            String   @id @default(uuid())
+  name          String
+  phone         String
+  email         String?
+  planId        String
+  joinDate      DateTime @default(now())
+  expiryDate    DateTime
+  status        String   @default("Active")
+  planPrice     Float    @default(0)
+  paidAmount    Float    @default(0)
+  gymId         String
+  branchId      String?
+  freezeHistory String?  // stored as JSON string
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Attendance {
+  id          String   @id @default(uuid())
+  memberId    String
+  date        DateTime @default(now())
+  checkInTime String
+  gymId       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Payment {
+  id            String   @id @default(uuid())
+  memberId      String
+  amount        Float
+  method        String
+  date          DateTime @default(now())
+  gymId         String
+  branchId      String?
+  transactionId String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Expense {
+  id          String   @id @default(uuid())
+  gymId       String
+  title       String
+  amount      Float
+  category    String
+  date        DateTime @default(now())
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model GymClass {
+  id           String   @id @default(uuid())
+  name         String
+  type         String
+  description  String   @default("")
+  trainerName  String   @default("")
+  scheduleDate DateTime
+  startTime    String
+  endTime      String
+  maxSeats     Int      @default(10)
+  gymId        String
+  bookings     String?  // stored as JSON string
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Lead {
+  id                String    @id @default(uuid())
+  name              String
+  phone             String
+  email             String    @default("")
+  source            String    @default("Walk-in")
+  status            String    @default("New")
+  interestedPlan    String    @default("")
+  notes             String    @default("")
+  followUpDate      DateTime?
+  convertedMemberId String?
+  gymId             String
+  assignedTo        String    @default("")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  gymId      String
+  userId     String?
+  userName   String   @default("System")
+  userEmail  String   @default("")
+  userRole   String   @default("")
+  action     String
+  entity     String   @default("")
+  entityId   String   @default("")
+  entityName String   @default("")
+  details    String   @default("")
+  ip         String   @default("")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Branch {
+  id          String   @id @default(uuid())
+  name        String
+  address     String   @default("")
+  phone       String   @default("")
+  email       String   @default("")
+  gymId       String
+  managerId   String?
+  managerName String   @default("")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  recipientId String
+  gymId       String
+  type        String
+  message     String
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

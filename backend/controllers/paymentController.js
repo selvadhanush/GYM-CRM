@@ -15,9 +15,9 @@ const addPayment = async (req, res) => {
 
     const payment = await Payment.create({
         memberId,
-        amount,
+        amount: Number(amount),
         method,
-        date: date || new Date(),
+        date: date ? new Date(date) : new Date(),
         gymId: req.user.gymId
     });
 
