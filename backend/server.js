@@ -62,6 +62,16 @@ app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/audit', require('./routes/auditRoutes'));
 app.use('/api/branches', require('./routes/branchRoutes'));
 app.use('/api/staff', require('./routes/staffRoutes'));
+app.use('/api/trainer-assignments', require('./routes/memberTrainerAssignmentRoutes'));
+app.use('/api/workout-templates', require('./routes/workoutTemplateRoutes'));
+app.use('/api/workout-plans', require('./routes/workoutPlanRoutes'));
+app.use('/api/diet-plans', require('./routes/dietPlanRoutes'));
+app.use('/api/pt-packages', require('./routes/ptPackageRoutes'));
+app.use('/api/pt-sessions', require('./routes/ptSessionRoutes'));
+app.use('/api/body-assessments', require('./routes/bodyAssessmentRoutes'));
+app.use('/api/trainer-attendance', require('./routes/trainerAttendanceRoutes'));
+app.use('/api/payroll', require('./routes/payrollRoutes'));
+app.use('/api/equipments', require('./routes/equipmentRoutes'));
 
 // Test routes (Dev only)
 app.use('/api/test', require('./routes/testRoutes'));
