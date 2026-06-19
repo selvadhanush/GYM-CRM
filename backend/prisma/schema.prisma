@@ -166,3 +166,165 @@ model Notification {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+model MemberTrainerAssignment {
+  id           String   @id @default(uuid())
+  memberId     String
+  trainerId    String
+  assignedDate DateTime @default(now())
+  gymId        String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model WorkoutTemplate {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  exercises    String?
+  gymId        String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model WorkoutPlan {
+  id           String   @id @default(uuid())
+  memberId     String
+  trainerId    String?
+  name         String
+  startDate    DateTime?
+  endDate      DateTime?
+  exercises    String?
+  gymId        String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model DietPlan {
+  id           String   @id @default(uuid())
+  memberId     String
+  trainerId    String?
+  name         String
+  startDate    DateTime?
+  endDate      DateTime?
+  meals        String?
+  gymId        String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model PtPackage {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  price        Float
+  sessionCount Int
+  duration     Int?
+  gymId        String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model PtSession {
+  id           String   @id @default(uuid())
+  memberId     String
+  trainerId    String
+  packageId    String?
+  sessionDate  DateTime
+  status       String   @default("Scheduled")
+  notes        String?
+  gymId        String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model BodyAssessment {
+  id             String   @id @default(uuid())
+  memberId       String
+  trainerId      String?
+  weight         Float
+  bmi            Float
+  bodyFat        Float    // PBF
+  muscleMass     Float    // SMM
+  bmr            Float
+  inBodyScore    Float?
+  assessmentDate DateTime @default(now())
+  gymId          String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model TrainerAttendance {
+  id           String    @id @default(uuid())
+  trainerId    String
+  date         DateTime  @default(now())
+  checkInTime  DateTime  @default(now())
+  checkOutTime DateTime?
+  workingHours Float?
+  gymId        String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model TrainerSalary {
+  id           String    @id @default(uuid())
+  trainerId    String    @unique
+  fixedSalary  Float     @default(0)
+  commissionPt Float     @default(0) // Rate per PT session
+  gymId        String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model PtCommission {
+  id           String    @id @default(uuid())
+  trainerId    String
+  sessionId    String?   // PtSession reference
+  amount       Float
+  date         DateTime  @default(now())
+  gymId        String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Payroll {
+  id           String    @id @default(uuid())
+  trainerId    String
+  month        Int       // 1 to 12
+  year         Int
+  fixedSalary  Float     @default(0)
+  commissions  Float     @default(0)
+  incentives   Float     @default(0)
+  totalAmount  Float
+  status       String    @default("Pending") // Pending, Paid
+  paymentDate  DateTime?
+  gymId        String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Equipment {
+  id              String           @id @default(uuid())
+  name            String
+  type            String?          // Cardio, Strength, etc.
+  purchaseDate    DateTime?
+  warrantyExpiry  DateTime?
+  serviceSchedule String?          // Monthly, Quarterly, etc.
+  status          String           @default("Active") // Active, Under Maintenance, Broken, Retired
+  gymId           String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model MaintenanceLog {
+  id              String    @id @default(uuid())
+  equipmentId     String
+  serviceDate     DateTime  @default(now())
+  cost            Float     @default(0)
+  description     String?
+  technicianName  String?
+  nextServiceDate DateTime?
+  gymId           String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}

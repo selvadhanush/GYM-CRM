@@ -168,9 +168,11 @@ function wrapRecord(record, modelName) {
     delete dataToSave.updatedAt;
     
     if (modelName === 'user' && dataToSave.password && dataToSave.password !== originalPassword) {
-      const bcrypt = require('bcryptjs');
-      const salt = await bcrypt.genSalt(10);
-      dataToSave.password = await bcrypt.hash(dataToSave.password, salt);
+      if (!dataToSave.password.startsWith('$2')) {
+        const bcrypt = require('bcryptjs');
+        const salt = await bcrypt.genSalt(10);
+        dataToSave.password = await bcrypt.hash(dataToSave.password, salt);
+      }
       originalPassword = dataToSave.password;
     }
     
@@ -368,9 +370,11 @@ class ModelWrapper {
       const dataToSave = { ...item };
       
       if (this.modelName === 'user' && dataToSave.password) {
-        const bcrypt = require('bcryptjs');
-        const salt = await bcrypt.genSalt(10);
-        dataToSave.password = await bcrypt.hash(dataToSave.password, salt);
+        if (!dataToSave.password.startsWith('$2')) {
+          const bcrypt = require('bcryptjs');
+          const salt = await bcrypt.genSalt(10);
+          dataToSave.password = await bcrypt.hash(dataToSave.password, salt);
+        }
       }
       
       if (this.modelName === 'member') {
@@ -419,9 +423,11 @@ class ModelWrapper {
     const dataToSave = { ...data };
     
     if (dataToSave.password) {
-      const bcrypt = require('bcryptjs');
-      const salt = await bcrypt.genSalt(10);
-      dataToSave.password = await bcrypt.hash(dataToSave.password, salt);
+      if (!dataToSave.password.startsWith('$2')) {
+        const bcrypt = require('bcryptjs');
+        const salt = await bcrypt.genSalt(10);
+        dataToSave.password = await bcrypt.hash(dataToSave.password, salt);
+      }
     }
     
     if (this.modelName === 'member') {
@@ -499,6 +505,13 @@ class ModelWrapper {
     return wrapRecord(record, this.modelName);
   }
   
+  async findOneAndUpdate(query, update, options = {}) {
+    const where = translateQuery(query);
+    const record = await prisma[this.modelName].findFirst({ where });
+    if (!record) return null;
+    return await this.findByIdAndUpdate(record.id, update, options);
+  }
+
   async findOneAndDelete(query) {
     const where = translateQuery(query);
     const record = await prisma[this.modelName].findFirst({ where });
@@ -570,7 +583,20 @@ class ModelWrapper {
       branches: 'branch',
       attendances: 'attendance',
       auditlogs: 'auditLog',
-      gymclasses: 'gymClass'
+      gymclasses: 'gymClass',
+      membertrainerassignments: 'memberTrainerAssignment',
+      workouttemplates: 'workoutTemplate',
+      workoutplans: 'workoutPlan',
+      dietplans: 'dietPlan',
+      ptpackages: 'ptPackage',
+      ptsessions: 'ptSession',
+      bodyassessments: 'bodyAssessment',
+      trainerattendances: 'trainerAttendance',
+      trainersalaries: 'trainerSalary',
+      ptcommissions: 'ptCommission',
+      payrolls: 'payroll',
+      equipments: 'equipment',
+      maintenancelogs: 'maintenanceLog'
     };
 
     function getNestedVal(obj, path) {

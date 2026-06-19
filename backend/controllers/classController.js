@@ -83,7 +83,7 @@ const bookClass = async (req, res) => {
         if (!gymClass) return res.status(404).json({ message: 'Class not found' });
 
         const alreadyBooked = gymClass.bookings.some(
-            b => b && b.memberId && req.user.memberId && b.memberId.toString() === req.user.memberId.toString()
+            b => b && (b.memberId || b).toString() === req.user.memberId.toString()
         );
         if (alreadyBooked) return res.status(400).json({ message: 'Already booked this class' });
 
@@ -117,7 +117,7 @@ const cancelBooking = async (req, res) => {
         if (!gymClass) return res.status(404).json({ message: 'Class not found' });
 
         const bookingIndex = gymClass.bookings.findIndex(
-            b => b && b.memberId && req.user.memberId && b.memberId.toString() === req.user.memberId.toString()
+            b => b && (b.memberId || b).toString() === req.user.memberId.toString()
         );
         if (bookingIndex === -1) return res.status(400).json({ message: 'No booking found for this class' });
 
@@ -151,7 +151,7 @@ const getMemberClasses = async (req, res) => {
         const result = classes.map(c => ({
             ...c,
             seatsAvailable: c.maxSeats - (c.bookings?.length || 0),
-            isBooked: c.bookings?.some(b => b.memberId.toString() === req.user.memberId.toString()) || false
+            isBooked: c.bookings?.some(b => b && (b.memberId || b).toString() === req.user.memberId.toString()) || false
         }));
         res.json(result);
     } catch (error) {
@@ -173,7 +173,7 @@ const adminBookClass = async (req, res) => {
         if (!gymClass) return res.status(404).json({ message: 'Class not found' });
 
         const alreadyBooked = gymClass.bookings.some(
-            b => b && b.memberId && b.memberId.toString() === memberId.toString()
+            b => b && (b.memberId || b).toString() === memberId.toString()
         );
         if (alreadyBooked) return res.status(400).json({ message: 'Member already booked for this class' });
 
@@ -210,7 +210,7 @@ const adminCancelBooking = async (req, res) => {
         if (!gymClass) return res.status(404).json({ message: 'Class not found' });
 
         const bookingIndex = gymClass.bookings.findIndex(
-            b => b && b.memberId && b.memberId.toString() === memberId.toString()
+            b => b && (b.memberId || b).toString() === memberId.toString()
         );
         if (bookingIndex === -1) return res.status(400).json({ message: 'No booking found for this member' });
 
