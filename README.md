@@ -1,6 +1,10 @@
 # Gym CRM - Management System
 
+> [!IMPORTANT]
+> **Teammate Guide**: For detailed developer guides, architecture overviews, verification plans, local setup scripts, and test credentials (including logins/passwords), please refer to the [TEAM_GUIDE.md](file:///d:/Zippy/GYM-CRM/TEAM_GUIDE.md) in the project root.
+
 A production-ready Gym Management System built with the MERN stack. Designed for gym owners to manage members, subscription plans, payments, and attendance with ease.
+
 
 ## 🚀 Live Demo (Future Link)
 [View Live Demo](https://your-deployment-link.vercel.app)
