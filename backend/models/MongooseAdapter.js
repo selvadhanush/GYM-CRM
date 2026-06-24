@@ -584,6 +584,7 @@ class ModelWrapper {
       attendances: 'attendance',
       auditlogs: 'auditLog',
       gymclasses: 'gymClass',
+      sessioncheckins: 'sessionCheckIn',
       membertrainerassignments: 'memberTrainerAssignment',
       workouttemplates: 'workoutTemplate',
       workoutplans: 'workoutPlan',
@@ -732,7 +733,20 @@ class ModelWrapper {
         const lookupStage = stage.$lookup;
         const targetModel = collectionToModel[lookupStage.from.toLowerCase()];
         if (targetModel) {
-          const targetRecords = await prisma[targetModel].findMany();
+          const localVals = [...new Set(records.map(record => {
+            const v = getNestedVal(record, lookupStage.localField);
+            return typeof v === 'object' && v !== null ? v.toString() : v;
+          }).filter(Boolean))];
+          
+          let targetRecords = [];
+          if (localVals.length > 0) {
+            const foreignKey = lookupStage.foreignField === '_id' ? 'id' : lookupStage.foreignField;
+            targetRecords = await prisma[targetModel].findMany({
+              where: {
+                [foreignKey]: { in: localVals }
+              }
+            });
+          }
           
           for (const record of records) {
             const localVal = getNestedVal(record, lookupStage.localField);

@@ -6,6 +6,7 @@ const MemberDashboard = () => {
     const [plan, setPlan] = useState(null);
     const [attendance, setAttendance] = useState([]);
     const [payments, setPayments] = useState([]);
+    const [sessionStatus, setSessionStatus] = useState(null);
     const [loading, setLoading] = useState(true);
     const [qrFullscreen, setQrFullscreen] = useState(false);
     const [paying, setPaying] = useState(false);
@@ -23,6 +24,12 @@ const MemberDashboard = () => {
             setPlan(planRes.data);
             setAttendance(attRes.data);
             setPayments(payRes.data);
+            // Fetch FitPrime session status (sessionsRemaining / active session / cooldown).
+            // Non-fatal: traditional (non-FitPrime) members just have no session balance.
+            try {
+                const { data } = await API.get('/member-portal/sessions/status');
+                setSessionStatus(data);
+            } catch { setSessionStatus(null); }
         } catch (error) {
             console.error('Error fetching member data:', error);
         } finally {
@@ -148,6 +155,11 @@ const MemberDashboard = () => {
 
     const daysLeft = plan ? Math.ceil((new Date(plan.expiryDate) - new Date()) / (1000 * 60 * 60 * 24)) : 0;
     const memberId = plan?._id || '';
+    // A FitPrime member holds a session-based plan (gymId === 'SYSTEM').
+    const isFitPrimeMember = plan?.planId?.gymId === 'SYSTEM';
+    const sessionsRemaining = sessionStatus?.sessionsRemaining ?? plan?.sessionsRemaining ?? 0;
+    const activeSession = sessionStatus?.active;
+    const inCooldown = sessionStatus?.inCooldown;
     // amountDue is already computed above
 
     return (
@@ -169,17 +181,35 @@ const MemberDashboard = () => {
                         </div>
                     )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
-                        <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                            Expires: {new Date(plan?.expiryDate).toLocaleDateString()}
-                        </span>
-                        <span style={{
-                            background: plan?.status === 'Frozen' ? 'var(--primary-light)' : daysLeft > 7 ? 'var(--success-light)' : 'var(--danger-light)',
-                            color: plan?.status === 'Frozen' ? 'var(--primary-color)' : daysLeft > 7 ? 'var(--success-color)' : 'var(--danger-color)',
-                            padding: '0.25rem 0.75rem', borderRadius: '9999px',
-                            fontSize: '0.75rem', fontWeight: '700'
-                        }}>
-                            {plan?.status === 'Frozen' ? '❄️ Paused' : daysLeft > 0 ? `${daysLeft} Days Left` : 'Expired'}
-                        </span>
+                        {isFitPrimeMember ? (
+                            <>
+                                <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                                    Sessions remaining
+                                </span>
+                                <span style={{
+                                    background: sessionsRemaining > 0 ? 'var(--success-light)' : 'var(--danger-light)',
+                                    color: sessionsRemaining > 0 ? 'var(--success-color)' : 'var(--danger-color)',
+                                    padding: '0.25rem 0.75rem', borderRadius: '9999px',
+                                    fontSize: '0.75rem', fontWeight: '700'
+                                }}>
+                                    🎟️ {sessionsRemaining} left
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                                    Expires: {new Date(plan?.expiryDate).toLocaleDateString()}
+                                </span>
+                                <span style={{
+                                    background: plan?.status === 'Frozen' ? 'var(--primary-light)' : daysLeft > 7 ? 'var(--success-light)' : 'var(--danger-light)',
+                                    color: plan?.status === 'Frozen' ? 'var(--primary-color)' : daysLeft > 7 ? 'var(--success-color)' : 'var(--danger-color)',
+                                    padding: '0.25rem 0.75rem', borderRadius: '9999px',
+                                    fontSize: '0.75rem', fontWeight: '700'
+                                }}>
+                                    {plan?.status === 'Frozen' ? '❄️ Paused' : daysLeft > 0 ? `${daysLeft} Days Left` : 'Expired'}
+                                </span>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -255,6 +285,34 @@ const MemberDashboard = () => {
                     </p>
                 </div>
             </div>
+
+            {/* FitPrime session status banner (active session or cooldown) */}
+            {isFitPrimeMember && (activeSession || inCooldown) && (
+                <div className="glass" style={{
+                    padding: '1rem 1.5rem', borderRadius: '14px', marginBottom: '1.5rem',
+                    borderLeft: `5px solid ${activeSession ? '#10b981' : '#f59e0b'}`,
+                    display: 'flex', alignItems: 'center', gap: '1rem'
+                }}>
+                    <span style={{ fontSize: '1.6rem' }}>{activeSession ? '🏃' : '⏳'}</span>
+                    <div>
+                        {activeSession ? (
+                            <>
+                                <div style={{ fontWeight: '800', fontSize: '0.95rem' }}>Session active</div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                    Ends at {new Date(sessionStatus.sessionEndsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. A 3-hour cooldown starts then.
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div style={{ fontWeight: '800', fontSize: '0.95rem' }}>Cooldown in effect</div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                    You can check in again after {new Date(sessionStatus.cooldownEndsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* History Tables */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>

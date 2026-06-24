@@ -7,54 +7,95 @@ generator client {
 }
 
 model Gym {
-  id        String   @id @default(uuid())
-  name      String
-  address   String?
-  phone     String?
-  email     String?
-  status    String   @default("Active")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                            String   @id @default(uuid())
+  name                          String
+  address                       String?
+  phone                         String?
+  email                         String?
+  status                        String   @default("Active")
+  images                        String[] @default([])
+  // Per-gym default session duration (minutes). Controls how long a FitPrime
+  // session stays active before auto-closing. Default 2 hours.
+  defaultSessionDurationMinutes Int      @default(120)
+  createdAt                     DateTime @default(now())
+  updatedAt                     DateTime @updatedAt
+
+  @@index([status])
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      String   @default("admin")
-  gymId     String
-  memberId  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                  String   @id @default(uuid())
+  name                String
+  email               String   @unique
+  password            String
+  phone               String?
+  role                String   @default("admin")
+  gymId               String
+  memberId            String?
+  isVerified          Boolean  @default(false)
+  // --- Web login brute-force protection (email+password login) ---
+  failedLoginAttempts Int      @default(0)
+  // Account is locked (cannot login) until this timestamp passes. Null = not locked.
+  lockUntil           DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([gymId])
+  @@index([role])
 }
 
 model Plan {
   id             String   @id @default(uuid())
   name           String
-  duration       Int      // duration in days
+  duration       Int      // duration value (used by traditional gym membership plans)
+  durationUnit   String   @default("days") // e.g. "days", "hours" (traditional plans)
+  // FitPrime (SYSTEM) plans grant a number of sessions instead of a time-based duration.
+  // Null/0 for traditional plans; set only on FitPrime global plans.
+  sessions       Int?
   price          Float
   gymId          String
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  @@index([gymId])
 }
 
 model Member {
-  id            String   @id @default(uuid())
-  name          String
-  phone         String
-  email         String?
-  planId        String
-  joinDate      DateTime @default(now())
-  expiryDate    DateTime
-  status        String   @default("Active")
-  planPrice     Float    @default(0)
-  paidAmount    Float    @default(0)
-  gymId         String
-  branchId      String?
-  freezeHistory String?  // stored as JSON string
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                    String   @id @default(uuid())
+  name                  String
+  phone                 String
+  email                 String?
+  planId                String
+  joinDate              DateTime @default(now())
+  expiryDate            DateTime
+  status                String   @default("Active")
+  planPrice             Float    @default(0)
+  paidAmount            Float    @default(0)
+  gymId                 String
+  branchId              String?
+  freezeHistory         String?  // stored as JSON string
+  // --- FitPrime session-based check-in fields ---
+  // Live session credit counter for FitPrime (SYSTEM) plan holders.
+  sessionsRemaining     Int      @default(0)
+  // Original session count granted by the purchased FitPrime plan (reference/audit).
+  sessionsTotal         Int      @default(0)
+  // Timestamp of the last successful QR scan (drives analytics/history).
+  lastCheckInAt         DateTime?
+  // When the currently-active session auto-expires (startedAt + gym.defaultSessionDurationMinutes).
+  // Null when no session is active. Authoritative gate for the "active session → 409" check.
+  currentSessionEndsAt  DateTime?
+  // The gym whose QR was scanned for the active session.
+  currentSessionGymId   String?
+  // Cooldown gate (authoritative): now < cooldownEndsAt → 429. Equals sessionEndsAt + 3h.
+  cooldownEndsAt        DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([gymId])
+  @@index([status])
+  @@index([expiryDate])
+  @@index([phone])
+  @@index([planId])
 }
 
 model Attendance {
@@ -65,6 +106,26 @@ model Attendance {
   gymId       String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([gymId, date])
+  @@index([memberId])
+}
+
+// Audit-grade record of every FitPrime QR scan / session start.
+// One row per successful check-in. Status moves active → expired via cron/lazy expiry.
+model SessionCheckIn {
+  id        String   @id @default(uuid())
+  memberId  String
+  gymId     String                      // the gym whose QR was scanned
+  gymName   String   @default("")
+  startedAt DateTime @default(now())
+  expiresAt DateTime                    // startedAt + gym.defaultSessionDurationMinutes
+  status    String   @default("active") // "active" | "expired"
+  createdAt DateTime @default(now())
+
+  @@index([gymId, status])
+  @@index([gymId, startedAt])
+  @@index([memberId])
 }
 
 model Payment {
@@ -78,6 +139,9 @@ model Payment {
   transactionId String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@index([gymId, date])
+  @@index([memberId])
 }
 
 model Expense {
@@ -90,6 +154,8 @@ model Expense {
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([gymId, date])
 }
 
 model GymClass {
@@ -106,6 +172,8 @@ model GymClass {
   bookings     String?  // stored as JSON string
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@index([gymId, scheduleDate])
 }
 
 model Lead {
@@ -123,6 +191,9 @@ model Lead {
   assignedTo        String    @default("")
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+
+  @@index([gymId, status])
+  @@index([phone])
 }
 
 model AuditLog {
@@ -140,6 +211,9 @@ model AuditLog {
   ip         String   @default("")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  @@index([gymId, action])
+  @@index([createdAt])
 }
 
 model Branch {
@@ -154,6 +228,8 @@ model Branch {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([gymId])
 }
 
 model Notification {
@@ -165,6 +241,20 @@ model Notification {
   read        Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([recipientId, read])
+  @@index([gymId])
+}
+
+model OTP {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  otp       String
+  expiresAt DateTime
+  // Number of failed verification attempts for this OTP. After MAX_OTP_ATTEMPTS
+  // (see authController) the OTP is invalidated and the user must request a new one.
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
 }
 
 model MemberTrainerAssignment {

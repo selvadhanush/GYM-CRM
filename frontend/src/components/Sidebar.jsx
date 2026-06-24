@@ -6,21 +6,23 @@ import {
     LayoutDashboard, Users, ShieldCheck, Calendar, IndianRupee,
     UserCheck, Clock, Building2, History, ChevronRight,
     ChevronLeft, LogOut, Target, Package, Banknote,
-    AlertTriangle, Receipt, CalendarCheck, Snowflake, LineChart, FileText, Home, Dumbbell, Wrench
+    AlertTriangle, Receipt, CalendarCheck, Snowflake, LineChart, FileText, Home, Dumbbell, Image, Wrench
 } from 'lucide-react';
 
 const NAV_GROUPS = {
-    admin: [
+    superadmin: [
         {
-            label: 'Overview',
+            label: 'Global Overview',
             items: [
-                { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+                { name: 'Dashboard', path: '/superadmin/dashboard', icon: LayoutDashboard },
                 { name: 'Analytics', path: '/analytics', icon: LineChart },
             ]
         },
         {
             label: 'Management',
             items: [
+                { name: 'Partner Gyms', path: '/superadmin/gyms', icon: Building2 },
+                { name: 'Fit-Prime Plans', path: '/superadmin/plans', icon: Package },
                 { name: 'Members', path: '/members', icon: Users },
                 { name: 'Leads', path: '/leads', icon: Target },
                 { name: 'Plans', path: '/plans', icon: Package },
@@ -34,6 +36,7 @@ const NAV_GROUPS = {
             label: 'Ops & Finance',
             items: [
                 { name: 'Payments', path: '/payments', icon: IndianRupee },
+                { name: 'Expenses', path: '/expenses', icon: IndianRupee },
                 { name: 'Attendance', path: '/attendance', icon: UserCheck },
                 { name: 'Trainer Attendance', path: '/trainer-attendance', icon: CalendarCheck },
                 { name: 'Payroll', path: '/payroll', icon: Banknote },
@@ -43,8 +46,16 @@ const NAV_GROUPS = {
         {
             label: 'System',
             items: [
-                { name: 'Branches', path: '/branches', icon: Building2 },
                 { name: 'Audit Logs', path: '/audit', icon: History },
+            ]
+        }
+    ],
+    admin: [
+        {
+            label: 'Partner Access',
+            items: [
+                { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+                { name: 'Gym Profile', path: '/profile', icon: Image },
             ]
         }
     ],

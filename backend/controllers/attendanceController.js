@@ -1,13 +1,16 @@
 const Attendance = require('../models/Attendance');
 const Member = require('../models/Member');
+const { logAudit } = require('../utils/auditLogger');
 
-// @desc    Mark attendance for a member
+// @desc    Mark attendance for a member (traditional gym check-in by staff)
 // @route   POST /api/attendance
 // @access  Private/Admin
 const markAttendance = async (req, res) => {
     const { memberId } = req.body;
 
-    const member = await Member.findById(memberId);
+    // Tenant isolation: the member must belong to the caller's gym. Previously
+    // this looked up by id alone, allowing cross-gym attendance marking.
+    const member = await Member.findOne({ _id: memberId, gymId: req.user.gymId });
     if (!member) {
         res.status(404);
         throw new Error('Member not found');
@@ -18,6 +21,7 @@ const markAttendance = async (req, res) => {
 
     const existingAttendance = await Attendance.findOne({
         memberId,
+        gymId: req.user.gymId,
         date: {
             $gte: today,
             $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
@@ -41,6 +45,8 @@ const markAttendance = async (req, res) => {
     });
 
     if (attendance) {
+        await logAudit(req, 'ATTENDANCE_MARKED', 'Attendance', attendance._id,
+            `Marked attendance for ${member.name}`, member.name);
         res.status(201).json(attendance);
     } else {
         res.status(400);
