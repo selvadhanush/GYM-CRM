@@ -24,6 +24,10 @@ import Staff from './pages/Staff';
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
 import PartnerGyms from './pages/superadmin/PartnerGyms';
 import FitPrimePlans from './pages/superadmin/FitPrimePlans';
+import BodyAssessments from './pages/BodyAssessments';
+import TrainerAttendancePage from './pages/TrainerAttendancePage';
+import PayrollPage from './pages/PayrollPage';
+import Equipments from './pages/Equipments';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -220,6 +224,38 @@ function App() {
           <ProtectedRoute roles={['admin']}>
             <Layout>
               <Staff />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/body-assessments" element={
+          <ProtectedRoute roles={['admin', 'trainer', 'member']}>
+            <Layout>
+              <BodyAssessments />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/trainer-attendance" element={
+          <ProtectedRoute roles={['admin', 'trainer']}>
+            <Layout>
+              <TrainerAttendancePage />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/payroll" element={
+          <ProtectedRoute roles={['admin', 'trainer']}>
+            <Layout>
+              <PayrollPage />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/equipments" element={
+          <ProtectedRoute roles={['admin', 'receptionist', 'trainer']}>
+            <Layout>
+              <Equipments />
             </Layout>
           </ProtectedRoute>
         } />

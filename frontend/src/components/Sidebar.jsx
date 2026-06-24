@@ -6,7 +6,7 @@ import {
     LayoutDashboard, Users, ShieldCheck, Calendar, IndianRupee,
     UserCheck, Clock, Building2, History, ChevronRight,
     ChevronLeft, LogOut, Target, Package, Banknote,
-    AlertTriangle, Receipt, CalendarCheck, Snowflake, LineChart, FileText, Home, Dumbbell, Image
+    AlertTriangle, Receipt, CalendarCheck, Snowflake, LineChart, FileText, Home, Dumbbell, Image, Wrench
 } from 'lucide-react';
 
 const NAV_GROUPS = {
@@ -24,6 +24,11 @@ const NAV_GROUPS = {
                 { name: 'Partner Gyms', path: '/superadmin/gyms', icon: Building2 },
                 { name: 'Fit-Prime Plans', path: '/superadmin/plans', icon: Package },
                 { name: 'Members', path: '/members', icon: Users },
+                { name: 'Leads', path: '/leads', icon: Target },
+                { name: 'Plans', path: '/plans', icon: Package },
+                { name: 'Classes', path: '/classes', icon: Dumbbell },
+                { name: 'Assessments', path: '/body-assessments', icon: LineChart },
+                { name: 'Equipments', path: '/equipments', icon: Wrench },
                 { name: 'Staff', path: '/staff', icon: ShieldCheck },
             ]
         },
@@ -32,6 +37,9 @@ const NAV_GROUPS = {
             items: [
                 { name: 'Payments', path: '/payments', icon: IndianRupee },
                 { name: 'Expenses', path: '/expenses', icon: IndianRupee },
+                { name: 'Attendance', path: '/attendance', icon: UserCheck },
+                { name: 'Trainer Attendance', path: '/trainer-attendance', icon: CalendarCheck },
+                { name: 'Payroll', path: '/payroll', icon: Banknote },
                 { name: 'Pending Dues', path: '/dues', icon: Clock },
             ]
         },
@@ -58,6 +66,7 @@ const NAV_GROUPS = {
                 { name: 'Members', path: '/members', icon: Users },
                 { name: 'Leads', path: '/leads', icon: Target },
                 { name: 'Attendance', path: '/attendance', icon: UserCheck },
+                { name: 'Equipments', path: '/equipments', icon: Wrench },
             ]
         },
         {
@@ -74,6 +83,10 @@ const NAV_GROUPS = {
             items: [
                 { name: 'Attendance', path: '/attendance', icon: UserCheck },
                 { name: 'Classes', path: '/classes', icon: Dumbbell },
+                { name: 'Assessments', path: '/body-assessments', icon: LineChart },
+                { name: 'Check In/Out', path: '/trainer-attendance', icon: Clock },
+                { name: 'My Payroll', path: '/payroll', icon: Banknote },
+                { name: 'Equipments', path: '/equipments', icon: Wrench },
             ]
         }
     ],
@@ -82,6 +95,7 @@ const NAV_GROUPS = {
             label: 'My Portal',
             items: [
                 { name: 'Dashboard', path: '/member-dashboard', icon: Home },
+                { name: 'My InBody', path: '/body-assessments', icon: LineChart },
                 { name: 'Classes', path: '/member-classes', icon: Dumbbell },
             ]
         }

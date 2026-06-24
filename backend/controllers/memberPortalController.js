@@ -142,7 +142,7 @@ const createRazorpayOrder = async (req, res) => {
         }
 
         // --- PARTIAL PAYMENT: use custom amount from request body ---
-        let paymentAmount = Number(req.body.amount);
+        let paymentAmount = req.body ? Number(req.body.amount) : NaN;
         if (!paymentAmount || isNaN(paymentAmount) || paymentAmount <= 0) {
             // fallback to full due amount if not provided
             paymentAmount = amountDue;
@@ -156,16 +156,20 @@ const createRazorpayOrder = async (req, res) => {
             return res.status(400).json({ message: `Amount too small: ₹${paymentAmount}. Minimum is ₹1.` });
         }
 
-        const isMockEnv = !process.env.RAZORPAY_KEY_ID || 
-                          !process.env.RAZORPAY_KEY_SECRET || 
-                          process.env.RAZORPAY_KEY_ID === 'your_razorpay_key_id';
+        const keyId = process.env.RAZORPAY_KEY_ID;
+        const keySecret = process.env.RAZORPAY_KEY_SECRET;
+        const hasRazorpayKeys = keyId && keySecret && 
+                                keyId !== 'your_razorpay_key_id' &&
+                                keyId !== 'null' && keyId !== 'undefined' && keyId.trim() !== '' &&
+                                keySecret !== 'null' && keySecret !== 'undefined' && keySecret.trim() !== '';
 
-        if (isMockEnv) {
+        if (!hasRazorpayKeys) {
+            console.log('Razorpay keys missing or invalid in .env. Returning a mock order for testing.');
             const mockOrder = {
                 id: `order_mock_${crypto.randomBytes(8).toString('hex')}`,
                 amount: amountInPaise,
                 currency: "INR",
-                receipt: `rcpt_${req.user.memberId.toString().slice(-6)}_${Date.now()}`,
+                receipt: `rcpt_${(member._id || member.id).toString().slice(-6)}_${Date.now()}`,
                 status: "created",
                 is_mock: true
             };
@@ -173,21 +177,21 @@ const createRazorpayOrder = async (req, res) => {
         }
 
         const instance = new Razorpay({
-            key_id: process.env.RAZORPAY_KEY_ID,
-            key_secret: process.env.RAZORPAY_KEY_SECRET,
+            key_id: keyId,
+            key_secret: keySecret,
         });
 
         const options = {
             amount: amountInPaise,
             currency: "INR",
-            receipt: `rcpt_${member._id.toString().slice(-6)}_${Date.now()}`,
-            notes: { paymentAmount: paymentAmount, memberId: member._id.toString() },
+            receipt: `rcpt_${(member._id || member.id).toString().slice(-6)}_${Date.now()}`,
+            notes: { paymentAmount: paymentAmount, memberId: (member._id || member.id).toString() },
         };
 
         const order = await instance.orders.create(options);
         res.status(201).json(order);
     } catch (error) {
-        console.error('RAZORPAY CREATE-ORDER ERROR:', error.message);
+        console.error('RAZORPAY CREATE-ORDER ERROR:', error);
         res.status(500).json({
             message: 'Razorpay order creation failed',
             error: error.message || String(error),
@@ -200,58 +204,75 @@ const createRazorpayOrder = async (req, res) => {
 // @route   POST /api/member-portal/payment/verify
 // @access  Private/Member
 const verifyRazorpayPayment = async (req, res) => {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, amount_paid } = req.body;
+    try {
+        const { razorpay_order_id, razorpay_payment_id, razorpay_signature, amount_paid } = req.body || {};
 
-    const isMock = (razorpay_order_id && razorpay_order_id.startsWith('order_mock_')) ||
-                   !process.env.RAZORPAY_KEY_SECRET ||
-                   process.env.RAZORPAY_KEY_SECRET === 'your_razorpay_key_secret';
-    let isAuthentic = false;
-
-    if (isMock) {
-        isAuthentic = true;
-    } else {
-        const body = razorpay_order_id + "|" + razorpay_payment_id;
-        const expectedSignature = crypto
-            .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-            .update(body.toString())
-            .digest('hex');
-        isAuthentic = expectedSignature === razorpay_signature;
-    }
-
-    if (isAuthentic) {
-        const member = await Member.findById(req.user.memberId);
-
-        // Use the actual amount paid (partial or full)
-        const amountPaid = Number(amount_paid) || (member.planPrice - member.paidAmount);
-
-        // Create Payment record
-        await Payment.create({
-            memberId: member._id,
-            gymId: member.gymId,
-            amount: amountPaid,
-            method: 'Online (Razorpay)',
-            date: new Date(),
-            transactionId: razorpay_payment_id
-        });
-
-        // Increment paidAmount by the partial amount paid
-        member.paidAmount = Math.min(member.paidAmount + amountPaid, member.planPrice);
-        // Mark active only if fully paid
-        if (member.paidAmount >= member.planPrice) {
-            member.status = 'Active';
+        if (!req.user?.memberId) {
+            return res.status(403).json({ message: 'Not authorized as a member' });
         }
-        await member.save();
 
-        res.status(200).json({
-            success: true,
-            message: 'Payment verified and recorded successfully',
-            amountPaid,
-            remainingDue: member.planPrice - member.paidAmount
-        });
-    } else {
-        res.status(400).json({
+        const member = await Member.findById(req.user.memberId);
+        if (!member) {
+            return res.status(404).json({ message: 'Member profile not found' });
+        }
+
+        const isMock = razorpay_order_id && razorpay_order_id.startsWith('order_mock_');
+        let isAuthentic = false;
+
+        const keySecret = process.env.RAZORPAY_KEY_SECRET;
+        const hasKeySecret = keySecret && keySecret !== 'null' && keySecret !== 'undefined' && keySecret.trim() !== '';
+
+        if (isMock || !hasKeySecret) {
+            isAuthentic = true;
+        } else {
+            const body = razorpay_order_id + "|" + razorpay_payment_id;
+            const expectedSignature = crypto
+                .createHmac('sha256', keySecret)
+                .update(body.toString())
+                .digest('hex');
+            isAuthentic = expectedSignature === razorpay_signature;
+        }
+
+        if (isAuthentic) {
+            // Use the actual amount paid (partial or full)
+            const amountPaid = Number(amount_paid) || ((member.planPrice || 0) - (member.paidAmount || 0));
+
+            // Create Payment record
+            await Payment.create({
+                memberId: member._id || member.id,
+                gymId: member.gymId,
+                amount: amountPaid,
+                method: 'Online (Razorpay)',
+                date: new Date(),
+                transactionId: razorpay_payment_id || `txn_${crypto.randomBytes(8).toString('hex')}`
+            });
+
+            // Increment paidAmount by the partial amount paid
+            member.paidAmount = Math.min((member.paidAmount || 0) + amountPaid, member.planPrice || 0);
+            // Mark active only if fully paid
+            if (member.paidAmount >= (member.planPrice || 0)) {
+                member.status = 'Active';
+            }
+            await member.save();
+
+            res.status(200).json({
+                success: true,
+                message: 'Payment verified and recorded successfully',
+                amountPaid,
+                remainingDue: (member.planPrice || 0) - member.paidAmount
+            });
+        } else {
+            res.status(400).json({
+                success: false,
+                message: 'Payment verification failed'
+            });
+        }
+    } catch (error) {
+        console.error('PAYMENT VERIFICATION ERROR:', error);
+        res.status(500).json({
             success: false,
-            message: 'Payment verification failed'
+            message: 'Error verifying payment',
+            error: error.message
         });
     }
 };
