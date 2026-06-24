@@ -3,7 +3,43 @@ import { getStats, getMembers } from '../services/apiService';
 import { AuthContext } from '../context/AuthContext';
 import API from '../services/api';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie } from 'recharts';
-import { Users, CheckCircle2, AlertTriangle, Clock, Sparkles, IndianRupee, TrendingDown, TrendingUp, Megaphone, Check } from 'lucide-react';
+import { Users, CheckCircle2, AlertTriangle, Clock, Sparkles, IndianRupee, TrendingDown, TrendingUp, Megaphone, Check, QrCode } from 'lucide-react';
+import { QRCodeCanvas } from 'qrcode.react';
+
+const LiveSessionTimer = ({ expiresAt }) => {
+    const [timeLeft, setTimeLeft] = useState('');
+
+    useEffect(() => {
+        const calculateTimeLeft = () => {
+            const now = new Date();
+            const expiration = new Date(expiresAt);
+            const diff = expiration - now;
+
+            if (diff <= 0) {
+                return 'Expired';
+            }
+
+            const h = Math.floor(diff / (1000 * 60 * 60));
+            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        };
+
+        setTimeLeft(calculateTimeLeft());
+        const timer = setInterval(() => {
+            setTimeLeft(calculateTimeLeft());
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [expiresAt]);
+
+    return (
+        <span style={{ fontFamily: 'monospace', color: timeLeft === 'Expired' ? 'var(--danger-color)' : 'var(--success-color)', fontWeight: 'bold' }}>
+            {timeLeft}
+        </span>
+    );
+};
 
 const Dashboard = () => {
     const { user } = useContext(AuthContext);
@@ -14,6 +50,7 @@ const Dashboard = () => {
     const [showAnnounce, setShowAnnounce] = useState(false);
     const [announcing, setAnnouncing] = useState(false);
     const [announceSuccess, setAnnounceSuccess] = useState(false);
+    const [showQR, setShowQR] = useState(false);
 
     useEffect(() => {
         const fetchDashboardData = async () => {
@@ -70,85 +107,58 @@ const Dashboard = () => {
 
     if (loading) return (
         <div className="kpi-grid" style={{ marginBottom: '1.75rem' }}>
-            {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="kpi-card" style={{ '--kpi-color': '#e2e8f0', '--kpi-bg': 'var(--bg-tertiary)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <div className="skeleton" style={{ width: 100, height: 12, borderRadius: 6 }} />
-                        <div className="skeleton" style={{ width: 36, height: 36, borderRadius: 8 }} />
-                    </div>
-                    <div className="skeleton" style={{ width: 80, height: 32, borderRadius: 8 }} />
-                    <div className="skeleton" style={{ width: 110, height: 11, borderRadius: 6 }} />
-                </div>
-            ))}
+            <div className="kpi-card" style={{ '--kpi-color': '#e2e8f0', '--kpi-bg': 'var(--bg-tertiary)' }}>
+                <div className="skeleton" style={{ width: 100, height: 12, borderRadius: 6 }} />
+                <div className="skeleton" style={{ width: 80, height: 32, borderRadius: 8, marginTop: 12 }} />
+            </div>
         </div>
     );
 
     const cards = [
-        { title: 'Total Members', value: stats?.totalMembers || 0, icon: <Users size={22} />, color: 'var(--primary-color)' },
-        { title: 'Active Members', value: stats?.activeMembers || 0, icon: <CheckCircle2 size={22} />, color: 'var(--success-color)' },
-        { title: 'Expired Members', value: stats?.expiredMembers || 0, icon: <AlertTriangle size={22} />, color: '#ef4444' },
-        { title: 'Inactive (7+ Days)', value: stats?.inactiveMembersCount || 0, icon: <Clock size={22} />, color: '#f43f5e' },
-        { title: 'New This Month', value: stats?.newMembersThisMonth || 0, icon: <Sparkles size={22} />, color: 'var(--accent-color)' },
-        { title: 'Monthly Revenue', value: `₹${stats?.monthlyRevenue || 0}`, icon: <IndianRupee size={22} />, color: '#f59e0b' },
-        { title: 'Monthly Expenses', value: `₹${stats?.monthlyExpenses || 0}`, icon: <TrendingDown size={22} />, color: '#ef4444' },
-        { title: 'Monthly Profit', value: `₹${stats?.monthlyProfit || 0}`, icon: <TrendingUp size={22} />, color: 'var(--success-color)' },
+        { title: 'Active Members', value: activeLiveSessions.length, icon: <CheckCircle2 size={22} />, color: 'var(--success-color)' },
+        { title: 'Total Check-Ins Today', value: (stats?.todayAttendanceCount || 0) + (stats?.todaySessionsCount || 0), icon: <CheckCircle2 size={22} />, color: 'var(--warning-color)' },
     ];
 
-    const COLORS = ['var(--primary)', 'var(--accent)', '#a855f7', '#d946ef', '#f43f5e'];
+    const recentCheckins = stats?.recentCheckins || [];
+    const activeLiveSessions = stats?.activeLiveSessions || [];
+
 
     return (
         <div className="fade-in">
             <div className="page-header">
                 <div className="page-header-left">
-                    <h2>Dashboard Overview</h2>
-                    <p>Welcome back, {user?.name || 'Administrator'}. Here's what's happening today.</p>
+                    <h2>Partner Dashboard</h2>
+                    <p>Welcome back, {user?.name || 'Partner'}. Here's the activity at your gym today.</p>
                 </div>
                 {user?.role === 'admin' && (
-                    <button onClick={() => setShowAnnounce(true)} className="btn btn-primary">
-                        <Megaphone size={18} /> Send Announcement
-                    </button>
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                        <button onClick={() => setShowQR(true)} className="btn btn-secondary">
+                            <QrCode size={18} /> Print Check-In QR
+                        </button>
+                    </div>
                 )}
             </div>
 
-            {/* Announcement Modal */}
-            {showAnnounce && (
-                <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowAnnounce(false); }}>
-                    <div className="modal-content">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <Megaphone size={22} className="text-primary" /> Send Announcement
-                            </h3>
-                            <button onClick={() => setShowAnnounce(false)} className="btn-ghost" style={{ padding: '0.5rem', borderRadius: '50%' }}>×</button>
-                        </div>
-
-                        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-                            Broadcast a message to all members and staff. This will appear as a notification in their portal.
+            {/* QR Code Modal */}
+            {showQR && (
+                <div className="modal-overlay" onClick={() => setShowQR(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ textAlign: 'center', maxWidth: '350px' }}>
+                        <h3>{user?.name}'s Gym</h3>
+                        <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+                            Print this QR code and place it at the front desk. Members will scan it using their mobile app to check in.
                         </p>
-
-                        {announceSuccess ? (
-                            <div className="badge badge-active" style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '1rem' }}>
-                                <Check size={20} /> Announcement Dispatched Successfully!
-                            </div>
-                        ) : (
-                            <form onSubmit={handleAnnounce}>
-                                <div className="input-group">
-                                    <textarea
-                                        className="input"
-                                        style={{ minHeight: '120px', resize: 'none' }}
-                                        placeholder="Type your message here..."
-                                        value={announceMsg}
-                                        onChange={e => setAnnounceMsg(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-                                    <button type="button" onClick={() => setShowAnnounce(false)} className="btn btn-secondary" style={{ flex: 1 }}>Discard</button>
-                                    <button type="submit" disabled={announcing} className="btn btn-primary" style={{ flex: 1 }}>
-                                        {announcing ? 'Sending...' : 'Broadcast Now'}
-                                    </button>
-                                </div>
-                            </form>
-                        )}
+                        <div style={{ background: '#fff', padding: '1.5rem', display: 'inline-block', borderRadius: '12px' }}>
+                            <QRCodeCanvas 
+                                value={JSON.stringify({ gymId: user?.gymId, gymName: user?.name || 'Partner Gym' })}
+                                size={220}
+                                level="H"
+                            />
+                        </div>
+                        <div style={{ marginTop: '2rem' }}>
+                            <button className="btn btn-secondary" onClick={() => setShowQR(false)} style={{ width: '100%' }}>
+                                Close
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -165,120 +175,62 @@ const Dashboard = () => {
                 ))}
             </div>
 
-            <div className="charts-grid" style={{ marginBottom: '2.5rem' }}>
-                <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
-                    <h3 style={{ marginBottom: '2rem' }}>Revenue Analytics</h3>
-                    <div style={{ width: '100%', height: 300 }}>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <AreaChart data={formatTrendData(stats?.revenueTrend)}>
-                                <defs>
-                                    <linearGradient id="colorAmt" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.2} />
-                                        <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-secondary)', fontSize: 11, fontWeight: 500 }} dy={10} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-secondary)', fontSize: 11, fontWeight: 500 }} dx={-10} />
-                                <Tooltip
-                                    cursor={{ stroke: 'var(--primary)', strokeWidth: 1 }}
-                                    contentStyle={{
-                                        borderRadius: 'var(--radius-md)',
-                                        border: '1px solid var(--border)',
-                                        boxShadow: 'var(--shadow-lg)',
-                                        background: 'var(--bg-secondary)',
-                                        padding: '12px'
-                                    }}
-                                    itemStyle={{ color: 'var(--primary)', fontWeight: 700 }}
-                                    formatter={(value) => [`₹${value}`, 'Revenue']}
-                                />
-                                <Area type="monotone" dataKey="amount" stroke="var(--primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorAmt)" />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
-                    <h3 style={{ marginBottom: '2rem' }}>Plan Performance</h3>
-                    <div style={{ width: '100%', height: 300 }}>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={stats?.planBreakdown}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                                <XAxis dataKey="_id" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-secondary)', fontSize: 11, fontWeight: 500 }} dy={10} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-secondary)', fontSize: 11, fontWeight: 500 }} dx={-10} />
-                                <Tooltip
-                                    cursor={{ fill: 'var(--primary-light)' }}
-                                    contentStyle={{
-                                        borderRadius: 'var(--radius-md)',
-                                        border: '1px solid var(--border)',
-                                        boxShadow: 'var(--shadow-lg)',
-                                        background: 'var(--bg-secondary)'
-                                    }}
-                                    formatter={(value) => [`₹${value}`, 'Generated Revenue']}
-                                />
-                                <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={40}>
-                                    {stats?.planBreakdown?.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} fillOpacity={0.9} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-            </div>
-
-            <div className="charts-grid">
-                <div className="card">
-                    <h3 style={{ marginBottom: '2rem' }}>Collections by Method</h3>
-                    <div style={{ width: '100%', height: 300 }}>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <PieChart>
-                                <Pie
-                                    data={stats?.methodBreakdown}
-                                    innerRadius={70}
-                                    outerRadius={95}
-                                    paddingAngle={8}
-                                    dataKey="value"
-                                    nameKey="_id"
-                                    stroke="none"
-                                >
-                                    {stats?.methodBreakdown?.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip
-                                    contentStyle={{
-                                        borderRadius: 'var(--radius-md)',
-                                        border: '1px solid var(--border)',
-                                        boxShadow: 'var(--shadow-lg)',
-                                        background: 'var(--bg-secondary)'
-                                    }}
-                                    formatter={(value) => [`₹${value}`, 'Total Collected']}
-                                />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                <div className="card">
-                    <h3 style={{ marginBottom: '1.5rem' }}>Expiring Memberships</h3>
-                    <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Members whose plans expire within the next 7 days.</p>
-                    {expiringMembers.length > 0 ? (
+            <div className="charts-grid" style={{ marginTop: '2.5rem' }}>
+                {activeLiveSessions.length > 0 && (
+                    <div className="card" style={{ gridColumn: '1 / -1', marginBottom: '1.5rem', border: '2px solid var(--primary)', borderRadius: '0', background: 'var(--bg)' }}>
+                        <h3 style={{ marginBottom: '1.5rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1.5rem', letterSpacing: '0.05em' }}>
+                            <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: 'var(--primary)', boxShadow: '0 0 15px var(--primary)', animation: 'pulse 1.5s infinite alternate' }}></div>
+                            CURRENTLY ACTIVE MEMBERS (LIVE)
+                        </h3>
+                        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+                            Members currently working out in your gym right now.
+                        </p>
+                        
                         <div className="table-container">
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>Member</th>
-                                        <th>Expiry</th>
-                                        <th>Status</th>
+                                        <th>Member Name</th>
+                                        <th>Phone</th>
+                                        <th>Time Left</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {expiringMembers.map(member => (
-                                        <tr key={member._id}>
-                                            <td style={{ fontWeight: 600 }}>{member.name}</td>
-                                            <td>{new Date(member.expiryDate).toLocaleDateString()}</td>
-                                            <td><span className={`badge badge-${member.status.toLowerCase()}`}>{member.status}</span></td>
+                                    {activeLiveSessions.map(session => (
+                                        <tr key={session.id}>
+                                            <td style={{ fontWeight: 600 }}>{session.memberName}</td>
+                                            <td>{session.memberPhone}</td>
+                                            <td><LiveSessionTimer expiresAt={session.expiresAt} /></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                <div className="card" style={{ gridColumn: '1 / -1' }}>
+                    <h3 style={{ marginBottom: '1.5rem' }}>Recent Check-ins (This Month)</h3>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+                        History of members who have visited your gym recently.
+                    </p>
+                    
+                    {recentCheckins.length > 0 ? (
+                        <div className="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Member Name</th>
+                                        <th>Date</th>
+                                        <th>Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {recentCheckins.map(checkin => (
+                                        <tr key={checkin.id}>
+                                            <td style={{ fontWeight: 600 }}>{checkin.memberName}</td>
+                                            <td>{new Date(checkin.date).toLocaleDateString()}</td>
+                                            <td>{checkin.checkInTime}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -286,15 +238,13 @@ const Dashboard = () => {
                         </div>
                     ) : (
                         <div className="empty-state">
-                            <div className="empty-state-icon">✅</div>
-                            <h3>Clean Slate</h3>
-                            <p>No memberships are expiring in the coming week.</p>
+                            <div className="empty-state-icon">📝</div>
+                            <h3>No Recent Activity</h3>
+                            <p>No members have checked in this month yet.</p>
                         </div>
                     )}
                 </div>
             </div>
-
-
         </div>
     );
 };

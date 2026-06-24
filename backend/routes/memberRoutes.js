@@ -12,7 +12,7 @@ const {
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.route('/')
-    .get(protect, authorize('admin', 'receptionist'), getMembers)
+    .get(protect, authorize('admin', 'receptionist', 'superadmin'), getMembers)
     .post(protect, authorize('admin', 'receptionist'), createMember);
 
 router.get('/export/csv', protect, authorize('admin'), exportMembersCSV);

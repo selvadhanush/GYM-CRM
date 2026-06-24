@@ -3,65 +3,59 @@
    Modern SaaS Dashboard (Notion / Stripe inspired)
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Oswald:wght@400;500;600;700&display=swap');
 
 /* ─── CSS Variables ─── */
 :root {
-  /* HSL Base Colors for better transparency control */
-  --primary-h: 24;
-  --primary-s: 95%;
-  --primary-l: 53%;
-  /* Orange 500 equivalent */
+  /* Base Colors (Neon Lime) */
+  --primary: #D4FF00;
+  --primary-hover: #C5ED00;
+  --primary-light: rgba(212, 255, 0, 0.1);
+  --primary-muted: rgba(212, 255, 0, 0.2);
 
-  --primary: hsl(var(--primary-h), var(--primary-s), var(--primary-l));
-  --primary-hover: hsl(var(--primary-h), var(--primary-s), calc(var(--primary-l) - 5%));
-  --primary-light: hsla(var(--primary-h), var(--primary-s), var(--primary-l), 0.08);
-  --primary-muted: hsla(var(--primary-h), var(--primary-s), var(--primary-l), 0.15);
-
-  --accent: #e11d48;
-  /* Rose 600 */
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  --info: #0ea5e9;
+  --accent: #FF0055;
+  --success: #00FF66;
+  --warning: #FFD600;
+  --danger: #FF0044;
+  --info: #00FFFF;
 
   /* Backgrounds */
-  --bg: #fcfcfd;
-  --bg-secondary: #ffffff;
-  --bg-tertiary: #f4f4f5;
-  --sidebar-bg: #ffffff;
+  --bg: #0B0D0F;
+  --bg-secondary: #16191D;
+  --bg-tertiary: #1C2025;
+  --sidebar-bg: #16191D;
 
   /* Text */
-  --text-primary: #09090b;
-  --text-secondary: #52525b;
-  --text-muted: #a1a1aa;
-  --text-inverse: #ffffff;
+  --text-primary: #FFFFFF;
+  --text-secondary: #8A95A5;
+  --text-muted: #535C68;
+  --text-inverse: #000000;
 
   /* Borders */
-  --border: #e4e4e7;
+  --border: #2A2F36;
   --border-focus: var(--primary);
 
-  /* Shadows - Layered for depth */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.05);
-  --shadow-premium: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+  /* Shadows - Brutalist (Hard lines, no blur) */
+  --shadow-sm: 2px 2px 0 0 rgba(0, 0, 0, 1);
+  --shadow-md: 4px 4px 0 0 rgba(0, 0, 0, 1);
+  --shadow-lg: 6px 6px 0 0 rgba(0, 0, 0, 1);
+  --shadow-premium: 8px 8px 0 0 rgba(0, 0, 0, 1);
 
   /* Sidebar */
   --sidebar-width: 240px;
   --sidebar-collapsed-width: 64px;
 
-  /* Radius */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
+  /* Radius - Brutalist (Sharp) */
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 2px;
+  --radius-xl: 4px;
   --radius-full: 9999px;
 
-  /* Glassmorphism */
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.2);
-  --glass-blur: blur(12px);
+  /* Glassmorphism overrides */
+  --glass-bg: rgba(22, 25, 29, 0.9);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-blur: blur(4px);
 
   /* Animation */
   --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -132,8 +126,9 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: 'Outfit', sans-serif;
-  font-weight: 700;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
   color: var(--text-primary);
   line-height: 1.2;
 }
@@ -1419,4 +1414,150 @@ tbody tr:hover {
 
 .show-mobile {
   display: none;
+}
+
+/* ─── Gym Profile Gallery ─── */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.gallery-item-wrapper {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-slow);
+}
+
+.gallery-item-wrapper:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-lg);
+}
+
+.gallery-item {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.gallery-item-wrapper:hover img {
+  transform: scale(1.05);
+}
+
+.gallery-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: var(--transition);
+  backdrop-filter: blur(2px);
+}
+
+.gallery-item-wrapper:hover .gallery-overlay {
+  opacity: 1;
+}
+
+.gallery-controls {
+  display: flex;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 0.5rem;
+  border-radius: var(--radius-full);
+  backdrop-filter: blur(10px);
+}
+
+.gallery-controls button {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.gallery-controls button:hover:not(:disabled) {
+  background: var(--primary);
+  color: white;
+  transform: scale(1.1);
+}
+
+.gallery-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.gallery-controls .delete-btn:hover:not(:disabled) {
+  background: var(--danger);
+  color: white;
+}
+
+.gallery-index {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.empty-gallery {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  background: var(--bg-tertiary);
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--text-muted);
+}
+
+.empty-gallery p {
+  margin-top: 1rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.gallery-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(212, 255, 0, 0.7);
+  }
+  
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(212, 255, 0, 0);
+  }
+  
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(212, 255, 0, 0);
+  }
 }

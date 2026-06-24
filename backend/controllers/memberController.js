@@ -2,6 +2,7 @@ const Member = require('../models/Member');
 const Plan = require('../models/Plan');
 const User = require('../models/User');
 const { jsonToCsv } = require('../utils/csvUtils');
+const { logAudit } = require('../utils/auditLogger');
 
 // @desc    Create a new member
 // @route   POST /api/members
@@ -64,6 +65,7 @@ const createMember = async (req, res) => {
                 memberId: member._id
             });
 
+            await logAudit(req, 'MEMBER_CREATED', 'Member', member._id, `Created member: ${member.name}`, member.name);
             res.status(201).json(member);
         } else {
             res.status(400).json({ success: false, message: 'Invalid member data' });
@@ -190,6 +192,7 @@ const updateMember = async (req, res) => {
             if (branchId !== undefined) member.branchId = branchId || null;
 
             const updatedMember = await member.save();
+            await logAudit(req, 'MEMBER_UPDATED', 'Member', member._id, `Updated member: ${updatedMember.name}`, updatedMember.name);
             res.json(updatedMember);
         } else {
             res.status(404).json({ success: false, message: 'Member not found' });
@@ -210,7 +213,8 @@ const deleteMember = async (req, res) => {
         if (member) {
             // Delete associated User record to prevent unique constraint conflicts
             await User.deleteMany({ memberId: member.id });
-            
+
+            await logAudit(req, 'MEMBER_DELETED', 'Member', member._id, `Deleted member: ${member.name}`, member.name);
             // Delete the member
             await member.deleteOne();
             res.json({ message: 'Member removed' });

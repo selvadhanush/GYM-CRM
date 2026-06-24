@@ -88,8 +88,13 @@ const Plans = () => {
                     <tbody>
                         {plans.map(plan => (
                             <tr key={plan._id}>
-                                <td>{plan.name}</td>
-                                <td>{plan.duration}</td>
+                                <td>
+                                    {plan.name}
+                                    {plan.gymId === 'SYSTEM' && (
+                                        <span style={{ marginLeft: '8px', fontSize: '12px', padding: '2px 6px', backgroundColor: '#e0f2fe', color: '#0369a1', borderRadius: '4px' }}>Global</span>
+                                    )}
+                                </td>
+                                <td>{plan.gymId === 'SYSTEM' ? `${plan.sessions} sessions` : plan.duration}</td>
                                 <td>{plan.price}</td>
                                 {user?.role === 'admin' && (
                                     <td style={{ display: 'flex', gap: '0.5rem' }}>

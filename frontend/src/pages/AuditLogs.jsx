@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import API from '../services/api';
-import { LogIn, LogOut, UserPlus, UserCog, UserMinus, IndianRupee, Banknote, TrendingDown, ClipboardList, ClipboardEdit, ClipboardX, CalendarPlus, CalendarMinus, Target, Snowflake, Sun, Building, Settings } from 'lucide-react';
+import { LogIn, LogOut, UserPlus, UserCog, UserMinus, IndianRupee, Banknote, TrendingDown, ClipboardList, ClipboardEdit, ClipboardX, CalendarPlus, CalendarMinus, Target, Snowflake, Sun, Building, Settings, QrCode, ShieldAlert, Scale, ScanLine, MapPin } from 'lucide-react';
 
 const ACTION_ICONS = {
     LOGIN: <LogIn size={18} />, LOGOUT: <LogOut size={18} />,
@@ -12,6 +12,12 @@ const ACTION_ICONS = {
     LEAD_CREATED: <Target size={18} />, LEAD_UPDATED: <Target size={18} />, LEAD_DELETED: <Target size={18} />,
     FREEZE_APPLIED: <Snowflake size={18} />, FREEZE_REMOVED: <Sun size={18} />,
     BRANCH_CREATED: <Building size={18} />, BRANCH_UPDATED: <Building size={18} />, BRANCH_DELETED: <Building size={18} />,
+    // FitPrime session check-in actions
+    CHECK_IN: <ScanLine size={18} />, CHECK_IN_BLOCKED: <ShieldAlert size={18} />, SESSION_EXPIRED: <QrCode size={18} />,
+    SESSION_ADJUSTED: <Scale size={18} />, ATTENDANCE_MARKED: <MapPin size={18} />,
+    // Gym lifecycle + security
+    GYM_CREATED: <Building size={18} />, GYM_UPDATED: <Building size={18} />,
+    LOGIN_FAILED: <ShieldAlert size={18} />,
     OTHER: <Settings size={18} />
 };
 
@@ -25,6 +31,10 @@ const ACTION_COLORS = {
     LEAD_CREATED: '#8b5cf6', LEAD_UPDATED: '#f59e0b', LEAD_DELETED: '#ef4444',
     FREEZE_APPLIED: '#6366f1', FREEZE_REMOVED: '#10b981',
     BRANCH_CREATED: '#0ea5e9', BRANCH_UPDATED: '#f59e0b', BRANCH_DELETED: '#ef4444',
+    CHECK_IN: '#10b981', CHECK_IN_BLOCKED: '#ef4444', SESSION_EXPIRED: '#6b7280',
+    SESSION_ADJUSTED: '#f59e0b', ATTENDANCE_MARKED: '#0ea5e9',
+    GYM_CREATED: '#0ea5e9', GYM_UPDATED: '#f59e0b',
+    LOGIN_FAILED: '#ef4444',
     OTHER: '#6b7280'
 };
 
@@ -41,15 +51,17 @@ const AuditLogs = () => {
     const [summary, setSummary] = useState(null);
     const [loading, setLoading] = useState(true);
     const [filterAction, setFilterAction] = useState('');
+    const [filterEntity, setFilterEntity] = useState('');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
-    const [tab, setTab] = useState('timeline'); // 'timeline' | 'logins'
+    const [tab, setTab] = useState('timeline'); // 'timeline' | 'logins' | 'sessions'
 
-    const fetchLogs = async (p = 1, action = '') => {
+    const fetchLogs = async (p = 1, action = filterAction, entity = filterEntity) => {
         try {
             const params = new URLSearchParams({ page: p, limit: 50 });
             if (action) params.append('action', action);
+            if (entity) params.append('entity', entity);
             const { data } = await API.get(`/audit?${params}`);
             setLogs(data.logs);
             setTotalPages(data.pages);
@@ -67,23 +79,35 @@ const AuditLogs = () => {
 
     useEffect(() => {
         fetchSummary();
-        fetchLogs(1, filterAction);
+        fetchLogs(1, filterAction, filterEntity);
     }, []);
 
     const handleFilter = (action) => {
         setFilterAction(action);
         setPage(1);
-        fetchLogs(1, action);
+        fetchLogs(1, action, filterEntity);
+    };
+
+    const handleEntityFilter = (entity) => {
+        setFilterEntity(entity);
+        setPage(1);
+        fetchLogs(1, filterAction, entity);
     };
 
     const handlePage = (p) => {
         setPage(p);
-        fetchLogs(p, filterAction);
+        fetchLogs(p, filterAction, filterEntity);
     };
 
     const loginLogs = summary?.recentLogins || [];
+    // FitPrime session activity: check-ins, blocked attempts, and manual adjustments (No SESSION_EXPIRED in UI).
+    const SESSION_ACTIONS = ['CHECK_IN', 'CHECK_IN_BLOCKED', 'SESSION_ADJUSTED'];
+    const sessionLogs = logs.filter((l) => SESSION_ACTIONS.includes(l.action));
 
     if (loading) return <div className="spinner"></div>;
+
+    // Filter out any stale/old SESSION_EXPIRED records from UI display logs.
+    const displayLogs = logs.filter(l => l.action !== 'SESSION_EXPIRED');
 
     return (
         <div className="fade-in">
@@ -94,33 +118,64 @@ const AuditLogs = () => {
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <button onClick={() => setTab('timeline')} className="btn" style={{ background: tab === 'timeline' ? 'var(--primary-color)' : 'var(--bg-secondary)', color: tab === 'timeline' ? '#fff' : 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.4rem 0.9rem', fontSize: '0.85rem' }}>📋 Activity</button>
+                    <button onClick={() => setTab('sessions')} className="btn" style={{ background: tab === 'sessions' ? 'var(--primary-color)' : 'var(--bg-secondary)', color: tab === 'sessions' ? '#fff' : 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.4rem 0.9rem', fontSize: '0.85rem' }}>🏃 Sessions</button>
                     <button onClick={() => setTab('logins')} className="btn" style={{ background: tab === 'logins' ? 'var(--primary-color)' : 'var(--bg-secondary)', color: tab === 'logins' ? '#fff' : 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.4rem 0.9rem', fontSize: '0.85rem' }}>🔐 Login History</button>
                 </div>
             </div>
 
-            {/* Summary action counts */}
-            {summary?.summary?.length > 0 && tab === 'timeline' && (
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-                    <button
-                        onClick={() => handleFilter('')}
-                        style={{ background: !filterAction ? 'var(--primary-color)' : 'var(--bg-secondary)', color: !filterAction ? '#fff' : 'var(--text-secondary)', border: '1px solid var(--border-color)', borderRadius: '999px', padding: '0.25rem 0.75rem', fontSize: '0.78rem', cursor: 'pointer' }}>
-                        All ({total})
-                    </button>
-                    {summary.summary.map(s => (
-                        <button
-                            key={s._id}
-                            onClick={() => handleFilter(s._id)}
-                            style={{ background: filterAction === s._id ? ACTION_COLORS[s._id] || 'var(--primary-color)' : 'var(--bg-secondary)', color: filterAction === s._id ? '#fff' : 'var(--text-secondary)', border: `1px solid ${filterAction === s._id ? (ACTION_COLORS[s._id] || 'var(--primary-color)') : 'var(--border-color)'}`, borderRadius: '999px', padding: '0.25rem 0.75rem', fontSize: '0.78rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                            {ACTION_ICONS[s._id] || <Settings size={14} />} {s._id.replace(/_/g, ' ')} ({s.count})
-                        </button>
-                    ))}
+            {/* Filter controls row */}
+            {tab === 'timeline' && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', gap: '1rem', flexWrap: 'wrap' }}>
+                    {summary?.summary?.length > 0 && (
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', flex: 1 }}>
+                            <button
+                                onClick={() => handleFilter('')}
+                                style={{ background: !filterAction ? 'var(--primary-color)' : 'var(--bg-secondary)', color: !filterAction ? '#fff' : 'var(--text-secondary)', border: '1px solid var(--border-color)', borderRadius: '999px', padding: '0.25rem 0.75rem', fontSize: '0.78rem', cursor: 'pointer' }}>
+                                All Actions ({total})
+                            </button>
+                            {summary.summary.filter(s => s._id !== 'SESSION_EXPIRED').map(s => (
+                                <button
+                                    key={s._id}
+                                    onClick={() => handleFilter(s._id)}
+                                    style={{ background: filterAction === s._id ? ACTION_COLORS[s._id] || 'var(--primary-color)' : 'var(--bg-secondary)', color: filterAction === s._id ? '#fff' : 'var(--text-secondary)', border: `1px solid ${filterAction === s._id ? (ACTION_COLORS[s._id] || 'var(--primary-color)') : 'var(--border-color)'}`, borderRadius: '999px', padding: '0.25rem 0.75rem', fontSize: '0.78rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    {ACTION_ICONS[s._id] || <Settings size={14} />} {s._id.replace(/_/g, ' ')} ({s.count})
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                    {/* Entity Filter Dropdown */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Entity:</span>
+                        <select
+                            value={filterEntity}
+                            onChange={(e) => handleEntityFilter(e.target.value)}
+                            style={{
+                                padding: '0.35rem 0.75rem',
+                                borderRadius: '8px',
+                                border: '1px solid var(--border-color)',
+                                background: 'var(--bg-secondary)',
+                                color: 'var(--text-primary)',
+                                fontSize: '0.85rem'
+                            }}
+                        >
+                            <option value="">All Entities</option>
+                            <option value="Member">Member</option>
+                            <option value="Gym">Gym</option>
+                            <option value="Plan">Plan</option>
+                            <option value="Branch">Branch</option>
+                            <option value="Expense">Expense</option>
+                            <option value="User">User</option>
+                            <option value="Payment">Payment</option>
+                            <option value="Attendance">Attendance</option>
+                        </select>
+                    </div>
                 </div>
             )}
 
             {/* Activity Timeline */}
             {tab === 'timeline' && (
                 <div className="card" style={{ padding: '1rem' }}>
-                    {logs.length === 0 ? (
+                    {displayLogs.length === 0 ? (
                         <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '3rem' }}>
                             <div style={{ fontSize: '2.5rem' }}>🔍</div>
                             <p>No activity logged yet. Actions will appear here.</p>
@@ -129,9 +184,10 @@ const AuditLogs = () => {
                         <div style={{ position: 'relative' }}>
                             {/* Timeline line */}
                             <div style={{ position: 'absolute', left: '19px', top: 0, bottom: 0, width: '2px', background: 'var(--border-color)' }} />
-                            {logs.map((log, i) => {
+                            {displayLogs.map((log, i) => {
                                 const color = ACTION_COLORS[log.action] || '#6b7280';
                                 const icon = ACTION_ICONS[log.action] || '⚙️';
+
                                 return (
                                     <div key={log._id} style={{ display: 'flex', gap: '1rem', marginBottom: '1.25rem', position: 'relative' }}>
                                         {/* Dot */}
@@ -172,6 +228,38 @@ const AuditLogs = () => {
                             <button disabled={page === totalPages} onClick={() => handlePage(page + 1)} className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem' }}>Next →</button>
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* Sessions Tab -- FitPrime check-ins, blocked attempts, manual adjustments */}
+            {tab === 'sessions' && (
+                <div className="card" style={{ padding: 0 }}>
+                    <table>
+                        <thead><tr><th>Action</th><th>Details</th><th>Member</th><th>By</th><th>Time</th><th>IP</th></tr></thead>
+                        <tbody>
+                            {sessionLogs.length === 0 ? (
+                                <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>No session activity yet. Check-ins and adjustments will appear here.</td></tr>
+                            ) : sessionLogs.map(l => {
+                                const color = ACTION_COLORS[l.action] || '#6b7280';
+                                return (
+                                    <tr key={l._id}>
+                                        <td>
+                                            <span style={{ background: `${color}22`, color, padding: '0.2rem 0.5rem', borderRadius: '6px', fontSize: '0.74rem', fontWeight: '800', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                                                {ACTION_ICONS[l.action]} {l.action.replace(/_/g, ' ')}
+                                            </span>
+                                        </td>
+                                        <td style={{ fontSize: '0.85rem' }}>{l.details || '—'}</td>
+                                        <td style={{ fontWeight: '600', fontSize: '0.85rem' }}>{l.entityName || '—'}</td>
+                                        <td style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>
+                                            {l.userName}{l.userRole ? ` · ${l.userRole}` : ''}
+                                        </td>
+                                        <td style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>{new Date(l.createdAt).toLocaleString()}</td>
+                                        <td style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', fontFamily: 'monospace' }}>{l.ip || '—'}</td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
                 </div>
             )}
 

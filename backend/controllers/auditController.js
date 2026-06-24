@@ -5,10 +5,15 @@ const AuditLog = require('../models/AuditLog');
 // @access  Private/Admin
 const getAuditLogs = async (req, res) => {
     try {
-        const { action, userId, limit = 100, page = 1 } = req.query;
-        const filter = { gymId: req.user.gymId };
+        const { action, userId, entity, limit = 100, page = 1 } = req.query;
+        const filter = {};
+        if (req.user.role !== 'superadmin') {
+            filter.gymId = req.user.gymId;
+        }
         if (action) filter.action = action;
         if (userId) filter.userId = userId;
+        if (entity) filter.entity = entity;
+
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const [logs, total] = await Promise.all([
@@ -31,14 +36,16 @@ const getAuditLogs = async (req, res) => {
 // @access  Private/Admin
 const getAuditSummary = async (req, res) => {
     try {
+        const filter = req.user.role === 'superadmin' ? {} : { gymId: req.user.gymId };
+        
         const summary = await AuditLog.aggregate([
-            { $match: { gymId: req.user.gymId } },
+            { $match: filter },
             { $group: { _id: '$action', count: { $sum: 1 } } },
             { $sort: { count: -1 } }
         ]);
 
         // Recent logins
-        const recentLogins = await AuditLog.find({ gymId: req.user.gymId, action: 'LOGIN' })
+        const recentLogins = await AuditLog.find({ ...filter, action: 'LOGIN' })
             .sort({ createdAt: -1 }).limit(10).lean();
 
         res.json({ summary, recentLogins });

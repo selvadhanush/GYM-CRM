@@ -4,6 +4,7 @@ import { AuthContext } from './context/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import GymProfile from './pages/GymProfile';
 import Plans from './pages/Plans';
 import Members from './pages/Members';
 import Payments from './pages/Payments';
@@ -20,6 +21,9 @@ import Analytics from './pages/Analytics';
 import AuditLogs from './pages/AuditLogs';
 import Branches from './pages/Branches';
 import Staff from './pages/Staff';
+import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
+import PartnerGyms from './pages/superadmin/PartnerGyms';
+import FitPrimePlans from './pages/superadmin/FitPrimePlans';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -42,6 +46,7 @@ function App() {
           <ProtectedRoute>
             <Layout>
               <Navigate to={
+                user?.role === 'superadmin' ? "/superadmin/dashboard" :
                 user?.role === 'admin' ? "/dashboard" :
                   user?.role === 'trainer' ? "/attendance" :
                     user?.role === 'member' ? "/member-dashboard" :
@@ -51,10 +56,42 @@ function App() {
           </ProtectedRoute>
         } />
 
+        <Route path="/superadmin/dashboard" element={
+          <ProtectedRoute roles={['superadmin']}>
+            <Layout>
+              <SuperAdminDashboard />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/superadmin/gyms" element={
+          <ProtectedRoute roles={['superadmin']}>
+            <Layout>
+              <PartnerGyms />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/superadmin/plans" element={
+          <ProtectedRoute roles={['superadmin']}>
+            <Layout>
+              <FitPrimePlans />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
         <Route path="/dashboard" element={
           <ProtectedRoute roles={['admin']}>
             <Layout>
               <Dashboard />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/profile" element={
+          <ProtectedRoute roles={['admin']}>
+            <Layout>
+              <GymProfile />
             </Layout>
           </ProtectedRoute>
         } />

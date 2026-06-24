@@ -1,5 +1,6 @@
 const Payment = require('../models/Payment');
 const Member = require('../models/Member');
+const { logAudit } = require('../utils/auditLogger');
 
 // @desc    Add a new payment
 // @route   POST /api/payments
@@ -7,7 +8,10 @@ const Member = require('../models/Member');
 const addPayment = async (req, res) => {
     const { memberId, amount, method, date } = req.body;
 
-    const member = await Member.findById(memberId);
+    // Tenant isolation: the member must belong to the caller's gym. Previously
+    // this looked up by id alone, allowing a partner to post payments against
+    // another gym's member.
+    const member = await Member.findOne({ _id: memberId, gymId: req.user.gymId });
     if (!member) {
         res.status(404);
         throw new Error('Member not found');
@@ -25,6 +29,8 @@ const addPayment = async (req, res) => {
         // Update member's paidAmount
         member.paidAmount += Number(amount);
         await member.save();
+        await logAudit(req, 'PAYMENT_ADDED', 'Payment', payment._id,
+            `Recorded ${method} payment of ${amount} from ${member.name}`, member.name);
         res.status(201).json(payment);
     } else {
         res.status(400);
