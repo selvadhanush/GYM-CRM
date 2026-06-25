@@ -102,6 +102,7 @@ export default function TabLayout() {
       <Tabs.Screen name="scanner" options={{ title: 'Scan' }} />
       <Tabs.Screen name="history" options={{ title: 'History' }} />
       <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
+      <Tabs.Screen name="classes" options={{ href: null }} />
       <Tabs.Screen name="checkout" options={{ href: null }} />
       <Tabs.Screen name="gym-details" options={{ href: null, tabBarStyle: { display: 'none' } }} />
     </Tabs>

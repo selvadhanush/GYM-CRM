@@ -49,7 +49,7 @@ export const memberService = {
   bookClass: (classId: string) =>
     api.post<{ message: string; seatsAvailable: number }>(`/member-portal/classes/${classId}/book`),
 
-  cancelBooking: (classId: string) =>
+  cancelClassBooking: (classId: string) =>
     api.delete<{ message: string; seatsAvailable: number }>(`/member-portal/classes/${classId}/book`),
 
   createPaymentOrder: (amount?: number) =>

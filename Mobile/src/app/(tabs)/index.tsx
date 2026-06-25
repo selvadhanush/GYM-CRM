@@ -242,6 +242,7 @@ export default function DashboardScreen() {
       <View style={styles.actionGrid}>
         {[
           { icon: 'qr-code', label: 'Scan QR', route: '/(tabs)/scanner', color: '#FF7A00', bg: 'rgba(255,122,0,0.12)' },
+          { icon: 'calendar', label: 'Classes', route: '/(tabs)/classes', color: '#10B981', bg: 'rgba(16,185,129,0.12)' },
           { icon: 'pricetags', label: 'Plans', route: '/(tabs)/packages', color: '#00D4AA', bg: 'rgba(0,212,170,0.12)' },
           { icon: 'time', label: 'History', route: '/(tabs)/history', color: '#A78BFA', bg: 'rgba(167,139,250,0.12)' },
           { icon: 'person', label: 'Profile', route: '/(tabs)/profile', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' },
@@ -445,10 +446,10 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: FONTS.sizes.lg, color: '#000000', ...FONTS.bold, marginBottom: SPACING.md },
   seeAll: { color: COLORS.primary, fontSize: FONTS.sizes.sm, ...FONTS.medium },
 
-  actionGrid: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.lg },
+  actionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: SPACING.lg },
   actionCard: {
-    flex: 1, backgroundColor: '#F8F9FA', borderRadius: RADIUS.xl,
-    padding: SPACING.md, alignItems: 'center', borderWidth: 1, borderColor: '#E5E7EB',
+    width: '31%', backgroundColor: '#F8F9FA', borderRadius: RADIUS.xl,
+    paddingVertical: SPACING.md, paddingHorizontal: 4, alignItems: 'center', borderWidth: 1, borderColor: '#E5E7EB',
   },
   actionIcon: { width: 52, height: 52, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: SPACING.sm },
   actionLabel: { color: '#444444', fontSize: FONTS.sizes.xs, ...FONTS.medium },

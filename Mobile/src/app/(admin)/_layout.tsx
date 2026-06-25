@@ -57,9 +57,9 @@ export default function AdminTabLayout() {
       <Tabs.Screen
         name="members"
         options={{
-          title: 'History',
+          title: 'Members',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="time" size={size} color={color} />
+            <Ionicons name="people" size={size} color={color} />
           ),
         }}
       />
@@ -79,6 +79,111 @@ export default function AdminTabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-circle" size={size} color={color} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="attendance"
+        options={{
+          href: null,
+          title: 'Attendance',
+        }}
+      />
+      <Tabs.Screen
+        name="equipments"
+        options={{
+          href: null,
+          title: 'Equipments',
+        }}
+      />
+      <Tabs.Screen
+        name="expenses"
+        options={{
+          href: null,
+          title: 'Expenses',
+        }}
+      />
+      <Tabs.Screen
+        name="payments"
+        options={{
+          href: null,
+          title: 'Payments',
+        }}
+      />
+      <Tabs.Screen
+        name="dues"
+        options={{
+          href: null,
+          title: 'Dues',
+        }}
+      />
+      <Tabs.Screen
+        name="classes"
+        options={{
+          href: null,
+          title: 'Classes',
+        }}
+      />
+      <Tabs.Screen
+        name="freeze"
+        options={{
+          href: null,
+          title: 'Freeze Management',
+        }}
+      />
+      <Tabs.Screen
+        name="leads"
+        options={{
+          href: null,
+          title: 'Leads',
+        }}
+      />
+      <Tabs.Screen
+        name="analytics"
+        options={{
+          href: null,
+          title: 'Analytics',
+        }}
+      />
+      <Tabs.Screen
+        name="branches"
+        options={{
+          href: null,
+          title: 'Branches',
+        }}
+      />
+      <Tabs.Screen
+        name="staff"
+        options={{
+          href: null,
+          title: 'Staff',
+        }}
+      />
+      <Tabs.Screen
+        name="body-assessments"
+        options={{
+          href: null,
+          title: 'Body Assessments',
+        }}
+      />
+      <Tabs.Screen
+        name="trainer-attendance"
+        options={{
+          href: null,
+          title: 'Trainer Attendance',
+        }}
+      />
+      <Tabs.Screen
+        name="payroll"
+        options={{
+          href: null,
+          title: 'Payroll',
+        }}
+      />
+      <Tabs.Screen
+        name="reports"
+        options={{
+          href: null,
+          title: 'Reports',
         }}
       />
     </Tabs>
