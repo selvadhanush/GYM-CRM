@@ -63,8 +63,12 @@ export default function AdminDashboard() {
   const qrData = JSON.stringify({ gymId: user?.gymId, gymName: user?.gymName || 'Partner Gym' });
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(qrData)}`;
 
+  const [sharingLink, setSharingLink] = useState(false);
+
   const handleShareLink = async () => {
+    if (sharingLink) return;
     try {
+      setSharingLink(true);
       await Share.share({
         message: `Here is the Check-In link for ${user?.gymName || 'our gym'}. Show this QR at the desk: ${qrUrl}`,
         url: qrUrl,
@@ -72,10 +76,13 @@ export default function AdminDashboard() {
       });
     } catch (error) {
       console.error('Share Link Error:', error);
+    } finally {
+      setSharingLink(false);
     }
   };
 
   const handleShareImage = async () => {
+    if (sharingImage) return;
     try {
       setSharingImage(true);
       const fileUri = FileSystem.cacheDirectory + 'checkin-qr.png';
