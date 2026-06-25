@@ -20,7 +20,10 @@ import { useAuthStore } from '@/stores/auth';
 import { COLORS, SPACING, RADIUS, FONTS } from '@/theme';
 import type { DashboardStats } from '@/types';
 
+import { useRouter } from 'expo-router';
+
 export default function AdminDashboard() {
+  const router = useRouter();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -182,6 +185,39 @@ export default function AdminDashboard() {
           />
         </View>
       )}
+
+      {/* Operations Controls Dashboard Grid */}
+      <Text style={styles.sectionTitle}>Operations Control</Text>
+      <View style={styles.actionGrid}>
+        {[
+          { icon: 'snow', label: 'Freeze', route: '/(admin)/freeze', color: '#FF7A00', bg: 'rgba(255,122,0,0.1)' },
+          { icon: 'funnel', label: 'Leads', route: '/(admin)/leads', color: '#0EA5E9', bg: 'rgba(14,165,233,0.1)' },
+          { icon: 'people-circle', label: 'Staff', route: '/(admin)/staff', color: '#EF4444', bg: 'rgba(239,68,68,0.1)' },
+          { icon: 'barbell', label: 'InBody', route: '/(admin)/body-assessments', color: '#10B981', bg: 'rgba(16,185,129,0.1)' },
+          { icon: 'calendar', label: 'Attendance', route: '/(admin)/trainer-attendance', color: '#8B5CF6', bg: 'rgba(139,92,246,0.1)' },
+          { icon: 'wallet', label: 'Payroll', route: '/(admin)/payroll', color: '#EC4899', bg: 'rgba(236,72,153,0.1)' },
+          { icon: 'analytics', label: 'Analytics', route: '/(admin)/analytics', color: '#3B82F6', bg: 'rgba(59,130,246,0.1)' },
+          { icon: 'business', label: 'Branches', route: '/(admin)/branches', color: '#06B6D4', bg: 'rgba(6,182,212,0.1)' },
+          { icon: 'document-text', label: 'Reports', route: '/(admin)/reports', color: '#84CC16', bg: 'rgba(132,204,22,0.1)' },
+          { icon: 'construct', label: 'Equipments', route: '/(admin)/equipments', color: '#14B8A6', bg: 'rgba(20,184,166,0.1)' },
+          { icon: 'card', label: 'Payments', route: '/(admin)/payments', color: '#A78BFA', bg: 'rgba(167,139,250,0.1)' },
+          { icon: 'trending-down', label: 'Expenses', route: '/(admin)/expenses', color: '#F43F5E', bg: 'rgba(244,63,94,0.1)' },
+          { icon: 'alert-circle', label: 'Dues', route: '/(admin)/dues', color: '#EAB308', bg: 'rgba(234,179,8,0.1)' },
+          { icon: 'school', label: 'Classes', route: '/(admin)/classes', color: '#6366F1', bg: 'rgba(99,102,241,0.1)' },
+        ].map((item) => (
+          <TouchableOpacity
+            key={item.label}
+            style={styles.actionCard}
+            onPress={() => router.push(item.route as any)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.actionIcon, { backgroundColor: item.bg }]}>
+              <Ionicons name={item.icon as any} size={22} color={item.color} />
+            </View>
+            <Text style={styles.actionLabel} numberOfLines={1}>{item.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       {stats?.activeLiveSessions && stats.activeLiveSessions.length > 0 && (
         <View style={styles.liveSessionsContainer}>
@@ -500,5 +536,36 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sizes.lg,
     ...FONTS.bold,
     fontVariant: ['tabular-nums'],
+  },
+  actionGrid: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    gap: 10, 
+    marginBottom: SPACING.xl,
+    marginTop: 6
+  },
+  actionCard: {
+    width: '31%', 
+    backgroundColor: '#FFF', 
+    borderRadius: RADIUS.xl,
+    paddingVertical: 14, 
+    paddingHorizontal: 4, 
+    alignItems: 'center', 
+    borderWidth: 1, 
+    borderColor: '#E5E7EB',
+  },
+  actionIcon: { 
+    width: 48, 
+    height: 48, 
+    borderRadius: 16, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginBottom: 6 
+  },
+  actionLabel: { 
+    color: '#000000', 
+    fontSize: 10, 
+    ...FONTS.semibold,
+    textAlign: 'center'
   },
 });

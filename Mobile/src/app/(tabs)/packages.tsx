@@ -61,7 +61,7 @@ export default function PackagesScreen() {
 
   const handleCancelBooking = async (classId: string) => {
     try {
-      const res = await memberService.cancelBooking(classId);
+      const res = await memberService.cancelClassBooking(classId);
       Alert.alert('Cancelled', res.message); fetchData();
     } catch (err: any) { Alert.alert('Error', err.message); }
   };
