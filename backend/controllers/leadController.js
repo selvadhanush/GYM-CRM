@@ -6,7 +6,8 @@ const Member = require('../models/Member');
 const getLeads = async (req, res) => {
     try {
         const { status, source } = req.query;
-        const filter = { gymId: req.user.gymId };
+        const filter = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) filter.branchId = req.user.branchId;
         if (status) filter.status = status;
         if (source) filter.source = source;
 
@@ -26,7 +27,8 @@ const createLead = async (req, res) => {
 
         const lead = await Lead.create({
             name, phone, email, source, interestedPlan, notes, followUpDate, assignedTo,
-            gymId: req.user.gymId,
+            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
+            branchId: req.user.branchId || null,
             status: 'New'
         });
         res.status(201).json(lead);
@@ -39,7 +41,9 @@ const createLead = async (req, res) => {
 // @route   PUT /api/leads/:id
 const updateLead = async (req, res) => {
     try {
-        const lead = await Lead.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) query.branchId = req.user.branchId;
+        const lead = await Lead.findOne(query);
         if (!lead) return res.status(404).json({ message: 'Lead not found' });
 
         const { name, phone, email, source, status, interestedPlan, notes, followUpDate, assignedTo } = req.body;
@@ -64,7 +68,9 @@ const updateLead = async (req, res) => {
 // @route   DELETE /api/leads/:id
 const deleteLead = async (req, res) => {
     try {
-        const lead = await Lead.findOneAndDelete({ _id: req.params.id, gymId: req.user.gymId });
+        const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) query.branchId = req.user.branchId;
+        const lead = await Lead.findOneAndDelete(query);
         if (!lead) return res.status(404).json({ message: 'Lead not found' });
         res.json({ message: 'Lead deleted' });
     } catch (err) {
@@ -76,13 +82,16 @@ const deleteLead = async (req, res) => {
 // @route   GET /api/leads/summary
 const getLeadSummary = async (req, res) => {
     try {
+        const matchStage = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) matchStage.branchId = req.user.branchId;
+
         const statusCounts = await Lead.aggregate([
-            { $match: { gymId: req.user.gymId } },
+            { $match: matchStage },
             { $group: { _id: '$status', count: { $sum: 1 } } }
         ]);
 
         const sourceCounts = await Lead.aggregate([
-            { $match: { gymId: req.user.gymId } },
+            { $match: matchStage },
             { $group: { _id: '$source', count: { $sum: 1 } } }
         ]);
 
@@ -90,13 +99,13 @@ const getLeadSummary = async (req, res) => {
         const today = new Date();
         today.setHours(23, 59, 59, 999);
         const followUpDue = await Lead.countDocuments({
-            gymId: req.user.gymId,
+            ...matchStage,
             followUpDate: { $lte: today },
             status: { $nin: ['Converted', 'Lost'] }
         });
 
         // Conversion rate
-        const total = await Lead.countDocuments({ gymId: req.user.gymId });
+        const total = await Lead.countDocuments(matchStage);
         const converted = statusCounts.find(s => s._id === 'Converted')?.count || 0;
         const conversionRate = total > 0 ? ((converted / total) * 100).toFixed(1) : 0;
 

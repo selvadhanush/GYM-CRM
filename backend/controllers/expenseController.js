@@ -8,7 +8,8 @@ const createExpense = async (req, res) => {
     const { title, amount, category, description, date } = req.body;
 
     const expense = await Expense.create({
-        gymId: req.user.gymId,
+        gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
+        branchId: req.user.branchId || null,
         title,
         amount: Number(amount),
         category,
@@ -29,7 +30,11 @@ const createExpense = async (req, res) => {
 // @route   GET /api/expenses
 // @access  Private/Admin
 const getExpenses = async (req, res) => {
-    const expenses = await Expense.find({ gymId: req.user.gymId }).sort({ date: -1 });
+    const query = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+    if (req.user.branchId) {
+        query.branchId = req.user.branchId;
+    }
+    const expenses = await Expense.find(query).sort({ date: -1 });
     res.json(expenses);
 };
 
@@ -37,7 +42,11 @@ const getExpenses = async (req, res) => {
 // @route   DELETE /api/expenses/:id
 // @access  Private/Admin
 const deleteExpense = async (req, res) => {
-    const expense = await Expense.findOne({ _id: req.params.id, gymId: req.user.gymId });
+    const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+    if (req.user.branchId) {
+        query.branchId = req.user.branchId;
+    }
+    const expense = await Expense.findOne(query);
 
     if (expense) {
         await logAudit(req, 'EXPENSE_DELETED', 'Expense', expense._id, `Deleted expense: ${expense.title} ₹${expense.amount}`, expense.title);

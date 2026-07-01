@@ -97,54 +97,57 @@ function PartnerGyms() {
     if (loading) return <div className="spinner"></div>;
 
     return (
-        <div className="plans-container">
-            <header className="page-header">
+        <div style={{ padding: '1rem 0' }}>
+            <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <h2>Partner Gyms Management</h2>
             </header>
 
-            {error && <div className="error-message">{error}</div>}
+            {error && <div className="error-message" style={{ color: 'var(--danger)', marginBottom: '1rem', padding: '0.75rem', background: 'rgba(255,0,68,0.1)', borderRadius: '6px' }}>{error}</div>}
 
-            <div className="form-card">
-                <h3>Create New Partner Gym</h3>
-                <form onSubmit={handleCreateGym} className="plan-form">
-                    <div className="form-group">
-                        <label>Gym Name</label>
-                        <input type="text" value={gymName} onChange={(e) => setGymName(e.target.value)} required />
+            <div className="card" style={{ marginBottom: '2.5rem', padding: '2rem' }}>
+                <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', color: 'var(--text-primary)' }}>Create New Partner Gym</h3>
+                <form onSubmit={handleCreateGym}>
+                    <div className="form-grid">
+                        <div className="input-group">
+                            <label>Gym Name</label>
+                            <input className="input" type="text" placeholder="e.g. Elite Fitness Center" value={gymName} onChange={(e) => setGymName(e.target.value)} required />
+                        </div>
+                        <div className="input-group">
+                            <label>Default Session Duration (Hours)</label>
+                            <select className="input" value={sessionHours} onChange={(e) => setSessionHours(e.target.value)} required>
+                                <option value="1">1 Hour</option>
+                                <option value="2">2 Hours</option>
+                                <option value="3">3 Hours</option>
+                                <option value="4">4 Hours</option>
+                                <option value="5">5 Hours</option>
+                                <option value="6">6 Hours</option>
+                            </select>
+                        </div>
                     </div>
-                    <div className="form-group">
+                    <div className="input-group">
                         <label>Gym Address</label>
-                        <input type="text" value={gymAddress} onChange={(e) => setGymAddress(e.target.value)} required />
+                        <input className="input" type="text" placeholder="e.g. 123 Fitness Ave, Muscle Town" value={gymAddress} onChange={(e) => setGymAddress(e.target.value)} required />
                     </div>
-                    <div className="form-group">
-                        <label>Default Session Duration (Hours)</label>
-                        <select value={sessionHours} onChange={(e) => setSessionHours(e.target.value)} required className="form-control">
-                            <option value="1">1 Hour</option>
-                            <option value="2">2 Hours</option>
-                            <option value="3">3 Hours</option>
-                            <option value="4">4 Hours</option>
-                            <option value="5">5 Hours</option>
-                            <option value="6">6 Hours</option>
-                        </select>
-                        <small style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>How long a FitPrime check-in stays active before auto-closing (e.g. 2 Hours).</small>
+                    <div className="form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+                        <div className="input-group">
+                            <label>Admin Name</label>
+                            <input className="input" type="text" placeholder="e.g. Admin User" value={adminName} onChange={(e) => setAdminName(e.target.value)} required />
+                        </div>
+                        <div className="input-group">
+                            <label>Admin Email</label>
+                            <input className="input" type="email" placeholder="e.g. admin@example.com" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} required />
+                        </div>
+                        <div className="input-group">
+                            <label>Admin Password</label>
+                            <input className="input" type="text" placeholder="e.g. securepassword" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} required />
+                        </div>
                     </div>
-                    <div className="form-group">
-                        <label>Admin Name</label>
-                        <input type="text" value={adminName} onChange={(e) => setAdminName(e.target.value)} required />
-                    </div>
-                    <div className="form-group">
-                        <label>Admin Email</label>
-                        <input type="email" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} required />
-                    </div>
-                    <div className="form-group">
-                        <label>Admin Password</label>
-                        <input type="text" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} required />
-                    </div>
-                    <button type="submit" className="btn btn-primary">Create Partner Gym</button>
+                    <button type="submit" className="btn btn-primary" style={{ marginTop: '1rem' }}>Create Partner Gym</button>
                 </form>
             </div>
 
-            <div className="table-container" style={{ marginTop: '30px' }}>
-                <table className="data-table">
+            <div className="table-container">
+                <table>
                     <thead>
                         <tr>
                             <th>Gym Name</th>
@@ -155,74 +158,90 @@ function PartnerGyms() {
                         </tr>
                     </thead>
                     <tbody>
-                        {gyms.map(gym => {
-                            const current = gym.defaultSessionDurationMinutes || 120;
-                            const draft = durationDraft[gym.id] ?? durationDraft[gym._id];
-                            const draftVal = draft !== undefined ? draft : current;
-                            return (
-                                <tr key={gym._id}>
-                                    <td>{gym.name}</td>
-                                    <td>{gym.address}</td>
-                                    <td>{gym.admins?.[0]?.name || 'N/A'}<br /><span style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>{gym.admins?.[0]?.email || ''}</span></td>
-                                    <td>
-                                        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                                            <select
-                                                value={draftVal / 60}
-                                                onChange={(e) => setDurationDraft((d) => ({ ...d, [gym._id]: Number(e.target.value) * 60 }))}
-                                                style={{ width: '100px', padding: '0.25rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
-                                            >
-                                                <option value="1">1 Hour</option>
-                                                <option value="2">2 Hours</option>
-                                                <option value="3">3 Hours</option>
-                                                <option value="4">4 Hours</option>
-                                                <option value="5">5 Hours</option>
-                                                <option value="6">6 Hours</option>
-                                            </select>
-                                            {draft !== undefined && Number(draft) !== current && (
-                                                <button className="btn btn-primary" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }} onClick={() => handleSaveDuration(gym._id)}>Save</button>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                            <button
-                                                className="btn btn-secondary"
-                                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
-                                                onClick={() => setEditingGym({ ...gym })}
-                                            >
-                                                Edit
-                                            </button>
-                                            <button
-                                                className="btn btn-danger"
-                                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', background: '#e74c3c', color: '#fff', border: 'none' }}
-                                                onClick={() => handleDeleteGym(gym._id)}
-                                            >
-                                                Delete
-                                            </button>
-                                            <button
-                                                className="btn btn-secondary"
-                                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
-                                                onClick={() => setSelectedGymQr(gym)}
-                                            >
-                                                View QR
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            );
-                        })}
+                        {gyms.length === 0 ? (
+                            <tr>
+                                <td colSpan="5">
+                                    <div className="empty-state">
+                                        <div className="empty-state-icon">🏢</div>
+                                        <h3>No Partner Gyms Found</h3>
+                                        <p>Create a partner gym above to begin managing subscriptions and sessions.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        ) : (
+                            gyms.map(gym => {
+                                const current = gym.defaultSessionDurationMinutes || 120;
+                                const draft = durationDraft[gym.id] ?? durationDraft[gym._id];
+                                const draftVal = draft !== undefined ? draft : current;
+                                return (
+                                    <tr key={gym._id}>
+                                        <td style={{ fontWeight: '600' }}>{gym.name}</td>
+                                        <td>{gym.address}</td>
+                                        <td>
+                                            <div style={{ fontWeight: '500' }}>{gym.admins?.[0]?.name || 'N/A'}</div>
+                                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>{gym.admins?.[0]?.email || ''}</div>
+                                        </td>
+                                        <td>
+                                            <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                                                <select
+                                                    value={draftVal / 60}
+                                                    onChange={(e) => setDurationDraft((d) => ({ ...d, [gym._id]: Number(e.target.value) * 60 }))}
+                                                    className="input"
+                                                    style={{ width: '120px', padding: '0.4rem 2rem 0.4rem 0.75rem', fontSize: '0.85rem' }}
+                                                >
+                                                    <option value="1">1 Hour</option>
+                                                    <option value="2">2 Hours</option>
+                                                    <option value="3">3 Hours</option>
+                                                    <option value="4">4 Hours</option>
+                                                    <option value="5">5 Hours</option>
+                                                    <option value="6">6 Hours</option>
+                                                </select>
+                                                {draft !== undefined && Number(draft) !== current && (
+                                                    <button className="btn btn-primary" style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }} onClick={() => handleSaveDuration(gym._id)}>Save</button>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                <button
+                                                    className="btn btn-secondary"
+                                                    style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                                                    onClick={() => setEditingGym({ ...gym })}
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    className="btn btn-danger"
+                                                    style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                                                    onClick={() => handleDeleteGym(gym._id)}
+                                                >
+                                                    Delete
+                                                </button>
+                                                <button
+                                                    className="btn btn-secondary"
+                                                    style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                                                    onClick={() => setSelectedGymQr(gym)}
+                                                >
+                                                    View QR
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })
+                        )}
                     </tbody>
                 </table>
             </div>
 
             {selectedGymQr && (
                 <div className="modal-overlay" onClick={() => setSelectedGymQr(null)}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ textAlign: 'center', maxWidth: '350px' }}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ textAlign: 'center', maxWidth: '380px' }}>
                         <h3>{selectedGymQr.name}</h3>
                         <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
                             Print this QR code. Members will scan it using their mobile app to check in to this gym.
                         </p>
-                        <div style={{ background: '#fff', padding: '1.5rem', display: 'inline-block', borderRadius: '12px' }}>
+                        <div style={{ background: '#fff', padding: '1.5rem', display: 'inline-block', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
                             <QRCodeCanvas
                                 value={JSON.stringify({ gymId: selectedGymQr._id, gymName: selectedGymQr.name })}
                                 size={220}
@@ -240,28 +259,30 @@ function PartnerGyms() {
 
             {editingGym && (
                 <div className="modal-overlay" onClick={() => setEditingGym(null)}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '450px' }}>
                         <h3>Edit Partner Gym</h3>
-                        <form onSubmit={handleUpdateGym} className="plan-form" style={{ marginTop: '1.5rem' }}>
-                            <div className="form-group">
+                        <form onSubmit={handleUpdateGym} style={{ marginTop: '1.5rem' }}>
+                            <div className="input-group">
                                 <label>Gym Name</label>
                                 <input 
+                                    className="input"
                                     type="text" 
                                     value={editingGym.name} 
                                     onChange={(e) => setEditingGym({...editingGym, name: e.target.value})} 
                                     required 
                                 />
                             </div>
-                            <div className="form-group">
+                            <div className="input-group">
                                 <label>Gym Address</label>
                                 <input 
+                                    className="input"
                                     type="text" 
                                     value={editingGym.address} 
                                     onChange={(e) => setEditingGym({...editingGym, address: e.target.value})} 
                                     required 
                                 />
                             </div>
-                            <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                            <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
                                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Save Changes</button>
                                 <button type="button" className="btn btn-secondary" onClick={() => setEditingGym(null)} style={{ flex: 1 }}>Cancel</button>
                             </div>

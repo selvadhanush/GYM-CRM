@@ -24,21 +24,25 @@ model Gym {
 }
 
 model User {
-  id                  String   @id @default(uuid())
+  id                  String    @id @default(uuid())
   name                String
-  email               String   @unique
+  email               String    @unique
   password            String
   phone               String?
-  role                String   @default("admin")
+  role                String    @default("admin")
   gymId               String
   memberId            String?
-  isVerified          Boolean  @default(false)
+  isVerified          Boolean   @default(false)
+  status              String    @default("Active")
+  isActive            Boolean   @default(true)
+  lastLogin           DateTime?
   // --- Web login brute-force protection (email+password login) ---
-  failedLoginAttempts Int      @default(0)
+  failedLoginAttempts Int       @default(0)
   // Account is locked (cannot login) until this timestamp passes. Null = not locked.
   lockUntil           DateTime?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  branchId            String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   @@index([gymId])
   @@index([role])
@@ -54,6 +58,7 @@ model Plan {
   sessions       Int?
   price          Float
   gymId          String
+  branchId       String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -104,6 +109,7 @@ model Attendance {
   date        DateTime @default(now())
   checkInTime String
   gymId       String
+  branchId    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -114,19 +120,52 @@ model Attendance {
 // Audit-grade record of every FitPrime QR scan / session start.
 // One row per successful check-in. Status moves active → expired via cron/lazy expiry.
 model SessionCheckIn {
-  id        String   @id @default(uuid())
-  memberId  String
-  gymId     String                      // the gym whose QR was scanned
-  gymName   String   @default("")
-  startedAt DateTime @default(now())
-  expiresAt DateTime                    // startedAt + gym.defaultSessionDurationMinutes
-  status    String   @default("active") // "active" | "expired"
-  createdAt DateTime @default(now())
+  id         String   @id @default(uuid())
+  memberId   String
+  gymId      String                      // the gym whose QR was scanned
+  gymName    String   @default("")
+  branchId   String?
+  branchName String   @default("")
+  startedAt  DateTime @default(now())
+  expiresAt  DateTime                    // startedAt + gym.defaultSessionDurationMinutes
+  status     String   @default("active") // "active" | "expired"
+  createdAt  DateTime @default(now())
 
   @@index([gymId, status])
   @@index([gymId, startedAt])
   @@index([memberId])
 }
+
+model FitPassAuditLog {
+  id                     String   @id @default(uuid())
+  memberId               String
+  memberName             String
+  fitPassMembershipId    String
+  organizationId         String
+  branchId               String?
+  gymIdVisited           String
+  gymName                String
+  branchIdVisited        String?
+  branchNameVisited      String?
+  checkInTimestamp       DateTime @default(now())
+  accessStatus           String
+  failureReason          String?
+  totalPurchasedSessions Int
+  sessionsUsedBefore     Int
+  sessionsDeducted       Int
+  remainingSessionsAfter Int
+  membershipExpiryDate   DateTime
+  qrCodeUsed             String
+  deviceInfo             String?
+  createdBySystem        Boolean  @default(true)
+  createdAt              DateTime @default(now())
+
+  @@index([memberId])
+  @@index([gymIdVisited])
+  @@index([accessStatus])
+  @@index([createdAt])
+}
+
 
 model Payment {
   id            String   @id @default(uuid())
@@ -152,6 +191,7 @@ model Expense {
   category    String
   date        DateTime @default(now())
   description String?
+  branchId    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -169,6 +209,7 @@ model GymClass {
   endTime      String
   maxSeats     Int      @default(10)
   gymId        String
+  branchId     String?
   bookings     String?  // stored as JSON string
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -188,6 +229,7 @@ model Lead {
   followUpDate      DateTime?
   convertedMemberId String?
   gymId             String
+  branchId          String?
   assignedTo        String    @default("")
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
@@ -217,17 +259,18 @@ model AuditLog {
 }
 
 model Branch {
-  id          String   @id @default(uuid())
-  name        String
-  address     String   @default("")
-  phone       String   @default("")
-  email       String   @default("")
-  gymId       String
-  managerId   String?
-  managerName String   @default("")
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(uuid())
+  name           String
+  address        String   @default("")
+  phone          String   @default("")
+  email          String   @default("")
+  gymId          String
+  managerId      String?
+  managerName    String   @default("")
+  isActive       Boolean  @default(true)
+  fitPassEnabled Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([gymId])
 }
@@ -273,6 +316,7 @@ model WorkoutTemplate {
   description  String?
   exercises    String?
   gymId        String
+  branchId     String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -286,6 +330,7 @@ model WorkoutPlan {
   endDate      DateTime?
   exercises    String?
   gymId        String
+  branchId     String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -299,6 +344,7 @@ model DietPlan {
   endDate      DateTime?
   meals        String?
   gymId        String
+  branchId     String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -311,6 +357,7 @@ model PtPackage {
   sessionCount Int
   duration     Int?
   gymId        String
+  branchId     String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -324,6 +371,7 @@ model PtSession {
   status       String   @default("Scheduled")
   notes        String?
   gymId        String
+  branchId     String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -340,6 +388,7 @@ model BodyAssessment {
   inBodyScore    Float?
   assessmentDate DateTime @default(now())
   gymId          String
+  branchId       String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -352,6 +401,7 @@ model TrainerAttendance {
   checkOutTime DateTime?
   workingHours Float?
   gymId        String
+  branchId     String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }
@@ -362,6 +412,7 @@ model TrainerSalary {
   fixedSalary  Float     @default(0)
   commissionPt Float     @default(0) // Rate per PT session
   gymId        String
+  branchId     String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }
@@ -373,6 +424,7 @@ model PtCommission {
   amount       Float
   date         DateTime  @default(now())
   gymId        String
+  branchId     String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }
@@ -389,6 +441,7 @@ model Payroll {
   status       String    @default("Pending") // Pending, Paid
   paymentDate  DateTime?
   gymId        String
+  branchId     String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }
@@ -402,6 +455,7 @@ model Equipment {
   serviceSchedule String?          // Monthly, Quarterly, etc.
   status          String           @default("Active") // Active, Under Maintenance, Broken, Retired
   gymId           String
+  branchId        String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 }
@@ -415,6 +469,7 @@ model MaintenanceLog {
   technicianName  String?
   nextServiceDate DateTime?
   gymId           String
+  branchId        String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }

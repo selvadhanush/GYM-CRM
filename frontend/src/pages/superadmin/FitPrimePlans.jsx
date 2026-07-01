@@ -64,22 +64,24 @@ function FitPrimePlans() {
 
             {error && <div className="error-message">{error}</div>}
 
-            <div className="form-card">
-                <h3>Create FitPrime Plan</h3>
-                <form onSubmit={handleCreatePlan} className="plan-form">
-                    <div className="form-group">
-                        <label>Plan Name</label>
-                        <input type="text" value={name} onChange={(e) => setName(e.target.value)} required placeholder="e.g. 10 Session Pack" />
+            <div className="card" style={{ marginBottom: '2.5rem', padding: '2rem' }}>
+                <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', color: 'var(--text-primary)' }}>Create FitPrime Plan</h3>
+                <form onSubmit={handleCreatePlan}>
+                    <div className="form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+                        <div className="input-group">
+                            <label>Plan Name</label>
+                            <input className="input" type="text" value={name} onChange={(e) => setName(e.target.value)} required placeholder="e.g. 10 Session Pack" />
+                        </div>
+                        <div className="input-group">
+                            <label>Sessions (number of check-ins)</label>
+                            <input className="input" type="number" min="1" step="1" value={sessions} onChange={(e) => setSessions(e.target.value)} required placeholder="e.g. 10" />
+                        </div>
+                        <div className="input-group">
+                            <label>Price (₹)</label>
+                            <input className="input" type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} required placeholder="e.g. 999" />
+                        </div>
                     </div>
-                    <div className="form-group">
-                        <label>Sessions (number of check-ins)</label>
-                        <input type="number" min="1" step="1" value={sessions} onChange={(e) => setSessions(e.target.value)} required placeholder="e.g. 10" />
-                    </div>
-                    <div className="form-group">
-                        <label>Price (Rs)</label>
-                        <input type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} required placeholder="e.g. 999" />
-                    </div>
-                    <button type="submit" className="btn btn-primary">Create Plan</button>
+                    <button type="submit" className="btn btn-primary" style={{ marginTop: '1rem' }}>Create Plan</button>
                 </form>
             </div>
 

@@ -17,7 +17,8 @@ const createPlan = async (req, res) => {
             name,
             duration: Number(duration),
             price: Number(price),
-            gymId: req.user.gymId
+            gymId: req.user.gymId,
+            branchId: req.user.branchId || null
         });
 
         if (plan) {
@@ -39,8 +40,8 @@ const getPlans = async (req, res) => {
     try {
         const plans = await Plan.find({
             $or: [
-                { gymId: req.user.gymId },
-                { gymId: 'SYSTEM' }
+                { gymId: 'SYSTEM' },
+                { gymId: req.user.gymId, branchId: req.user.branchId || null }
             ]
         }).lean();
         res.json(plans);
@@ -55,7 +56,9 @@ const getPlans = async (req, res) => {
 // @access  Private/Admin
 const getPlanById = async (req, res) => {
     try {
-        const plan = await Plan.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const query = { _id: req.params.id, gymId: req.user.gymId };
+        if (req.user.branchId) query.branchId = req.user.branchId;
+        const plan = await Plan.findOne(query);
 
         if (plan) {
             res.json(plan);
@@ -75,7 +78,9 @@ const updatePlan = async (req, res) => {
     try {
         const { name, duration, price } = req.body;
 
-        const plan = await Plan.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const query = { _id: req.params.id, gymId: req.user.gymId };
+        if (req.user.branchId) query.branchId = req.user.branchId;
+        const plan = await Plan.findOne(query);
 
         if (plan) {
             plan.name = name || plan.name;
@@ -103,7 +108,9 @@ const updatePlan = async (req, res) => {
 // @access  Private/Admin
 const deletePlan = async (req, res) => {
     try {
-        const plan = await Plan.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const query = { _id: req.params.id, gymId: req.user.gymId };
+        if (req.user.branchId) query.branchId = req.user.branchId;
+        const plan = await Plan.findOne(query);
 
         if (plan) {
             await logAudit(req, 'PLAN_DELETED', 'Plan', plan._id, `Deleted plan: ${plan.name}`, plan.name);

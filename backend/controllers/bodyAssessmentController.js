@@ -26,7 +26,11 @@ const createAssessment = async (req, res) => {
         }
 
         // Validate member exists in same gym
-        const member = await Member.findOne({ _id: memberId, gymId: req.user.gymId });
+        const memberQuery = { _id: memberId, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            memberQuery.branchId = req.user.branchId;
+        }
+        const member = await Member.findOne(memberQuery);
         if (!member) {
             return res.status(404).json({ success: false, message: 'Member not found' });
         }
@@ -41,7 +45,8 @@ const createAssessment = async (req, res) => {
             bmr: Number(bmr),
             inBodyScore: inBodyScore !== undefined ? Number(inBodyScore) : null,
             assessmentDate: assessmentDate ? new Date(assessmentDate) : new Date(),
-            gymId: req.user.gymId
+            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
+            branchId: req.user.branchId || null
         });
 
         res.status(201).json(assessment);
@@ -56,7 +61,10 @@ const createAssessment = async (req, res) => {
 // @access  Private/Admin/Trainer/Member
 const getAssessments = async (req, res) => {
     try {
-        let query = { gymId: req.user.gymId };
+        let query = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
 
         // If member is calling, force show only their assessments
         if (req.user.role === 'member') {
@@ -73,7 +81,11 @@ const getAssessments = async (req, res) => {
         // Populate member details if requested
         const formatted = [];
         for (const a of assessments) {
-            const memberObj = await Member.findOne({ _id: a.memberId });
+            const memberQuery = { _id: a.memberId, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+            if (req.user.branchId) {
+                memberQuery.branchId = req.user.branchId;
+            }
+            const memberObj = await Member.findOne(memberQuery);
             const trainerObj = a.trainerId ? await User.findOne({ _id: a.trainerId }).select('-password') : null;
 
             formatted.push({
@@ -95,14 +107,22 @@ const getAssessments = async (req, res) => {
 // @access  Private/Admin/Trainer/Member
 const getAssessmentById = async (req, res) => {
     try {
-        const assessment = await BodyAssessment.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
+        const assessment = await BodyAssessment.findOne(query);
 
         if (assessment) {
             if (req.user.role === 'member' && assessment.memberId !== req.user.memberId) {
                 return res.status(403).json({ success: false, message: 'Not authorized to view this assessment' });
             }
 
-            const memberObj = await Member.findOne({ _id: assessment.memberId });
+            const memberQuery = { _id: assessment.memberId, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+            if (req.user.branchId) {
+                memberQuery.branchId = req.user.branchId;
+            }
+            const memberObj = await Member.findOne(memberQuery);
             const trainerObj = assessment.trainerId ? await User.findOne({ _id: assessment.trainerId }).select('-password') : null;
 
             res.json({
@@ -134,7 +154,11 @@ const updateAssessment = async (req, res) => {
             assessmentDate
         } = req.body;
 
-        const assessment = await BodyAssessment.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
+        const assessment = await BodyAssessment.findOne(query);
 
         if (assessment) {
             if (weight !== undefined) assessment.weight = Number(weight);
@@ -161,7 +185,11 @@ const updateAssessment = async (req, res) => {
 // @access  Private/Admin/Trainer
 const deleteAssessment = async (req, res) => {
     try {
-        const assessment = await BodyAssessment.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
+        const assessment = await BodyAssessment.findOne(query);
 
         if (assessment) {
             await assessment.deleteOne();

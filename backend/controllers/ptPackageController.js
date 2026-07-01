@@ -17,7 +17,7 @@ const createPackage = async (req, res) => {
             price: Number(price),
             sessionCount: Number(sessionCount),
             duration: duration ? Number(duration) : null,
-            gymId: req.user.gymId
+            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId })
         });
 
         res.status(201).json(packageObj);
@@ -32,7 +32,7 @@ const createPackage = async (req, res) => {
 // @access  Private/Admin/Trainer/Member
 const getPackages = async (req, res) => {
     try {
-        const packages = await PtPackage.find({ gymId: req.user.gymId }).lean();
+        const packages = await PtPackage.find({ gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) }).lean();
         res.json(packages);
     } catch (error) {
         console.error("GET PT PACKAGES ERROR:", error);
@@ -45,7 +45,7 @@ const getPackages = async (req, res) => {
 // @access  Private/Admin/Trainer/Member
 const getPackageById = async (req, res) => {
     try {
-        const packageObj = await PtPackage.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const packageObj = await PtPackage.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
 
         if (packageObj) {
             res.json(packageObj);
@@ -65,7 +65,7 @@ const updatePackage = async (req, res) => {
     try {
         const { name, description, price, sessionCount, duration } = req.body;
 
-        const packageObj = await PtPackage.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const packageObj = await PtPackage.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
 
         if (packageObj) {
             packageObj.name = name || packageObj.name;
@@ -90,7 +90,7 @@ const updatePackage = async (req, res) => {
 // @access  Private/Admin
 const deletePackage = async (req, res) => {
     try {
-        const packageObj = await PtPackage.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const packageObj = await PtPackage.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
 
         if (packageObj) {
             await packageObj.deleteOne();

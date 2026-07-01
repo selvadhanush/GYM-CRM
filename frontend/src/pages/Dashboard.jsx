@@ -6,6 +6,8 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Users, CheckCircle2, AlertTriangle, Clock, Sparkles, IndianRupee, TrendingDown, TrendingUp, Megaphone, Check, QrCode } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 
+const COLORS = ['var(--primary-color)', 'var(--accent-color)', '#a855f7', '#d946ef', '#f43f5e'];
+
 const LiveSessionTimer = ({ expiresAt }) => {
     const [timeLeft, setTimeLeft] = useState('');
 
@@ -42,7 +44,7 @@ const LiveSessionTimer = ({ expiresAt }) => {
 };
 
 const Dashboard = () => {
-    const { user } = useContext(AuthContext);
+    const { user, activeDivision, selectedBranchId } = useContext(AuthContext);
     const [stats, setStats] = useState(null);
     const [expiringMembers, setExpiringMembers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -79,7 +81,7 @@ const Dashboard = () => {
         };
 
         fetchDashboardData();
-    }, []);
+    }, [activeDivision, selectedBranchId]);
 
     const formatTrendData = (trend) => {
         if (!trend) return [];
@@ -114,23 +116,36 @@ const Dashboard = () => {
         </div>
     );
 
-    const cards = [
-        { title: 'Active Members', value: activeLiveSessions.length, icon: <CheckCircle2 size={22} />, color: 'var(--success-color)' },
-        { title: 'Total Check-Ins Today', value: (stats?.todayAttendanceCount || 0) + (stats?.todaySessionsCount || 0), icon: <CheckCircle2 size={22} />, color: 'var(--warning-color)' },
-    ];
-
     const recentCheckins = stats?.recentCheckins || [];
     const activeLiveSessions = stats?.activeLiveSessions || [];
 
+    const cards = activeDivision === 'h4' ? [
+        { title: 'Total Members', value: stats?.totalMembers || 0, icon: <Users size={22} />, color: 'var(--primary-color)' },
+        { title: 'Active Members', value: stats?.activeMembers || 0, icon: <CheckCircle2 size={22} />, color: 'var(--success-color)' },
+        { title: 'Expired Members', value: stats?.expiredMembers || 0, icon: <AlertTriangle size={22} />, color: '#ef4444' },
+        { title: 'Expiring Soon', value: stats?.expiringSoonCount || 0, icon: <Clock size={22} />, color: '#f59e0b' },
+        { title: 'New This Month', value: stats?.newMembersThisMonth || 0, icon: <Sparkles size={22} />, color: 'var(--accent-color)' },
+        { title: 'Monthly Revenue', value: `₹${(stats?.monthlyRevenue || 0).toLocaleString()}`, icon: <IndianRupee size={22} />, color: '#10b981' },
+        { title: 'Monthly Expenses', value: `₹${(stats?.monthlyExpenses || 0).toLocaleString()}`, icon: <TrendingDown size={22} />, color: '#ef4444' },
+        { title: 'Monthly Profit', value: `₹${(stats?.monthlyProfit || 0).toLocaleString()}`, icon: <TrendingUp size={22} />, color: '#10b981' },
+    ] : [
+        { title: 'Active Members', value: activeLiveSessions.length, icon: <CheckCircle2 size={22} />, color: 'var(--success-color)' },
+        { title: 'Total Check-Ins Today', value: (stats?.todayAttendanceCount || 0) + (stats?.todaySessionsCount || 0), icon: <CheckCircle2 size={22} />, color: 'var(--warning-color)' },
+    ];
 
     return (
         <div className="fade-in">
             <div className="page-header">
                 <div className="page-header-left">
-                    <h2>Partner Dashboard</h2>
-                    <p>Welcome back, {user?.name || 'Partner'}. Here's the activity at your gym today.</p>
+                    <h2>{activeDivision === 'h4' ? 'Gym CRM Dashboard' : 'Partner Dashboard'}</h2>
+                    <p>
+                        {activeDivision === 'h4'
+                            ? `Welcome back, ${user?.name || 'Admin'}. Overall analysis across ${selectedBranchId ? 'the selected branch' : 'all branches'}.`
+                            : `Welcome back, ${user?.name || 'Partner'}. Here's the activity at your gym today.`
+                        }
+                    </p>
                 </div>
-                {user?.role === 'admin' && (
+                {(user?.role === 'admin' || user?.role === 'superadmin') && (
                     <div style={{ display: 'flex', gap: '1rem' }}>
                         <button onClick={() => setShowQR(true)} className="btn btn-secondary">
                             <QrCode size={18} /> Print Check-In QR
@@ -175,11 +190,111 @@ const Dashboard = () => {
                 ))}
             </div>
 
+            {activeDivision === 'h4' && (
+                <>
+                    <div className="charts-grid" style={{ marginBottom: '2.5rem', marginTop: '2.5rem' }}>
+                        <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+                            <h3 style={{ marginBottom: '2rem' }}>Monthly Revenue Analytics</h3>
+                            <div style={{ width: '100%', height: 300 }}>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <AreaChart data={formatTrendData(stats?.revenueTrend)}>
+                                        <defs>
+                                            <linearGradient id="colorAmt" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="var(--primary-color)" stopOpacity={0.2} />
+                                                <stop offset="95%" stopColor="var(--primary-color)" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-secondary)', fontSize: 11, fontWeight: 500 }} dy={10} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-secondary)', fontSize: 11, fontWeight: 500 }} dx={-10} />
+                                        <Tooltip
+                                            cursor={{ stroke: 'var(--primary-color)', strokeWidth: 1 }}
+                                            contentStyle={{
+                                                borderRadius: 'var(--radius-md)',
+                                                border: '1px solid var(--border)',
+                                                boxShadow: 'var(--shadow-lg)',
+                                                background: 'var(--bg-secondary)',
+                                                padding: '12px'
+                                            }}
+                                            itemStyle={{ color: 'var(--primary-color)', fontWeight: 700 }}
+                                            formatter={(value) => [`₹${value}`, 'Revenue']}
+                                        />
+                                        <Area type="monotone" dataKey="amount" stroke="var(--primary-color)" strokeWidth={3} fillOpacity={1} fill="url(#colorAmt)" />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+                            <h3 style={{ marginBottom: '2rem' }}>Plan Performance</h3>
+                            <div style={{ width: '100%', height: 300 }}>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <BarChart data={stats?.planBreakdown}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                                        <XAxis dataKey="_id" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-secondary)', fontSize: 11, fontWeight: 500 }} dy={10} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-secondary)', fontSize: 11, fontWeight: 500 }} dx={-10} />
+                                        <Tooltip
+                                            cursor={{ fill: 'var(--primary-light)' }}
+                                            contentStyle={{
+                                                borderRadius: 'var(--radius-md)',
+                                                border: '1px solid var(--border)',
+                                                boxShadow: 'var(--shadow-lg)',
+                                                background: 'var(--bg-secondary)'
+                                            }}
+                                            formatter={(value) => [`₹${value}`, 'Generated Revenue']}
+                                        />
+                                        <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={40}>
+                                            {stats?.planBreakdown?.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} fillOpacity={0.9} />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="charts-grid" style={{ marginBottom: '2.5rem' }}>
+                        <div className="card">
+                            <h3 style={{ marginBottom: '2rem' }}>Collections by Method</h3>
+                            <div style={{ width: '100%', height: 300 }}>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <PieChart>
+                                        <Pie
+                                            data={stats?.methodBreakdown}
+                                            innerRadius={70}
+                                            outerRadius={95}
+                                            paddingAngle={8}
+                                            dataKey="value"
+                                            nameKey="_id"
+                                            stroke="none"
+                                        >
+                                            {stats?.methodBreakdown?.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip
+                                            contentStyle={{
+                                                borderRadius: 'var(--radius-md)',
+                                                border: '1px solid var(--border)',
+                                                boxShadow: 'var(--shadow-lg)',
+                                                background: 'var(--bg-secondary)'
+                                            }}
+                                            formatter={(value) => [`₹${value}`, 'Total Collected']}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
+
             <div className="charts-grid" style={{ marginTop: '2.5rem' }}>
                 {activeLiveSessions.length > 0 && (
-                    <div className="card" style={{ gridColumn: '1 / -1', marginBottom: '1.5rem', border: '2px solid var(--primary)', borderRadius: '0', background: 'var(--bg)' }}>
-                        <h3 style={{ marginBottom: '1.5rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1.5rem', letterSpacing: '0.05em' }}>
-                            <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: 'var(--primary)', boxShadow: '0 0 15px var(--primary)', animation: 'pulse 1.5s infinite alternate' }}></div>
+                    <div className="card" style={{ gridColumn: '1 / -1', marginBottom: '1.5rem', border: '2px solid var(--primary-color)', borderRadius: 'var(--radius-lg)', background: 'var(--bg)' }}>
+                        <h3 style={{ marginBottom: '1.5rem', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1.5rem', letterSpacing: '0.05em' }}>
+                            <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: 'var(--primary-color)', boxShadow: '0 0 15px var(--primary-color)', animation: 'pulse 1.5s infinite alternate' }}></div>
                             CURRENTLY ACTIVE MEMBERS (LIVE)
                         </h3>
                         <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>

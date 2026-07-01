@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  Alert, ActivityIndicator, Dimensions, Animated,
+  Alert, ActivityIndicator, Dimensions, Animated, Platform,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -89,10 +89,12 @@ export default function ScannerScreen() {
     // QR payload is { gymId, gymName } JSON (as produced by the web admin).
     let gymId = '';
     let gymName = 'Partner Gym';
+    let branchId = '';
     try {
       const p = JSON.parse(data);
       gymId = p.gymId || '';
       gymName = p.gymName || 'Partner Gym';
+      branchId = p.branchId || '';
     } catch {
       gymId = data; // fallback: raw string is the gymId
     }
@@ -104,15 +106,16 @@ export default function ScannerScreen() {
     }
     scannedGymIdRef.current = gymId;
     setScannedGymName(gymName);
-    doCheckIn(gymId);
+    doCheckIn(gymId, branchId);
   };
 
   // Call the server check-in endpoint. The server atomically deducts 1 session,
   // sets the active session + cooldown, and returns the authoritative end time.
-  const doCheckIn = async (gymId: string) => {
+  const doCheckIn = async (gymId: string, branchId?: string) => {
     setPhase('verifying');
     try {
-      const res = await memberService.checkIn(gymId);
+      const deviceInfo = `${Platform.OS} ${Platform.Version}`;
+      const res = await memberService.checkIn(gymId, branchId, deviceInfo);
       await applyCheckIn({
         sessionEndsAt: res.sessionEndsAt,
         cooldownEndsAt: res.cooldownEndsAt,

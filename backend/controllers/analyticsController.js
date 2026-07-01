@@ -9,24 +9,30 @@ const getAnalytics = async (req, res) => {
         const gymId = req.user.gymId;
         const now = new Date();
 
+        const queryFilter = { gymId };
+        if (req.user.branchId) {
+            queryFilter.branchId = req.user.branchId;
+        }
+
         // --- Inactive Members (no attendance in 7+ days) ---
         const sevenDaysAgo = new Date(now);
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
         const Attendance = require('../models/Attendance');
-        const recentAttendanceMemberIds = await Attendance.distinct('memberId', {
-            gymId,
-            date: { $gte: sevenDaysAgo }
-        });
+        const attendanceQuery = { gymId, date: { $gte: sevenDaysAgo } };
+        if (req.user.branchId) {
+            attendanceQuery.branchId = req.user.branchId;
+        }
+        const recentAttendanceMemberIds = await Attendance.distinct('memberId', attendanceQuery);
 
         const inactiveCount = await Member.countDocuments({
-            gymId,
+            ...queryFilter,
             status: 'Active',
             _id: { $nin: recentAttendanceMemberIds }
         });
 
         const inactiveMembers = await Member.find({
-            gymId,
+            ...queryFilter,
             status: 'Active',
             _id: { $nin: recentAttendanceMemberIds }
         }).populate('planId', 'name').select('name phone expiryDate planId joinDate').limit(20);
@@ -36,13 +42,13 @@ const getAnalytics = async (req, res) => {
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
         const expiredLast30 = await Member.countDocuments({
-            gymId,
+            ...queryFilter,
             expiryDate: { $gte: thirtyDaysAgo, $lte: now },
             status: 'Expired'
         });
 
         const totalActiveMonth = await Member.countDocuments({
-            gymId,
+            ...queryFilter,
             joinDate: { $lte: thirtyDaysAgo }
         });
 
@@ -55,14 +61,14 @@ const getAnalytics = async (req, res) => {
         ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
         const renewedCount = await Member.countDocuments({
-            gymId,
+            ...queryFilter,
             status: 'Active',
             joinDate: { $lte: ninetyDaysAgo },
             expiryDate: { $gte: now }
         });
 
         const expiredLast90 = await Member.countDocuments({
-            gymId,
+            ...queryFilter,
             expiryDate: { $gte: ninetyDaysAgo, $lte: now }
         });
 
@@ -73,7 +79,7 @@ const getAnalytics = async (req, res) => {
 
         // --- Lifetime Value (avg total paid per member) ---
         const ltv = await Payment.aggregate([
-            { $match: { gymId } },
+            { $match: queryFilter },
             { $group: { _id: '$memberId', totalPaid: { $sum: '$amount' } } },
             { $group: { _id: null, avgLTV: { $avg: '$totalPaid' } } }
         ]);
@@ -81,7 +87,7 @@ const getAnalytics = async (req, res) => {
 
         // --- Top value members ---
         const topMembers = await Payment.aggregate([
-            { $match: { gymId } },
+            { $match: queryFilter },
             { $group: { _id: '$memberId', totalPaid: { $sum: '$amount' } } },
             { $sort: { totalPaid: -1 } },
             { $limit: 5 },
@@ -103,7 +109,7 @@ const getAnalytics = async (req, res) => {
             const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
             const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
             const count = await Member.countDocuments({
-                gymId,
+                ...queryFilter,
                 expiryDate: { $gte: start, $lte: end },
                 status: 'Expired'
             });
@@ -115,7 +121,7 @@ const getAnalytics = async (req, res) => {
 
         // --- Membership status breakdown ---
         const statusBreakdown = await Member.aggregate([
-            { $match: { gymId } },
+            { $match: queryFilter },
             { $group: { _id: '$status', count: { $sum: 1 } } }
         ]);
 

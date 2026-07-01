@@ -62,11 +62,11 @@ const createAnnouncement = async (req, res) => {
         }
 
         // Find all users in this gym
-        const users = await User.find({ gymId: req.user.gymId });
+        const users = await User.find({ gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
 
         const notifications = users.map(user => ({
             recipientId: user._id,
-            gymId: req.user.gymId,
+            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
             type: 'announcement',
             message: `Gym Announcement: ${message}`
         }));

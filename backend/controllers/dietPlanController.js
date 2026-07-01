@@ -14,7 +14,7 @@ const createPlan = async (req, res) => {
         }
 
         // Validate member exists
-        const member = await Member.findOne({ _id: memberId, gymId: req.user.gymId });
+        const member = await Member.findOne({ _id: memberId, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
         if (!member) {
             return res.status(404).json({ success: false, message: 'Member not found' });
         }
@@ -26,7 +26,7 @@ const createPlan = async (req, res) => {
             startDate: startDate ? new Date(startDate) : null,
             endDate: endDate ? new Date(endDate) : null,
             meals: meals ? (typeof meals === 'string' ? meals : JSON.stringify(meals)) : null,
-            gymId: req.user.gymId
+            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId })
         });
 
         res.status(201).json(plan);
@@ -41,7 +41,7 @@ const createPlan = async (req, res) => {
 // @access  Private/Admin/Trainer/Member
 const getPlans = async (req, res) => {
     try {
-        let query = { gymId: req.user.gymId };
+        let query = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
 
         // If member is fetching, only show their plans
         if (req.user.role === 'member') {
@@ -85,7 +85,7 @@ const getPlans = async (req, res) => {
 // @access  Private/Admin/Trainer/Member
 const getPlanById = async (req, res) => {
     try {
-        const plan = await DietPlan.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const plan = await DietPlan.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
 
         if (plan) {
             if (req.user.role === 'member' && plan.memberId !== req.user.memberId) {
@@ -122,7 +122,7 @@ const updatePlan = async (req, res) => {
     try {
         const { name, startDate, endDate, meals, trainerId } = req.body;
 
-        const plan = await DietPlan.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const plan = await DietPlan.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
 
         if (plan) {
             plan.name = name || plan.name;
@@ -154,7 +154,7 @@ const updatePlan = async (req, res) => {
 // @access  Private/Admin/Trainer
 const deletePlan = async (req, res) => {
     try {
-        const plan = await DietPlan.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const plan = await DietPlan.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
 
         if (plan) {
             await plan.deleteOne();

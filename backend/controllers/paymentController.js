@@ -8,10 +8,12 @@ const { logAudit } = require('../utils/auditLogger');
 const addPayment = async (req, res) => {
     const { memberId, amount, method, date } = req.body;
 
-    // Tenant isolation: the member must belong to the caller's gym. Previously
-    // this looked up by id alone, allowing a partner to post payments against
-    // another gym's member.
-    const member = await Member.findOne({ _id: memberId, gymId: req.user.gymId });
+    // Tenant isolation: the member must belong to the caller's gym.
+    const memberQuery = { _id: memberId, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+    if (req.user.branchId) {
+        memberQuery.branchId = req.user.branchId;
+    }
+    const member = await Member.findOne(memberQuery);
     if (!member) {
         res.status(404);
         throw new Error('Member not found');
@@ -22,7 +24,8 @@ const addPayment = async (req, res) => {
         amount: Number(amount),
         method,
         date: date ? new Date(date) : new Date(),
-        gymId: req.user.gymId
+        gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
+        branchId: req.user.branchId || member.branchId || null
     });
 
     if (payment) {
@@ -43,7 +46,11 @@ const addPayment = async (req, res) => {
 // @access  Private/Admin
 const getPayments = async (req, res) => {
     try {
-        const payments = await Payment.find({ gymId: req.user.gymId })
+        const query = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
+        const payments = await Payment.find(query)
             .populate('memberId', 'name phone')
             .sort({ createdAt: -1 })
             .lean();
@@ -58,10 +65,14 @@ const getPayments = async (req, res) => {
 // @route   GET /api/payments/member/:memberId
 // @access  Private/Admin
 const getMemberPayments = async (req, res) => {
-    const payments = await Payment.find({
+    const query = {
         memberId: req.params.memberId,
-        gymId: req.user.gymId
-    })
+        gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId })
+    };
+    if (req.user.branchId) {
+        query.branchId = req.user.branchId;
+    }
+    const payments = await Payment.find(query)
         .sort({ createdAt: -1 })
         .lean();
     res.json(payments);

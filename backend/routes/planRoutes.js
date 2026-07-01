@@ -10,11 +10,11 @@ const {
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.route('/')
-    .get(protect, authorize('admin', 'receptionist', 'trainer'), getPlans)
+    .get(protect, authorize('admin', 'receptionist', 'trainer', 'superadmin'), getPlans)
     .post(protect, authorize('admin'), createPlan);
 
 router.route('/:id')
-    .get(protect, authorize('admin', 'receptionist', 'trainer'), getPlanById)
+    .get(protect, authorize('admin', 'receptionist', 'trainer', 'superadmin'), getPlanById)
     .put(protect, authorize('admin'), updatePlan)
     .delete(protect, authorize('admin'), deletePlan);
 

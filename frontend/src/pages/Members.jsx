@@ -187,7 +187,17 @@ const Members = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredMembers.map(member => (
+                        {filteredMembers.length === 0 ? (
+                            <tr>
+                                <td colSpan="7">
+                                    <div className="empty-state">
+                                        <div className="empty-state-icon">👥</div>
+                                        <h3>No members found</h3>
+                                        <p>Try adjusting your search query or status filter.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        ) : filteredMembers.map(member => (
                             <tr
                                 key={member._id}
                                 ref={member._id === highlightId ? highlightRef : null}
@@ -221,7 +231,7 @@ const Members = () => {
                                         <button className="btn" style={{ padding: '0.4rem', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }} onClick={() => handleOpenModal(member)}>
                                             <Pencil size={16} />
                                         </button>
-                                        {user?.role === 'admin' && (
+                                        {(user?.role === 'admin' || user?.role === 'superadmin') && (
                                             <button className="btn btn-danger" style={{ padding: '0.4rem' }} onClick={() => handleDelete(member._id)}>
                                                 <Trash2 size={16} />
                                             </button>
@@ -259,39 +269,41 @@ const Members = () => {
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingMember ? 'Edit Member' : 'Add New Member'}>
                 <form onSubmit={handleSubmit}>
-                    <div className="input-group">
-                        <label>Name</label>
-                        <input className="input" type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
-                    </div>
-                    <div className="input-group">
-                        <label>Phone</label>
-                        <input className="input" type="text" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} required />
-                    </div>
-                    <div className="input-group">
-                        <label>Email (Optional)</label>
-                        <input className="input" type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
-                    </div>
-                    <div className="input-group">
-                        <label>Subscription Plan</label>
-                        <select className="input" value={formData.planId} onChange={(e) => setFormData({ ...formData, planId: e.target.value })} required>
-                            <option value="">Select a plan</option>
-                            {plans.map(p => <option key={p._id} value={p._id}>{p.name} (₹{p.price})</option>)}
-                        </select>
-                    </div>
-                    <div className="input-group">
-                        <label>Branch (optional)</label>
-                        <select className="input" value={formData.branchId} onChange={(e) => setFormData({ ...formData, branchId: e.target.value })}>
-                            <option value="">No Branch / All Locations</option>
-                            {branches.map(b => <option key={b._id} value={b._id}>🏢 {b.name}</option>)}
-                        </select>
-                    </div>
-                    {!editingMember && (
-                        <div className="input-group">
-                            <label>Join Date</label>
-                            <input className="input" type="date" value={formData.joinDate} onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })} required />
+                    <div className="form-grid">
+                        <div className="input-group full-width">
+                            <label>Name</label>
+                            <input className="input" type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
                         </div>
-                    )}
-                    <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>{editingMember ? 'Update Member' : 'Register Member'}</button>
+                        <div className="input-group">
+                            <label>Phone</label>
+                            <input className="input" type="text" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} required />
+                        </div>
+                        <div className="input-group">
+                            <label>Email (Optional)</label>
+                            <input className="input" type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+                        </div>
+                        <div className="input-group">
+                            <label>Subscription Plan</label>
+                            <select className="input" value={formData.planId} onChange={(e) => setFormData({ ...formData, planId: e.target.value })} required>
+                                <option value="">Select a plan</option>
+                                {plans.map(p => <option key={p._id} value={p._id}>{p.name} (₹{p.price})</option>)}
+                            </select>
+                        </div>
+                        <div className="input-group">
+                            <label>Branch (optional)</label>
+                            <select className="input" value={formData.branchId} onChange={(e) => setFormData({ ...formData, branchId: e.target.value })}>
+                                <option value="">No Branch / All Locations</option>
+                                {branches.map(b => <option key={b._id} value={b._id}>🏢 {b.name}</option>)}
+                            </select>
+                        </div>
+                        {!editingMember && (
+                            <div className="input-group full-width">
+                                <label>Join Date</label>
+                                <input className="input" type="date" value={formData.joinDate} onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })} required />
+                            </div>
+                        )}
+                    </div>
+                    <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1.5rem' }}>{editingMember ? 'Update Member' : 'Register Member'}</button>
                 </form>
             </Modal>
 

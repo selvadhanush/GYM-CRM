@@ -17,7 +17,7 @@ const getDashboardStats = async (req, res) => {
 
         const prisma = require('../config/prisma');
 
-        if (req.user.role === 'admin' || req.user.role === 'partner') {
+        if (req.user.role === 'partner') {
             // Partner Stats: attendance and session history
             const startOfMonth = new Date();
             startOfMonth.setDate(1);
@@ -126,7 +126,13 @@ const getDashboardStats = async (req, res) => {
         }
 
         // Super Admin Stats (Global or SYSTEM)
-        const queryFilter = {}; // Empty filter means all gyms
+        const queryFilter = {};
+        if (req.user.gymId) {
+            queryFilter.gymId = req.user.gymId;
+        }
+        if (req.user.branchId) {
+            queryFilter.branchId = req.user.branchId;
+        }
         
         const sixMonthsAgo = new Date();
         sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
@@ -135,6 +141,14 @@ const getDashboardStats = async (req, res) => {
         
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+        const prismaWhere = {};
+        if (req.user.gymId) {
+            prismaWhere.gymId = req.user.gymId;
+        }
+        if (req.user.branchId) {
+            prismaWhere.branchId = req.user.branchId;
+        }
 
         const [
             totalMembers,
@@ -149,7 +163,9 @@ const getDashboardStats = async (req, res) => {
             revenueTrend,
             planBreakdown,
             methodBreakdown,
-            recentlyActiveIds
+            recentlyActiveIds,
+            traditionalCheckins,
+            sessionCheckins
         ] = await Promise.all([
             Member.countDocuments(queryFilter),
             Member.countDocuments({ ...queryFilter, status: 'Active' }),
@@ -172,6 +188,7 @@ const getDashboardStats = async (req, res) => {
             }),
             prisma.sessionCheckIn.count({
                 where: {
+                    ...prismaWhere,
                     startedAt: {
                         gte: today,
                         lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
@@ -211,6 +228,16 @@ const getDashboardStats = async (req, res) => {
             Attendance.distinct('memberId', {
                 ...queryFilter,
                 date: { $gte: sevenDaysAgo }
+            }),
+            prisma.attendance.findMany({
+                where: { ...prismaWhere, date: { gte: startOfMonth } },
+                orderBy: { date: 'desc' },
+                take: 30
+            }),
+            prisma.sessionCheckIn.findMany({
+                where: { ...prismaWhere, startedAt: { gte: startOfMonth } },
+                orderBy: { startedAt: 'desc' },
+                take: 30
             })
         ]);
 
@@ -224,11 +251,51 @@ const getDashboardStats = async (req, res) => {
             _id: { $nin: recentlyActiveIds }
         });
 
+        // Populate member names for recent check-ins
+        let recentCheckins = [];
+        try {
+            const memberIds = [...new Set([
+                ...traditionalCheckins.map(c => c.memberId),
+                ...sessionCheckins.map(c => c.memberId)
+            ])];
+
+            const members = await prisma.member.findMany({
+                where: { id: { in: memberIds } },
+                select: { id: true, name: true, phone: true }
+            });
+            const memberMap = {};
+            members.forEach(m => memberMap[m.id] = m);
+
+            const mappedTraditional = traditionalCheckins.map(a => ({
+                id: a.id,
+                memberName: memberMap[a.memberId]?.name || 'Unknown',
+                memberPhone: memberMap[a.memberId]?.phone || '',
+                date: a.date,
+                checkInTime: a.checkInTime,
+                type: 'Traditional'
+            }));
+
+            const mappedSessions = sessionCheckins.map(s => ({
+                id: s.id,
+                memberName: memberMap[s.memberId]?.name || 'Unknown',
+                memberPhone: memberMap[s.memberId]?.phone || '',
+                date: s.startedAt,
+                checkInTime: new Date(s.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                type: 'FitPrime'
+            }));
+
+            recentCheckins = [...mappedTraditional, ...mappedSessions]
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .slice(0, 50);
+        } catch (err) {
+            console.error("Prisma error for history:", err);
+        }
+
         res.json({
             totalMembers, activeMembers, expiredMembers, expiringSoonCount,
             newMembersThisMonth, todayAttendanceCount, todaySessionsCount, monthlyRevenue, monthlyExpenses,
             monthlyProfit, revenueTrend, planBreakdown, methodBreakdown, inactiveMembersCount,
-            recentCheckins: []
+            recentCheckins
         });
     } catch (error) {
         console.error('Dashboard Stats Error:', error);
@@ -276,17 +343,25 @@ const getHistory = async (req, res) => {
 
         let history = [];
 
-        if (req.user.role === 'partner' || req.user.role === 'admin') {
+        if (req.user.role === 'partner' || req.user.role === 'admin' || req.user.role === 'superadmin') {
+            const prismaWhere = {};
+            if (req.user.gymId) {
+                prismaWhere.gymId = req.user.gymId;
+            }
+            if (req.user.branchId) {
+                prismaWhere.branchId = req.user.branchId;
+            }
+
             const traditionalCheckins = await prisma.attendance.findMany({
                 where: {
-                    gymId: req.user.gymId,
+                    ...prismaWhere,
                     date: { gte: start, lte: end }
                 }
             });
 
             const sessionCheckins = await prisma.sessionCheckIn.findMany({
                 where: {
-                    gymId: req.user.gymId,
+                    ...prismaWhere,
                     startedAt: { gte: start, lte: end }
                 }
             });

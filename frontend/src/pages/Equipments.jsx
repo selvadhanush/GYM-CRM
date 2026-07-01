@@ -14,7 +14,7 @@ import { Wrench, PlusCircle, CheckCircle, AlertTriangle, Calendar, ShieldAlert, 
 
 const Equipments = () => {
     const { user } = useContext(AuthContext);
-    const isAdmin = user?.role === 'admin';
+    const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
 
     const [equipments, setEquipments] = useState([]);
     const [maintenanceLogs, setMaintenanceLogs] = useState([]);
@@ -293,7 +293,11 @@ const Equipments = () => {
                         <div className="card">
                             <h3 style={{ marginBottom: '1.25rem', fontSize: '1rem', fontWeight: '700' }}>📋 Active Inventory</h3>
                             {equipments.length === 0 ? (
-                                <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '2rem' }}>No equipment matched filters.</p>
+                                <div className="empty-state">
+                                    <div className="empty-state-icon">⚙️</div>
+                                    <h3>No equipment found</h3>
+                                    <p>Try adjusting your status or category filters.</p>
+                                </div>
                             ) : (
                                 <div className="table-container">
                                     <table>
@@ -377,7 +381,11 @@ const Equipments = () => {
                 <div className="card">
                     <h3 style={{ marginBottom: '1.25rem', fontSize: '1rem', fontWeight: '700' }}>🛠️ Service History & Maintenance Logs</h3>
                     {maintenanceLogs.length === 0 ? (
-                        <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '2rem' }}>No maintenance records found.</p>
+                        <div className="empty-state">
+                            <div className="empty-state-icon">🛠️</div>
+                            <h3>No maintenance logs found</h3>
+                            <p>No repairs or services have been logged yet.</p>
+                        </div>
                     ) : (
                         <div className="table-container">
                             <table>
@@ -457,7 +465,7 @@ const Equipments = () => {
                         </select>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="form-grid">
                         <div className="input-group">
                             <label>Purchase Date</label>
                             <input
@@ -516,7 +524,7 @@ const Equipments = () => {
             {/* Record Maintenance Log Modal */}
             <Modal isOpen={isMaintenanceModalOpen} onClose={() => setIsMaintenanceModalOpen(false)} title={`Log Maintenance: ${selectedEqForMaintenance?.name}`}>
                 <form onSubmit={handleSaveMaintenanceLog}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="form-grid">
                         <div className="input-group">
                             <label>Service Date *</label>
                             <input
@@ -538,7 +546,7 @@ const Equipments = () => {
                         </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="form-grid">
                         <div className="input-group">
                             <label>Repair Cost (₹) *</label>
                             <input

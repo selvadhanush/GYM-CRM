@@ -46,6 +46,11 @@ const createPartnerGym = async (req, res) => {
     }
     const { gymName, gymAddress, defaultSessionDurationMinutes, adminName, adminEmail, adminPassword } = parsed.data;
 
+    if (gymName && (gymName.toLowerCase() === 'h4' || gymName.toLowerCase().includes('h4'))) {
+        res.status(400);
+        throw new Error('H4 is a separate division and cannot be created as a FitPass partner.');
+    }
+
     const normalizedEmail = adminEmail.trim().toLowerCase();
     const userExists = await User.findOne({ email: normalizedEmail });
     if (userExists) {
@@ -141,7 +146,9 @@ const updatePartnerGym = async (req, res) => {
 // @route   GET /api/superadmin/gyms
 // @access  Private (Super Admin)
 const getPartnerGyms = async (req, res) => {
-    const gyms = await Gym.find({}).lean();
+    const allGyms = await Gym.find({}).lean();
+    // Exclude H4 gyms from partner list
+    const gyms = allGyms.filter(g => !g.name || !g.name.toLowerCase().includes('h4'));
     const users = await User.find({ role: 'admin' });
 
     const gymsWithAdmins = gyms.map(gym => {
@@ -153,6 +160,23 @@ const getPartnerGyms = async (req, res) => {
     });
 
     res.json(gymsWithAdmins);
+};
+
+// @desc    Get or create H4 gym
+// @route   GET /api/superadmin/h4-gym
+// @access  Private (Super Admin)
+const getOrCreateH4Gym = async (req, res) => {
+    let gym = await Gym.findOne({ name: 'H4' });
+    if (!gym) {
+        gym = await Gym.create({
+            name: 'H4',
+            address: 'H4 Head Office',
+            phone: '555-0100',
+            email: 'h4@gymcrm.com'
+        });
+        await logAudit(req, 'GYM_CREATED', 'Gym', gym._id, `System automatically created H4 Gym`, 'H4');
+    }
+    res.json(gym);
 };
 
 // @desc    Delete a partner gym
@@ -253,5 +277,6 @@ module.exports = {
     createFitPrimePlan,
     updateFitPrimePlan,
     deleteFitPrimePlan,
-    getFitPrimePlans
+    getFitPrimePlans,
+    getOrCreateH4Gym
 };

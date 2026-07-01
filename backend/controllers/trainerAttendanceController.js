@@ -13,7 +13,11 @@ const checkInTrainer = async (req, res) => {
         }
 
         // Validate trainer exists
-        const trainer = await User.findOne({ _id: trainerId, gymId: req.user.gymId });
+        const trainerQuery = { _id: trainerId, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            trainerQuery.branchId = req.user.branchId;
+        }
+        const trainer = await User.findOne(trainerQuery);
         if (!trainer || trainer.role !== 'trainer') {
             return res.status(404).json({ success: false, message: 'Trainer not found' });
         }
@@ -24,14 +28,19 @@ const checkInTrainer = async (req, res) => {
         const todayEnd = new Date();
         todayEnd.setHours(23, 59, 59, 999);
 
-        const existing = await TrainerAttendance.findOne({
+        const existingQuery = {
             trainerId,
-            gymId: req.user.gymId,
+            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
             date: {
                 $gte: todayStart,
                 $lte: todayEnd
             }
-        });
+        };
+        if (req.user.branchId) {
+            existingQuery.branchId = req.user.branchId;
+        }
+
+        const existing = await TrainerAttendance.findOne(existingQuery);
 
         if (existing) {
             return res.status(400).json({ success: false, message: 'Trainer already checked in today' });
@@ -41,7 +50,8 @@ const checkInTrainer = async (req, res) => {
             trainerId,
             date: new Date(),
             checkInTime: new Date(),
-            gymId: req.user.gymId
+            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
+            branchId: req.user.branchId || null
         });
 
         res.status(201).json(attendance);
@@ -62,12 +72,17 @@ const checkOutTrainer = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Trainer ID is required' });
         }
 
-        // Find active check-in (where checkOutTime is null)
-        const attendance = await TrainerAttendance.findOne({
+        const query = {
             trainerId,
-            gymId: req.user.gymId,
+            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
             checkOutTime: null
-        });
+        };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
+
+        // Find active check-in (where checkOutTime is null)
+        const attendance = await TrainerAttendance.findOne(query);
 
         if (!attendance) {
             return res.status(400).json({ success: false, message: 'No active check-in found for this trainer' });
@@ -94,7 +109,10 @@ const checkOutTrainer = async (req, res) => {
 // @access  Private (Admin/Trainer)
 const getTrainerAttendance = async (req, res) => {
     try {
-        let query = { gymId: req.user.gymId };
+        let query = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
 
         if (req.user.role === 'trainer') {
             query.trainerId = req.user.id;
@@ -107,7 +125,11 @@ const getTrainerAttendance = async (req, res) => {
         // Populate Trainer details
         const formatted = [];
         for (const log of logs) {
-            const trainerObj = await User.findOne({ _id: log.trainerId }).select('-password');
+            const trainerQuery = { _id: log.trainerId };
+            if (req.user.branchId) {
+                trainerQuery.branchId = req.user.branchId;
+            }
+            const trainerObj = await User.findOne(trainerQuery).select('-password');
             formatted.push({
                 ...log,
                 trainer: trainerObj ? { id: trainerObj.id, name: trainerObj.name, email: trainerObj.email } : null
