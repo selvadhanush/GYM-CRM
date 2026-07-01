@@ -173,7 +173,7 @@ const checkIn = async (req, res) => {
     const now = new Date();
 
     // 3. Membership status is active
-    if (member.status !== 'Active' || !member.isActive) {
+    if (member.status !== 'Active') {
       await logFitPassAttempt({
         member,
         gym,
@@ -508,8 +508,8 @@ const getFitPassAnalytics = async (req, res) => {
     const totalFitPassMembers = fitPassMembers.length;
     const now = new Date();
 
-    const activeFitPassMembers = fitPassMembers.filter(m => m.status === 'Active' && m.isActive && new Date(m.expiryDate) > now).length;
-    const expiredFitPassMembers = fitPassMembers.filter(m => m.status === 'Expired' || !m.isActive || new Date(m.expiryDate) <= now).length;
+    const activeFitPassMembers = fitPassMembers.filter(m => m.status === 'Active' && new Date(m.expiryDate) > now).length;
+    const expiredFitPassMembers = fitPassMembers.filter(m => m.status === 'Expired' || new Date(m.expiryDate) <= now).length;
 
     let totalSessionsSold = 0;
     let remainingSessions = 0;
