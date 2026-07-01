@@ -5,7 +5,11 @@ const Member = require('../models/Member');
 // @access  Private/Admin/Receptionist
 const freezeMember = async (req, res) => {
     try {
-        const member = await Member.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
+        const member = await Member.findOne(query);
         if (!member) return res.status(404).json({ message: 'Member not found' });
         if (member.status === 'Frozen') return res.status(400).json({ message: 'Member is already frozen' });
 
@@ -27,7 +31,11 @@ const freezeMember = async (req, res) => {
 // @access  Private/Admin/Receptionist
 const unfreezeMember = async (req, res) => {
     try {
-        const member = await Member.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
+        const member = await Member.findOne(query);
         if (!member) return res.status(404).json({ message: 'Member not found' });
         if (member.status !== 'Frozen') return res.status(400).json({ message: 'Member is not frozen' });
 
@@ -69,7 +77,11 @@ const unfreezeMember = async (req, res) => {
 // @access  Private/Admin/Receptionist
 const getFreezeHistory = async (req, res) => {
     try {
-        const member = await Member.findOne({ _id: req.params.id, gymId: req.user.gymId }).select('name freezeHistory status');
+        const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
+        const member = await Member.findOne(query).select('name freezeHistory status');
         if (!member) return res.status(404).json({ message: 'Member not found' });
         res.json({ name: member.name, status: member.status, freezeHistory: member.freezeHistory });
     } catch (error) {

@@ -14,13 +14,13 @@ const assignTrainer = async (req, res) => {
         }
 
         // Validate member exists in the same gym
-        const member = await Member.findOne({ _id: memberId, gymId: req.user.gymId });
+        const member = await Member.findOne({ _id: memberId, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
         if (!member) {
             return res.status(404).json({ success: false, message: 'Member not found' });
         }
 
         // Validate trainer exists in the same gym and has role 'trainer'
-        const trainer = await User.findOne({ _id: trainerId, gymId: req.user.gymId, role: 'trainer' });
+        const trainer = await User.findOne({ _id: trainerId, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }), role: 'trainer' });
         if (!trainer) {
             return res.status(404).json({ success: false, message: 'Trainer not found or user is not a trainer' });
         }
@@ -29,7 +29,7 @@ const assignTrainer = async (req, res) => {
         const existingAssignment = await MemberTrainerAssignment.findOne({
             memberId,
             trainerId,
-            gymId: req.user.gymId
+            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId })
         });
 
         if (existingAssignment) {
@@ -40,7 +40,7 @@ const assignTrainer = async (req, res) => {
             memberId,
             trainerId,
             assignedDate: new Date(),
-            gymId: req.user.gymId
+            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId })
         });
 
         res.status(201).json(assignment);
@@ -55,7 +55,7 @@ const assignTrainer = async (req, res) => {
 // @access  Private/Admin/Trainer
 const getAssignments = async (req, res) => {
     try {
-        const assignments = await MemberTrainerAssignment.find({ gymId: req.user.gymId }).lean();
+        const assignments = await MemberTrainerAssignment.find({ gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) }).lean();
         
         // Populate member and trainer manually since PerformPopulate in MongooseAdapter is basic
         const populated = [];
@@ -81,7 +81,7 @@ const getAssignments = async (req, res) => {
 // @access  Private/Admin
 const removeAssignment = async (req, res) => {
     try {
-        const assignment = await MemberTrainerAssignment.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const assignment = await MemberTrainerAssignment.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
 
         if (assignment) {
             await assignment.deleteOne();

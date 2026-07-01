@@ -199,8 +199,12 @@ const Staff = () => {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                                    No staff members found matching your search.
+                                <td colSpan="5">
+                                    <div className="empty-state">
+                                        <div className="empty-state-icon">👥</div>
+                                        <h3>No staff members found</h3>
+                                        <p>Try adjusting your search query or role filter.</p>
+                                    </div>
                                 </td>
                             </tr>
                         )}
@@ -221,64 +225,66 @@ const Staff = () => {
                         </div>
                     )}
                     
-                    <div className="input-group">
-                        <label>Full Name *</label>
-                        <input 
-                            className="input" 
-                            type="text" 
-                            value={formData.name} 
-                            onChange={e => setFormData({ ...formData, name: e.target.value })} 
-                            required 
-                            placeholder="John Doe"
-                        />
-                    </div>
-
-                    <div className="input-group">
-                        <label>Email Address *</label>
-                        <input 
-                            className="input" 
-                            type="email" 
-                            value={formData.email} 
-                            onChange={e => setFormData({ ...formData, email: e.target.value })} 
-                            required 
-                            placeholder="john@example.com"
-                        />
-                    </div>
-
-                    <div className="input-group">
-                        <label>{editingStaff ? 'New Password (leave blank to keep current)' : 'Password *'}</label>
-                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <div className="form-grid">
+                        <div className="input-group">
+                            <label>Full Name *</label>
                             <input 
                                 className="input" 
-                                type={showPassword ? 'text' : 'password'} 
-                                value={formData.password} 
-                                onChange={e => setFormData({ ...formData, password: e.target.value })} 
-                                required={!editingStaff} 
-                                placeholder={editingStaff ? '••••••••' : 'Enter login password'}
-                                style={{ paddingRight: '2.5rem' }}
+                                type="text" 
+                                value={formData.name} 
+                                onChange={e => setFormData({ ...formData, name: e.target.value })} 
+                                required 
+                                placeholder="John Doe"
                             />
-                            <button 
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                style={{ position: 'absolute', right: '10px', background: 'none', border: 'none', color: 'var(--text-muted)' }}
-                            >
-                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                            </button>
                         </div>
-                    </div>
 
-                    <div className="input-group">
-                        <label>System Role *</label>
-                        <select 
-                            className="input" 
-                            value={formData.role} 
-                            onChange={e => setFormData({ ...formData, role: e.target.value })}
-                            required
-                        >
-                            <option value="trainer">Trainer / Instructor</option>
-                            <option value="receptionist">Receptionist / Desk Staff</option>
-                            <option value="admin">Administrator</option>
-                        </select>
+                        <div className="input-group">
+                            <label>Email Address *</label>
+                            <input 
+                                className="input" 
+                                type="email" 
+                                value={formData.email} 
+                                onChange={e => setFormData({ ...formData, email: e.target.value })} 
+                                required 
+                                placeholder="john@example.com"
+                            />
+                        </div>
+
+                        <div className="input-group">
+                            <label>{editingStaff ? 'New Password' : 'Password *'}</label>
+                            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                <input 
+                                    className="input" 
+                                    type={showPassword ? 'text' : 'password'} 
+                                    value={formData.password} 
+                                    onChange={e => setFormData({ ...formData, password: e.target.value })} 
+                                    required={!editingStaff} 
+                                    placeholder={editingStaff ? 'Leave blank' : 'Enter password'}
+                                    style={{ paddingRight: '2.5rem' }}
+                                />
+                                <button 
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    style={{ position: 'absolute', right: '10px', background: 'none', border: 'none', color: 'var(--text-muted)' }}
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="input-group">
+                            <label>System Role *</label>
+                            <select 
+                                className="input" 
+                                value={formData.role} 
+                                onChange={e => setFormData({ ...formData, role: e.target.value })}
+                                required
+                            >
+                                <option value="trainer">Trainer / Instructor</option>
+                                <option value="receptionist">Receptionist / Desk Staff</option>
+                                <option value="admin">Administrator</option>
+                            </select>
+                        </div>
                     </div>
 
                     <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>

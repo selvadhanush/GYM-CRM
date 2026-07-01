@@ -15,7 +15,7 @@ const createTemplate = async (req, res) => {
             name,
             description: description || null,
             exercises: exercises ? (typeof exercises === 'string' ? exercises : JSON.stringify(exercises)) : null,
-            gymId: req.user.gymId
+            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId })
         });
 
         res.status(201).json(template);
@@ -30,7 +30,7 @@ const createTemplate = async (req, res) => {
 // @access  Private/Admin/Trainer/Member
 const getTemplates = async (req, res) => {
     try {
-        const templates = await WorkoutTemplate.find({ gymId: req.user.gymId }).lean();
+        const templates = await WorkoutTemplate.find({ gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) }).lean();
         
         // Parse exercises JSON string if present
         const formatted = templates.map(t => {
@@ -54,7 +54,7 @@ const getTemplates = async (req, res) => {
 // @access  Private/Admin/Trainer/Member
 const getTemplateById = async (req, res) => {
     try {
-        const template = await WorkoutTemplate.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const template = await WorkoutTemplate.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
 
         if (template) {
             if (template.exercises && typeof template.exercises === 'string') {
@@ -79,7 +79,7 @@ const updateTemplate = async (req, res) => {
     try {
         const { name, description, exercises } = req.body;
 
-        const template = await WorkoutTemplate.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const template = await WorkoutTemplate.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
 
         if (template) {
             template.name = name || template.name;
@@ -109,7 +109,7 @@ const updateTemplate = async (req, res) => {
 // @access  Private/Admin/Trainer
 const deleteTemplate = async (req, res) => {
     try {
-        const template = await WorkoutTemplate.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const template = await WorkoutTemplate.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
 
         if (template) {
             await template.deleteOne();

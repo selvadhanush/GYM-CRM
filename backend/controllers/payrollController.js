@@ -16,12 +16,20 @@ const upsertSalaryStructure = async (req, res) => {
         }
 
         // Validate trainer exists
-        const trainer = await User.findOne({ _id: trainerId, gymId: req.user.gymId });
+        const trainerQuery = { _id: trainerId, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            trainerQuery.branchId = req.user.branchId;
+        }
+        const trainer = await User.findOne(trainerQuery);
         if (!trainer || trainer.role !== 'trainer') {
             return res.status(404).json({ success: false, message: 'Trainer not found' });
         }
 
-        let salary = await TrainerSalary.findOne({ trainerId, gymId: req.user.gymId });
+        const salaryQuery = { trainerId, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            salaryQuery.branchId = req.user.branchId;
+        }
+        let salary = await TrainerSalary.findOne(salaryQuery);
 
         if (salary) {
             salary.fixedSalary = Number(fixedSalary);
@@ -33,7 +41,8 @@ const upsertSalaryStructure = async (req, res) => {
                 trainerId,
                 fixedSalary: Number(fixedSalary),
                 commissionPt: Number(commissionPt),
-                gymId: req.user.gymId
+                gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
+                branchId: req.user.branchId || null
             });
             return res.status(201).json(created);
         }
@@ -54,14 +63,18 @@ const getSalaryStructure = async (req, res) => {
             return res.status(403).json({ success: false, message: 'Not authorized to view this structure' });
         }
 
-        const salary = await TrainerSalary.findOne({ trainerId, gymId: req.user.gymId });
+        const query = { trainerId, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
+        const salary = await TrainerSalary.findOne(query);
 
         if (!salary) {
             return res.json({
                 trainerId,
                 fixedSalary: 0,
                 commissionPt: 0,
-                gymId: req.user.gymId
+                gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId })
             });
         }
 
@@ -84,7 +97,11 @@ const generateMonthlyPayroll = async (req, res) => {
         }
 
         // Get trainer salary config
-        const salaryConfig = await TrainerSalary.findOne({ trainerId, gymId: req.user.gymId });
+        const configQuery = { trainerId, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            configQuery.branchId = req.user.branchId;
+        }
+        const salaryConfig = await TrainerSalary.findOne(configQuery);
         const fixedSalary = salaryConfig ? salaryConfig.fixedSalary : 0;
         const commissionRate = salaryConfig ? salaryConfig.commissionPt : 0;
 
@@ -93,29 +110,36 @@ const generateMonthlyPayroll = async (req, res) => {
         const endDate = new Date(year, month, 0, 23, 59, 59, 999);
 
         // Fetch commissions matching dates
-        const commissionsList = await PtCommission.find({
+        const commQuery = {
             trainerId,
-            gymId: req.user.gymId,
+            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
             date: {
                 $gte: startDate,
                 $lte: endDate
             }
-        });
+        };
+        if (req.user.branchId) {
+            commQuery.branchId = req.user.branchId;
+        }
+        const commissionsList = await PtCommission.find(commQuery);
         const calculatedCommissions = commissionsList.reduce((sum, item) => sum + item.amount, 0);
 
         // Also calculate auto-commissions from completed PtSessions in this period if no manual commissions exist
-        // Note: Let's sum up completed PT sessions during this month to auto-calculate if there are no logged commissions
         let finalCommissions = calculatedCommissions;
         if (commissionsList.length === 0 && commissionRate > 0) {
-            const completedSessions = await PtSession.find({
+            const sessQuery = {
                 trainerId,
-                gymId: req.user.gymId,
+                gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
                 status: 'Completed',
                 sessionDate: {
                     $gte: startDate,
                     $lte: endDate
                 }
-            });
+            };
+            if (req.user.branchId) {
+                sessQuery.branchId = req.user.branchId;
+            }
+            const completedSessions = await PtSession.find(sessQuery);
             finalCommissions = completedSessions.length * commissionRate;
 
             // Log these auto-calculated commissions so they persist
@@ -125,7 +149,8 @@ const generateMonthlyPayroll = async (req, res) => {
                     sessionId: s._id,
                     amount: commissionRate,
                     date: s.sessionDate,
-                    gymId: req.user.gymId
+                    gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
+                    branchId: req.user.branchId || null
                 });
             }
         }
@@ -134,12 +159,16 @@ const generateMonthlyPayroll = async (req, res) => {
         const totalAmount = fixedSalary + finalCommissions + finalIncentives;
 
         // Check if payroll record already exists for this month
-        let payroll = await Payroll.findOne({
+        const payrollQuery = {
             trainerId,
             month: Number(month),
             year: Number(year),
-            gymId: req.user.gymId
-        });
+            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId })
+        };
+        if (req.user.branchId) {
+            payrollQuery.branchId = req.user.branchId;
+        }
+        let payroll = await Payroll.findOne(payrollQuery);
 
         if (payroll) {
             // Update existing
@@ -160,7 +189,8 @@ const generateMonthlyPayroll = async (req, res) => {
                 incentives: finalIncentives,
                 totalAmount,
                 status: 'Pending',
-                gymId: req.user.gymId
+                gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
+                branchId: req.user.branchId || null
             });
             return res.status(201).json(created);
         }
@@ -175,7 +205,10 @@ const generateMonthlyPayroll = async (req, res) => {
 // @access  Private (Admin/Trainer)
 const getPayrolls = async (req, res) => {
     try {
-        let query = { gymId: req.user.gymId };
+        let query = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
 
         if (req.user.role === 'trainer') {
             query.trainerId = req.user.id;
@@ -191,7 +224,11 @@ const getPayrolls = async (req, res) => {
         // Populate Trainer details
         const formatted = [];
         for (const p of payrolls) {
-            const trainerObj = await User.findOne({ _id: p.trainerId }).select('-password');
+            const trQuery = { _id: p.trainerId };
+            if (req.user.branchId) {
+                trQuery.branchId = req.user.branchId;
+            }
+            const trainerObj = await User.findOne(trQuery).select('-password');
             formatted.push({
                 ...p,
                 trainer: trainerObj ? { id: trainerObj.id, name: trainerObj.name, email: trainerObj.email } : null
@@ -211,7 +248,11 @@ const getPayrolls = async (req, res) => {
 const updatePayrollStatus = async (req, res) => {
     try {
         const { status, incentives } = req.body;
-        const payroll = await Payroll.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
+        const payroll = await Payroll.findOne(query);
 
         if (!payroll) {
             return res.status(404).json({ success: false, message: 'Payroll record not found' });
@@ -251,7 +292,11 @@ const addCommission = async (req, res) => {
         }
 
         // Validate trainer
-        const trainer = await User.findOne({ _id: trainerId, gymId: req.user.gymId });
+        const trQuery = { _id: trainerId, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            trQuery.branchId = req.user.branchId;
+        }
+        const trainer = await User.findOne(trQuery);
         if (!trainer || trainer.role !== 'trainer') {
             return res.status(404).json({ success: false, message: 'Trainer not found' });
         }
@@ -261,7 +306,8 @@ const addCommission = async (req, res) => {
             sessionId: sessionId || null,
             amount: Number(amount),
             date: date ? new Date(date) : new Date(),
-            gymId: req.user.gymId
+            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
+            branchId: req.user.branchId || null
         });
 
         res.status(201).json(commission);

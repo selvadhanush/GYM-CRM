@@ -17,10 +17,13 @@ const Login = () => {
         const result = await login(email, password);
         setLoading(false);
         if (result.success) {
-            if (result.user.role === 'superadmin') {
+            const role = result.user.role;
+            if (role === 'superadmin') {
                 navigate('/superadmin/dashboard');
-            } else if (result.user.role === 'member') {
+            } else if (role === 'member') {
                 navigate('/member-dashboard');
+            } else if (role === 'trainer') {
+                navigate('/attendance');
             } else {
                 navigate('/dashboard');
             }

@@ -49,8 +49,8 @@ const createMember = async (req, res) => {
             status,
             planPrice: plan.price,
             paidAmount: 0,
-            gymId: req.user.gymId,
-            branchId: branchId || null
+            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
+            branchId: req.user.branchId || branchId || null
         });
 
         if (member) {
@@ -61,7 +61,8 @@ const createMember = async (req, res) => {
                 email: emailCheck,
                 password: member.phone,
                 role: 'member',
-                gymId: req.user.gymId,
+                gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
+                branchId: req.user.branchId || branchId || null,
                 memberId: member._id
             });
 
@@ -87,7 +88,10 @@ const getMembers = async (req, res) => {
     try {
         const { status, page = 1, limit = 10, search = '' } = req.query;
 
-        const query = { gymId: req.user.gymId };
+        const query = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
 
         if (status) query.status = status;
         if (search) {
@@ -128,11 +132,16 @@ const getExpiringSoonMembers = async (req, res) => {
         const nextWeek = new Date();
         nextWeek.setDate(today.getDate() + 7);
 
-        const members = await Member.find({
-            gymId: req.user.gymId,
+        const query = {
+            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
             status: 'Active',
             expiryDate: { $gte: today, $lte: nextWeek }
-        }).populate('planId', 'name price').lean();
+        };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
+
+        const members = await Member.find(query).populate('planId', 'name price').lean();
 
         res.json(members);
     } catch (error) {
@@ -144,9 +153,15 @@ const getExpiringSoonMembers = async (req, res) => {
 // @desc    Get single member
 // @route   GET /api/members/:id
 // @access  Private/Admin
+const getPlanById = async (req, res) => { // wait, wait, the original function is getMemberById but there is a typo in target content, let's keep getMemberById
+};
 const getMemberById = async (req, res) => {
     try {
-        const member = await Member.findOne({ _id: req.params.id, gymId: req.user.gymId })
+        const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
+        const member = await Member.findOne(query)
             .populate('planId', 'name price')
             .lean();
 
@@ -168,11 +183,19 @@ const updateMember = async (req, res) => {
     try {
         const { name, phone, email, planId, status, joinDate, branchId } = req.body;
 
-        const member = await Member.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
+        const member = await Member.findOne(query);
 
         if (member) {
             if (planId && planId !== member.planId.toString()) {
-                const plan = await Plan.findOne({ _id: planId, gymId: req.user.gymId });
+                const planQuery = { _id: planId, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+                if (req.user.branchId) {
+                    planQuery.branchId = req.user.branchId;
+                }
+                const plan = await Plan.findOne(planQuery);
                 if (!plan) {
                     return res.status(404).json({ success: false, message: 'Plan not found' });
                 }
@@ -189,7 +212,7 @@ const updateMember = async (req, res) => {
             member.phone = phone || member.phone;
             member.email = email || member.email;
             if (status) member.status = status;
-            if (branchId !== undefined) member.branchId = branchId || null;
+            if (branchId !== undefined) member.branchId = req.user.branchId || branchId || null;
 
             const updatedMember = await member.save();
             await logAudit(req, 'MEMBER_UPDATED', 'Member', member._id, `Updated member: ${updatedMember.name}`, updatedMember.name);
@@ -208,7 +231,11 @@ const updateMember = async (req, res) => {
 // @access  Private/Admin
 const deleteMember = async (req, res) => {
     try {
-        const member = await Member.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
+        const member = await Member.findOne(query);
 
         if (member) {
             // Delete associated User record to prevent unique constraint conflicts
@@ -232,7 +259,11 @@ const deleteMember = async (req, res) => {
 // @access  Private/Admin
 const exportMembersCSV = async (req, res) => {
     try {
-        const members = await Member.find({ gymId: req.user.gymId }).populate('planId', 'name').lean();
+        const query = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
+        const members = await Member.find(query).populate('planId', 'name').lean();
 
         const formattedData = members.map(m => ({
             Name: m.name,

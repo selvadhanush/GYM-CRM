@@ -6,7 +6,9 @@ const Member = require('../models/Member');
 // @access  Private/Admin/Trainer
 const getClasses = async (req, res) => {
     try {
-        const classes = await GymClass.find({ gymId: req.user.gymId })
+        const query = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) query.branchId = req.user.branchId;
+        const classes = await GymClass.find(query)
             .sort({ scheduleDate: 1 })
             .lean();
         // Add seatsAvailable computed field
@@ -38,7 +40,8 @@ const createClass = async (req, res) => {
             startTime,
             endTime,
             maxSeats: Number(maxSeats),
-            gymId: req.user.gymId,
+            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
+            branchId: req.user.branchId || null,
             bookings: []
         });
         res.status(201).json(gymClass);
@@ -52,7 +55,9 @@ const createClass = async (req, res) => {
 // @access  Private/Admin
 const deleteClass = async (req, res) => {
     try {
-        const gymClass = await GymClass.findOneAndDelete({ _id: req.params.id, gymId: req.user.gymId });
+        const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) query.branchId = req.user.branchId;
+        const gymClass = await GymClass.findOneAndDelete(query);
         if (!gymClass) return res.status(404).json({ message: 'Class not found' });
         res.json({ message: 'Class deleted' });
     } catch (error) {
@@ -65,7 +70,9 @@ const deleteClass = async (req, res) => {
 // @access  Private/Admin/Trainer
 const getClassBookings = async (req, res) => {
     try {
-        const gymClass = await GymClass.findOne({ _id: req.params.id, gymId: req.user.gymId })
+        const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) query.branchId = req.user.branchId;
+        const gymClass = await GymClass.findOne(query)
             .populate('bookings.memberId', 'name phone');
         if (!gymClass) return res.status(404).json({ message: 'Class not found' });
         res.json(gymClass);

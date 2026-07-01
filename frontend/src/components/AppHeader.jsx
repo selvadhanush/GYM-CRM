@@ -25,10 +25,80 @@ const PAGE_TITLES = {
 };
 
 const AppHeader = ({ onThemeToggle, isDark }) => {
-    const { user } = useContext(AuthContext);
+    const { user, selectedGymId, changeSelectedGym, activeDivision, selectedBranchId, changeSelectedBranch } = useContext(AuthContext);
     const { toggleMobile } = useSidebar();
     const location = useLocation();
     const navigate = useNavigate();
+
+    // Gym/Branch list for context selectors
+    const [gyms, setGyms] = useState([]);
+
+    useEffect(() => {
+        const fetchGyms = async () => {
+            if (user?.role === 'superadmin') {
+                try {
+                    if (activeDivision === 'h4') {
+                        if (!selectedGymId) return;
+                        
+                        // Fetch H4 gym and partner gyms to find the current gym's name
+                        const [h4Res, partnerRes] = await Promise.all([
+                            API.get('/superadmin/h4-gym').catch(() => ({ data: null })),
+                            API.get('/superadmin/gyms').catch(() => ({ data: [] }))
+                        ]);
+                        
+                        const allGyms = [];
+                        if (h4Res.data) allGyms.push(h4Res.data);
+                        if (partnerRes.data) allGyms.push(...partnerRes.data);
+                        
+                        const currentGym = allGyms.find(g => (g._id || g.id) === selectedGymId);
+                        
+                        if (currentGym) {
+                            // Fetch branches for the selected gym
+                            const { data: branches } = await API.get('/branches', {
+                                headers: { 'x-gym-id': selectedGymId }
+                            });
+                            
+                            const branchOptions = (branches || []).map(b => ({
+                                _id: b._id || b.id,
+                                name: b.name,
+                                isBranch: true,
+                                parentGymId: selectedGymId
+                            }));
+                            
+                            setGyms([currentGym, ...branchOptions]);
+                            
+                            // Ensure selected context is valid
+                            const currentBranch = localStorage.getItem('selectedBranchId');
+                            if (currentBranch && !branchOptions.some(b => b._id === currentBranch)) {
+                                changeSelectedBranch('');
+                                window.location.reload();
+                            }
+                        }
+                    } else {
+                        // Fetch FitPass partner gyms (which excludes H4 from backend now)
+                        const { data } = await API.get('/superadmin/gyms');
+                        setGyms(data || []);
+                    }
+                } catch (err) {
+                    console.error('Failed to fetch gyms for selector:', err);
+                }
+            } else if (user?.role === 'partner') {
+                try {
+                    const { data: branches } = await API.get('/branches');
+                    const branchOptions = (branches || []).map(b => ({
+                        _id: b._id || b.id,
+                        name: b.name,
+                        isBranch: true,
+                        parentGymId: user.gymId
+                    }));
+                    setGyms(branchOptions);
+                } catch (err) {
+                    console.error('Failed to fetch branches for partner:', err);
+                }
+            }
+        };
+        fetchGyms();
+    }, [user, activeDivision, selectedGymId]);
 
     // Search state
     const [searchQuery, setSearchQuery] = useState('');
@@ -120,7 +190,7 @@ const AppHeader = ({ onThemeToggle, isDark }) => {
 
     return (
         <header className="app-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                 <button
                     className="header-btn show-mobile"
                     onClick={toggleMobile}
@@ -129,6 +199,61 @@ const AppHeader = ({ onThemeToggle, isDark }) => {
                     <Menu size={20} />
                 </button>
                 <h1 className="page-title">{getPageTitle()}</h1>
+
+                {((user?.role === 'superadmin' && activeDivision === 'h4') || user?.role === 'partner') && (
+                    <div style={{ marginLeft: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                            {user?.role === 'partner' ? 'Active Branch:' : 'Managing Gym:'}
+                        </span>
+                        <select
+                            className="input"
+                            style={{ 
+                                padding: '0.2rem 1.8rem 0.2rem 0.6rem', 
+                                fontSize: '0.8rem', 
+                                width: '200px', 
+                                height: '32px',
+                                margin: 0,
+                                backgroundPosition: 'right 0.4rem center'
+                            }}
+                            value={selectedBranchId || (user?.role === 'partner' ? '' : selectedGymId)}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                if (user?.role === 'partner') {
+                                    changeSelectedBranch(val);
+                                } else {
+                                    const selectedObj = gyms.find(g => (g._id || g.id) === val);
+                                    if (selectedObj && selectedObj.isBranch) {
+                                        changeSelectedGym(selectedObj.parentGymId);
+                                        changeSelectedBranch(val);
+                                    } else {
+                                        changeSelectedGym(val);
+                                        changeSelectedBranch('');
+                                    }
+                                }
+                                // Reload page to reset data and refresh queries
+                                window.location.reload();
+                            }}
+                        >
+                            {user?.role === 'partner' ? (
+                                <>
+                                    <option value="">-- All Branches --</option>
+                                    {gyms.map(branch => (
+                                        <option key={branch._id || branch.id} value={branch._id || branch.id}>
+                                            {branch.name}
+                                        </option>
+                                    ))}
+                                </>
+                            ) : (
+                                <>
+                                    <option value="">-- Select a Gym --</option>
+                                    {gyms.map(gym => (
+                                        <option key={gym._id || gym.id} value={gym._id || gym.id}>{gym.name}</option>
+                                    ))}
+                                </>
+                            )}
+                        </select>
+                    </div>
+                )}
             </div>
 
             {/* Search Bar */}

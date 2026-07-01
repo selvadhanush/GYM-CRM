@@ -80,7 +80,7 @@ export const memberService = {
   // --- FitPrime session check-in ---
 
   // Scan a gym QR -> deduct 1 session instantly. Body is the parsed QR payload's gymId.
-  checkIn: (gymId: string) =>
+  checkIn: (gymId: string, branchId?: string, deviceInfo?: string) =>
     api.post<{
       success: boolean;
       message: string;
@@ -89,7 +89,8 @@ export const memberService = {
       sessionEndsAt: string;
       cooldownEndsAt: string;
       gym: { id: string; name: string };
-    }>('/member-portal/sessions/check-in', { gymId }),
+      branch?: { id: string; name: string };
+    }>('/member-portal/sessions/check-in', { gymId, branchId, deviceInfo }),
 
   // Current session state (active session, cooldown, sessions remaining).
   getSessionStatus: () =>

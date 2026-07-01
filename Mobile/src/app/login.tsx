@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -26,6 +26,7 @@ export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const isSubmittingRef = useRef(false);
   const { setUser } = useAuthStore();
 
   const [showOTPField, setShowOTPField] = useState(false);
@@ -34,11 +35,13 @@ export default function LoginScreen() {
   const [otp, setOtp] = useState('');
 
   const handleContinue = async () => {
+    if (isSubmittingRef.current) return;
     if (!email.trim()) {
       Alert.alert('Required', 'Please enter your email address');
       return;
     }
 
+    isSubmittingRef.current = true;
     setLoading(true);
     try {
       const response = await authService.checkUser(email.trim());
@@ -61,15 +64,18 @@ export default function LoginScreen() {
       Alert.alert('Error', message);
     } finally {
       setLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 
   const handlePasswordLogin = async () => {
+    if (isSubmittingRef.current) return;
     if (!password.trim()) {
       Alert.alert('Required', 'Please enter your password');
       return;
     }
 
+    isSubmittingRef.current = true;
     setLoading(true);
     try {
       const user = await authService.login(email.trim(), password);
@@ -79,15 +85,18 @@ export default function LoginScreen() {
       Alert.alert('Login Failed', message);
     } finally {
       setLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 
   const handleVerifyOTP = async () => {
+    if (isSubmittingRef.current) return;
     if (!otp.trim()) {
       Alert.alert('Required', 'Please enter the OTP');
       return;
     }
 
+    isSubmittingRef.current = true;
     setLoading(true);
     try {
       const user = await authService.verifyOTP(email.trim(), otp.trim());
@@ -95,14 +104,20 @@ export default function LoginScreen() {
       if (!validRoles.includes(user.role)) {
         Alert.alert('Access Denied', 'This app is only for registered users');
         setLoading(false);
+        isSubmittingRef.current = false;
         return;
       }
       await setUser(user);
     } catch (error: any) {
+      // If user is already authenticated by a previous parallel request, do not show an alert
+      const currentAuth = useAuthStore.getState().isAuthenticated;
+      if (currentAuth) return;
+
       const message = error.response?.data?.message || error.message || 'Login failed';
       Alert.alert('Login Failed', message);
     } finally {
       setLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 
@@ -191,10 +206,16 @@ export default function LoginScreen() {
                     </View>
 
                     <View style={styles.socialContainer}>
-                      <TouchableOpacity style={styles.socialButton}>
+                      <TouchableOpacity 
+                        style={styles.socialButton}
+                        onPress={() => Alert.alert('Coming Soon', 'Google Sign-In is not configured for development. We will launch this in the production release!')}
+                      >
                         <Ionicons name="logo-google" size={22} color="#FFFFFF" />
                       </TouchableOpacity>
-                      <TouchableOpacity style={styles.socialButton}>
+                      <TouchableOpacity 
+                        style={styles.socialButton}
+                        onPress={() => Alert.alert('Coming Soon', 'Apple Sign-In is not configured for development. We will launch this in the production release!')}
+                      >
                         <Ionicons name="logo-apple" size={22} color="#FFFFFF" />
                       </TouchableOpacity>
                     </View>

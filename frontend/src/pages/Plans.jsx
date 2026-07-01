@@ -6,6 +6,7 @@ import { Pencil, Trash2 } from 'lucide-react';
 
 const Plans = () => {
     const { user } = useContext(AuthContext);
+    const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
     const [plans, setPlans] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -70,7 +71,7 @@ const Plans = () => {
         <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <h2>Plans Management</h2>
-                {user?.role === 'admin' && (
+                {isAdmin && (
                     <button className="btn btn-primary" onClick={() => handleOpenModal()}>+ Add New Plan</button>
                 )}
             </div>
@@ -82,32 +83,44 @@ const Plans = () => {
                             <th>Plan Name</th>
                             <th>Duration (Days)</th>
                             <th>Price (₹)</th>
-                            {user?.role === 'admin' && <th>Actions</th>}
+                            {isAdmin && <th>Actions</th>}
                         </tr>
                     </thead>
                     <tbody>
-                        {plans.map(plan => (
-                            <tr key={plan._id}>
-                                <td>
-                                    {plan.name}
-                                    {plan.gymId === 'SYSTEM' && (
-                                        <span style={{ marginLeft: '8px', fontSize: '12px', padding: '2px 6px', backgroundColor: '#e0f2fe', color: '#0369a1', borderRadius: '4px' }}>Global</span>
-                                    )}
+                        {plans.length === 0 ? (
+                            <tr>
+                                <td colSpan={isAdmin ? 4 : 3}>
+                                    <div className="empty-state">
+                                        <div className="empty-state-icon">📋</div>
+                                        <h3>No plans found</h3>
+                                        <p>Create subscription plans to get started.</p>
+                                    </div>
                                 </td>
-                                <td>{plan.gymId === 'SYSTEM' ? `${plan.sessions} sessions` : plan.duration}</td>
-                                <td>{plan.price}</td>
-                                {user?.role === 'admin' && (
-                                    <td style={{ display: 'flex', gap: '0.5rem' }}>
-                                        <button className="btn" style={{ padding: '0.4rem', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }} onClick={() => handleOpenModal(plan)}>
-                                            <Pencil size={16} />
-                                        </button>
-                                        <button className="btn btn-danger" style={{ padding: '0.4rem' }} onClick={() => handleDelete(plan._id)}>
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </td>
-                                )}
                             </tr>
-                        ))}
+                        ) : (
+                            plans.map(plan => (
+                                <tr key={plan._id}>
+                                    <td>
+                                        {plan.name}
+                                        {plan.gymId === 'SYSTEM' && (
+                                            <span style={{ marginLeft: '8px', fontSize: '12px', padding: '2px 6px', backgroundColor: '#e0f2fe', color: '#0369a1', borderRadius: '4px' }}>Global</span>
+                                        )}
+                                    </td>
+                                    <td>{plan.gymId === 'SYSTEM' ? `${plan.sessions} sessions` : plan.duration}</td>
+                                    <td>{plan.price}</td>
+                                    {isAdmin && (
+                                        <td style={{ display: 'flex', gap: '0.5rem' }}>
+                                            <button className="btn" style={{ padding: '0.4rem', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }} onClick={() => handleOpenModal(plan)}>
+                                                <Pencil size={16} />
+                                            </button>
+                                            <button className="btn btn-danger" style={{ padding: '0.4rem' }} onClick={() => handleDelete(plan._id)}>
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </td>
+                                    )}
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>
@@ -118,15 +131,17 @@ const Plans = () => {
                         <label>Plan Name</label>
                         <input className="input" type="text" placeholder="e.g. Monthly" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
                     </div>
-                    <div className="input-group">
-                        <label>Duration (days)</label>
-                        <input className="input" type="number" placeholder="e.g. 30" value={formData.duration} onChange={(e) => setFormData({ ...formData, duration: e.target.value })} required />
+                    <div className="form-grid">
+                        <div className="input-group">
+                            <label>Duration (days)</label>
+                            <input className="input" type="number" placeholder="e.g. 30" value={formData.duration} onChange={(e) => setFormData({ ...formData, duration: e.target.value })} required />
+                        </div>
+                        <div className="input-group">
+                            <label>Price (₹)</label>
+                            <input className="input" type="number" placeholder="e.g. 1000" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} required />
+                        </div>
                     </div>
-                    <div className="input-group">
-                        <label>Price (₹)</label>
-                        <input className="input" type="number" placeholder="e.g. 1000" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} required />
-                    </div>
-                    <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>{editingPlan ? 'Update Plan' : 'Create Plan'}</button>
+                    <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1.5rem' }}>{editingPlan ? 'Update Plan' : 'Create Plan'}</button>
                 </form>
             </Modal>
         </div>

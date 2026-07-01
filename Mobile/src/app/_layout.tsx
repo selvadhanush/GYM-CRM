@@ -1,9 +1,15 @@
 import { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, LogBox } from 'react-native';
 import { useAuthStore } from '@/stores/auth';
 import { COLORS } from '@/theme';
+
+// Suppress deprecated style warnings in third-party and native web packages
+LogBox.ignoreLogs([
+  'shadow* style props are deprecated',
+  'pointerEvents is deprecated',
+]);
 
 export default function RootLayout() {
   const { isAuthenticated, isLoading, loadStoredAuth, user } = useAuthStore();

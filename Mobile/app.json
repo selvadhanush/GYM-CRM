@@ -67,8 +67,7 @@
         {
           "photosPermission": "FitPrime needs access to your photos to upload gym images."
         }
-      ],
-      "sentry-expo"
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

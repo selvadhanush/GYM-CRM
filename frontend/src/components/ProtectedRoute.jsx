@@ -15,11 +15,12 @@ const ProtectedRoute = ({ children, roles }) => {
         return <Navigate to="/login" replace />;
     }
 
-    if (roles && !roles.includes(user.role)) {
-        const defaultPath = user.role === 'admin' ? '/dashboard' :
-            user.role === 'trainer' ? '/attendance' :
-                user.role === 'member' ? '/member-dashboard' :
-                    '/members';
+    if (roles && user.role !== 'superadmin' && !roles.includes(user.role)) {
+        const defaultPath = user.role === 'superadmin' ? '/superadmin/dashboard' :
+            user.role === 'admin' ? '/dashboard' :
+                user.role === 'trainer' ? '/attendance' :
+                    user.role === 'member' ? '/member-dashboard' :
+                        '/members';
         return <Navigate to={defaultPath} replace />;
     }
 

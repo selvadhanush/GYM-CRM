@@ -19,7 +19,8 @@ const createEquipment = async (req, res) => {
             warrantyExpiry: warrantyExpiry ? new Date(warrantyExpiry) : null,
             serviceSchedule: serviceSchedule || null,
             status: status || 'Active',
-            gymId: req.user.gymId
+            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
+            branchId: req.user.branchId || null
         });
 
         res.status(201).json(equipment);
@@ -34,7 +35,10 @@ const createEquipment = async (req, res) => {
 // @access  Private (Admin/Receptionist/Trainer)
 const getEquipments = async (req, res) => {
     try {
-        let query = { gymId: req.user.gymId };
+        let query = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
 
         if (req.query.status) {
             query.status = req.query.status;
@@ -56,7 +60,11 @@ const getEquipments = async (req, res) => {
 // @access  Private (Admin/Receptionist/Trainer)
 const getEquipmentById = async (req, res) => {
     try {
-        const item = await Equipment.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
+        const item = await Equipment.findOne(query);
         if (!item) {
             return res.status(404).json({ success: false, message: 'Equipment not found' });
         }
@@ -73,7 +81,11 @@ const getEquipmentById = async (req, res) => {
 const updateEquipment = async (req, res) => {
     try {
         const { name, type, purchaseDate, warrantyExpiry, serviceSchedule, status } = req.body;
-        const item = await Equipment.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
+        const item = await Equipment.findOne(query);
 
         if (!item) {
             return res.status(404).json({ success: false, message: 'Equipment not found' });
@@ -99,13 +111,21 @@ const updateEquipment = async (req, res) => {
 // @access  Private (Admin)
 const deleteEquipment = async (req, res) => {
     try {
-        const item = await Equipment.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
+        const item = await Equipment.findOne(query);
         if (!item) {
             return res.status(404).json({ success: false, message: 'Equipment not found' });
         }
 
         // Delete associated maintenance logs
-        const logs = await MaintenanceLog.find({ equipmentId: req.params.id, gymId: req.user.gymId });
+        const logsQuery = { equipmentId: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            logsQuery.branchId = req.user.branchId;
+        }
+        const logs = await MaintenanceLog.find(logsQuery);
         for (const log of logs) {
             await log.deleteOne();
         }
@@ -130,7 +150,11 @@ const createMaintenanceLog = async (req, res) => {
         }
 
         // Verify equipment exists
-        const item = await Equipment.findOne({ _id: equipmentId, gymId: req.user.gymId });
+        const query = { _id: equipmentId, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
+        const item = await Equipment.findOne(query);
         if (!item) {
             return res.status(404).json({ success: false, message: 'Equipment not found' });
         }
@@ -142,7 +166,8 @@ const createMaintenanceLog = async (req, res) => {
             description: description || null,
             technicianName: technicianName || null,
             nextServiceDate: nextServiceDate ? new Date(nextServiceDate) : null,
-            gymId: req.user.gymId
+            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
+            branchId: req.user.branchId || null
         });
 
         // Optionally update the status of the equipment (e.g. if serviced, set back to Active)
@@ -163,7 +188,10 @@ const createMaintenanceLog = async (req, res) => {
 // @access  Private (Admin/Receptionist/Trainer)
 const getMaintenanceLogs = async (req, res) => {
     try {
-        let query = { gymId: req.user.gymId };
+        let query = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
 
         if (req.query.equipmentId) {
             query.equipmentId = req.query.equipmentId;
@@ -174,7 +202,11 @@ const getMaintenanceLogs = async (req, res) => {
         // Populate Equipment name
         const formatted = [];
         for (const log of logs) {
-            const eq = await Equipment.findOne({ _id: log.equipmentId });
+            const eqQuery = { _id: log.equipmentId, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+            if (req.user.branchId) {
+                eqQuery.branchId = req.user.branchId;
+            }
+            const eq = await Equipment.findOne(eqQuery);
             formatted.push({
                 ...log,
                 equipmentName: eq ? eq.name : 'Unknown Equipment'
@@ -193,7 +225,11 @@ const getMaintenanceLogs = async (req, res) => {
 // @access  Private (Admin)
 const deleteMaintenanceLog = async (req, res) => {
     try {
-        const log = await MaintenanceLog.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
+        const log = await MaintenanceLog.findOne(query);
         if (!log) {
             return res.status(404).json({ success: false, message: 'Log not found' });
         }

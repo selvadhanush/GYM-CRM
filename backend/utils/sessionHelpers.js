@@ -116,7 +116,7 @@ const evaluateCheckInGates = (member) => {
  * @param {object} member - lazily-expired member row
  * @param {object} gym    - gym row whose QR was scanned (must have defaultSessionDurationMinutes)
  */
-const attemptCheckIn = async (member, gym) => {
+const attemptCheckIn = async (member, gym, branch = null) => {
   const now = new Date();
   const durationMinutes = gym.defaultSessionDurationMinutes || 120;
   const sessionEndsAt = new Date(now.getTime() + durationMinutes * 60 * 1000);
@@ -160,6 +160,8 @@ const attemptCheckIn = async (member, gym) => {
       memberId: member.id,
       gymId: gym.id,
       gymName: gym.name || '',
+      branchId: branch ? branch.id : null,
+      branchName: branch ? branch.name || '' : '',
       startedAt: now,
       expiresAt: sessionEndsAt,
       status: 'active',

@@ -147,7 +147,13 @@ const Attendance = () => {
                             </tr>
                         )) : (
                             <tr>
-                                <td colSpan="3" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No attendance marked today.</td>
+                                <td colSpan="4">
+                                    <div className="empty-state">
+                                        <div className="empty-state-icon">📋</div>
+                                        <h3>No attendance marked today</h3>
+                                        <p>Check in members manually or scan their QR codes to start.</p>
+                                    </div>
+                                </td>
                             </tr>
                         )}
                     </tbody>
@@ -174,7 +180,11 @@ const Attendance = () => {
                             </tbody>
                         </table>
                     ) : (
-                        <p>No attendance records found.</p>
+                        <div className="empty-state">
+                            <div className="empty-state-icon">📅</div>
+                            <h3>No history found</h3>
+                            <p>No attendance records found for this member.</p>
+                        </div>
                     )}
                 </div>
             </Modal>

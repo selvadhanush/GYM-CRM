@@ -15,20 +15,20 @@ const createSession = async (req, res) => {
         }
 
         // Validate member
-        const member = await Member.findOne({ _id: memberId, gymId: req.user.gymId });
+        const member = await Member.findOne({ _id: memberId, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
         if (!member) {
             return res.status(404).json({ success: false, message: 'Member not found' });
         }
 
         // Validate trainer
-        const trainer = await User.findOne({ _id: trainerId, gymId: req.user.gymId, role: 'trainer' });
+        const trainer = await User.findOne({ _id: trainerId, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }), role: 'trainer' });
         if (!trainer) {
             return res.status(404).json({ success: false, message: 'Trainer not found or user is not a trainer' });
         }
 
         // Validate package (if provided)
         if (packageId) {
-            const packageObj = await PtPackage.findOne({ _id: packageId, gymId: req.user.gymId });
+            const packageObj = await PtPackage.findOne({ _id: packageId, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
             if (!packageObj) {
                 return res.status(404).json({ success: false, message: 'Package not found' });
             }
@@ -41,7 +41,7 @@ const createSession = async (req, res) => {
             sessionDate: new Date(sessionDate),
             status: req.body.status || 'Scheduled',
             notes: notes || null,
-            gymId: req.user.gymId
+            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId })
         });
 
         res.status(201).json(session);
@@ -56,7 +56,7 @@ const createSession = async (req, res) => {
 // @access  Private/Admin/Trainer/Member
 const getSessions = async (req, res) => {
     try {
-        let query = { gymId: req.user.gymId };
+        let query = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
 
         if (req.user.role === 'member') {
             query.memberId = req.user.memberId;
@@ -99,7 +99,7 @@ const getSessions = async (req, res) => {
 // @access  Private/Admin/Trainer/Member
 const getSessionById = async (req, res) => {
     try {
-        const session = await PtSession.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const session = await PtSession.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
 
         if (session) {
             if (req.user.role === 'member' && session.memberId !== req.user.memberId) {
@@ -132,14 +132,14 @@ const updateSession = async (req, res) => {
     try {
         const { sessionDate, status, notes, trainerId } = req.body;
 
-        const session = await PtSession.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const session = await PtSession.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
 
         if (session) {
             if (sessionDate) session.sessionDate = new Date(sessionDate);
             if (status) session.status = status;
             if (notes !== undefined) session.notes = notes;
             if (trainerId) {
-                const trainer = await User.findOne({ _id: trainerId, gymId: req.user.gymId, role: 'trainer' });
+                const trainer = await User.findOne({ _id: trainerId, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }), role: 'trainer' });
                 if (!trainer) {
                     return res.status(404).json({ success: false, message: 'Trainer not found' });
                 }
@@ -162,7 +162,7 @@ const updateSession = async (req, res) => {
 // @access  Private/Admin/Trainer
 const deleteSession = async (req, res) => {
     try {
-        const session = await PtSession.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const session = await PtSession.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
 
         if (session) {
             await session.deleteOne();

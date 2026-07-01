@@ -28,6 +28,7 @@ import BodyAssessments from './pages/BodyAssessments';
 import TrainerAttendancePage from './pages/TrainerAttendancePage';
 import PayrollPage from './pages/PayrollPage';
 import Equipments from './pages/Equipments';
+import FitPassAnalyticsPage from './pages/FitPassAnalyticsPage';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -84,6 +85,14 @@ function App() {
           </ProtectedRoute>
         } />
 
+        <Route path="/superadmin/fitpass-analytics" element={
+          <ProtectedRoute roles={['superadmin']}>
+            <Layout>
+              <FitPassAnalyticsPage />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
         <Route path="/dashboard" element={
           <ProtectedRoute roles={['admin']}>
             <Layout>
@@ -109,7 +118,7 @@ function App() {
         } />
 
         <Route path="/members" element={
-          <ProtectedRoute roles={['admin', 'receptionist']}>
+          <ProtectedRoute roles={['admin', 'receptionist', 'superadmin']}>
             <Layout>
               <Members />
             </Layout>
@@ -204,8 +213,16 @@ function App() {
           </ProtectedRoute>
         } />
 
+        <Route path="/fitpass-analytics" element={
+          <ProtectedRoute roles={['admin', 'partner']}>
+            <Layout>
+              <FitPassAnalyticsPage />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
         <Route path="/audit" element={
-          <ProtectedRoute roles={['admin']}>
+          <ProtectedRoute roles={['superadmin']}>
             <Layout>
               <AuditLogs />
             </Layout>

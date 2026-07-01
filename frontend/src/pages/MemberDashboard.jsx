@@ -14,6 +14,29 @@ const MemberDashboard = () => {
     const [customAmount, setCustomAmount] = useState('');
     const qrRef = useRef(null);
 
+    // FitPass specific states
+    const [fitPassHistory, setFitPassHistory] = useState([]);
+    const [gyms, setGyms] = useState([]);
+    const [filterGym, setFilterGym] = useState('');
+    const [filterStatus, setFilterStatus] = useState('');
+    const [filterStartDate, setFilterStartDate] = useState('');
+    const [filterEndDate, setFilterEndDate] = useState('');
+
+    const fetchFitPassHistory = async (params = {}) => {
+        try {
+            const query = new URLSearchParams();
+            if (params.gymId) query.append('gymId', params.gymId);
+            if (params.status) query.append('status', params.status);
+            if (params.startDate) query.append('startDate', params.startDate);
+            if (params.endDate) query.append('endDate', params.endDate);
+
+            const { data } = await API.get(`/member-portal/sessions/history?${query.toString()}`);
+            setFitPassHistory(data.history || []);
+        } catch (error) {
+            console.error('Error fetching FitPass history:', error);
+        }
+    };
+
     const fetchMemberData = async () => {
         try {
             const [planRes, attRes, payRes] = await Promise.all([
@@ -21,7 +44,8 @@ const MemberDashboard = () => {
                 API.get('/member-portal/attendance'),
                 API.get('/member-portal/payments')
             ]);
-            setPlan(planRes.data);
+            const memberPlan = planRes.data;
+            setPlan(memberPlan);
             setAttendance(attRes.data);
             setPayments(payRes.data);
             // Fetch FitPrime session status (sessionsRemaining / active session / cooldown).
@@ -30,6 +54,17 @@ const MemberDashboard = () => {
                 const { data } = await API.get('/member-portal/sessions/status');
                 setSessionStatus(data);
             } catch { setSessionStatus(null); }
+
+            // If it is a FitPass member, fetch partners list and history
+            if (memberPlan?.planId?.gymId === 'SYSTEM') {
+                try {
+                    const gymRes = await API.get('/member-portal/gyms');
+                    setGyms(gymRes.data || []);
+                } catch (e) {
+                    console.error('Error fetching gyms:', e);
+                }
+                await fetchFitPassHistory();
+            }
         } catch (error) {
             console.error('Error fetching member data:', error);
         } finally {
@@ -336,25 +371,116 @@ const MemberDashboard = () => {
 
             {/* History Tables */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem' }}>
-                {/* Attendance History */}
-                <div className="card">
-                    <h3 style={{ marginBottom: '1rem' }}>Recent Attendance</h3>
-                    {attendance.length > 0 ? (
-                        <table className="table">
-                            <thead>
-                                <tr><th>Date</th><th>Status</th></tr>
-                            </thead>
-                            <tbody>
-                                {attendance.slice(0, 5).map(att => (
-                                    <tr key={att._id}>
-                                        <td>{new Date(att.date).toLocaleDateString()}</td>
-                                        <td><span className="badge badge-active">Present</span></td>
-                                    </tr>
+                {/* Attendance or FitPass History */}
+                {isFitPrimeMember ? (
+                    <div className="card">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                            <h3 style={{ margin: 0 }}>FitPass Session History</h3>
+                            <button className="btn btn-secondary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }} 
+                                    onClick={() => {
+                                        setFilterGym('');
+                                        setFilterStatus('');
+                                        setFilterStartDate('');
+                                        setFilterEndDate('');
+                                        fetchFitPassHistory({});
+                                    }}>
+                                Reset
+                            </button>
+                        </div>
+
+                        {/* Filter inputs */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.5rem', marginBottom: '1rem' }}>
+                            <select className="input" value={filterGym} onChange={e => {
+                                setFilterGym(e.target.value);
+                                fetchFitPassHistory({ gymId: e.target.value, status: filterStatus, startDate: filterStartDate, endDate: filterEndDate });
+                            }} style={{ padding: '0.25rem 0.5rem', fontSize: '0.85rem' }}>
+                                <option value="">All Partner Gyms</option>
+                                {gyms.map(g => (
+                                    <option key={g._id || g.id} value={g._id || g.id}>{g.name}</option>
                                 ))}
-                            </tbody>
-                        </table>
-                    ) : <p style={{ color: 'var(--text-secondary)' }}>No attendance records yet.</p>}
-                </div>
+                            </select>
+
+                            <select className="input" value={filterStatus} onChange={e => {
+                                setFilterStatus(e.target.value);
+                                fetchFitPassHistory({ gymId: filterGym, status: e.target.value, startDate: filterStartDate, endDate: filterEndDate });
+                            }} style={{ padding: '0.25rem 0.5rem', fontSize: '0.85rem' }}>
+                                <option value="">All Statuses</option>
+                                <option value="Success">Success</option>
+                                <option value="Failed">Failed</option>
+                            </select>
+
+                            <input type="date" className="input" value={filterStartDate} onChange={e => {
+                                setFilterStartDate(e.target.value);
+                                fetchFitPassHistory({ gymId: filterGym, status: filterStatus, startDate: e.target.value, endDate: filterEndDate });
+                            }} style={{ padding: '0.25rem 0.5rem', fontSize: '0.85rem' }} />
+
+                            <input type="date" className="input" value={filterEndDate} onChange={e => {
+                                setFilterEndDate(e.target.value);
+                                fetchFitPassHistory({ gymId: filterGym, status: filterStatus, startDate: filterStartDate, endDate: e.target.value });
+                            }} style={{ padding: '0.25rem 0.5rem', fontSize: '0.85rem' }} />
+                        </div>
+
+                        {fitPassHistory.length > 0 ? (
+                            <div style={{ overflowX: 'auto' }}>
+                                <table className="table" style={{ width: '100%' }}>
+                                    <thead>
+                                        <tr>
+                                            <th>Date &amp; Time</th>
+                                            <th>Gym Visited</th>
+                                            <th>Deducted</th>
+                                            <th>Remaining</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {fitPassHistory.map(log => (
+                                            <tr key={log.id}>
+                                                <td>{new Date(log.checkInTimestamp).toLocaleString()}</td>
+                                                <td>
+                                                    <span style={{ fontWeight: '600' }}>{log.gymName}</span>
+                                                    {log.branchNameVisited && <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block' }}>Branch: {log.branchNameVisited}</span>}
+                                                </td>
+                                                <td style={{ fontWeight: '700', color: log.sessionsDeducted > 0 ? 'var(--primary-color)' : 'inherit' }}>
+                                                    {log.sessionsDeducted}
+                                                </td>
+                                                <td>{log.remainingSessionsAfter}</td>
+                                                <td>
+                                                    <span className={`badge ${log.accessStatus === 'Success' ? 'badge-active' : 'badge-inactive'}`} 
+                                                          title={log.failureReason || ''}
+                                                          style={{
+                                                              background: log.accessStatus === 'Success' ? 'var(--success-light)' : 'var(--danger-light)',
+                                                              color: log.accessStatus === 'Success' ? 'var(--success-color)' : 'var(--danger-color)'
+                                                          }}>
+                                                        {log.accessStatus}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>No FitPass history found.</p>}
+                    </div>
+                ) : (
+                    <div className="card">
+                        <h3 style={{ marginBottom: '1rem' }}>Recent Attendance</h3>
+                        {attendance.length > 0 ? (
+                            <table className="table">
+                                <thead>
+                                    <tr><th>Date</th><th>Status</th></tr>
+                                </thead>
+                                <tbody>
+                                    {attendance.slice(0, 5).map(att => (
+                                        <tr key={att._id}>
+                                            <td>{new Date(att.date).toLocaleDateString()}</td>
+                                            <td><span className="badge badge-active">Present</span></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        ) : <p style={{ color: 'var(--text-secondary)' }}>No attendance records yet.</p>}
+                    </div>
+                )}
 
                 {/* Payment History */}
                 <div className="card">

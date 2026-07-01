@@ -14,7 +14,7 @@ import { Banknote, Users, DollarSign, PlusCircle, CheckCircle, AlertCircle, Edit
 
 const PayrollPage = () => {
     const { user } = useContext(AuthContext);
-    const isAdmin = user?.role === 'admin';
+    const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
 
     const [payrolls, setPayrolls] = useState([]);
     const [trainers, setTrainers] = useState([]);
@@ -233,7 +233,11 @@ const PayrollPage = () => {
                         <div className="card">
                             <h3 style={{ marginBottom: '1.25rem', fontSize: '1rem', fontWeight: '700' }}>📜 Monthly Pay Slips</h3>
                             {payrolls.length === 0 ? (
-                                <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '2rem' }}>No payroll reports generated for this period.</p>
+                                <div className="empty-state">
+                                    <div className="empty-state-icon">💵</div>
+                                    <h3>No payroll records found</h3>
+                                    <p>No payroll reports generated for this period.</p>
+                                </div>
                             ) : (
                                 <div className="table-container">
                                     <table>
@@ -385,7 +389,7 @@ const PayrollPage = () => {
                         </select>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="form-grid">
                         <div className="input-group">
                             <label>Month *</label>
                             <select

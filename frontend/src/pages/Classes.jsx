@@ -122,9 +122,12 @@ const Classes = () => {
             </div>
 
             {classes.length === 0 ? (
-                <div className="card" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
-                    <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📅</div>
-                    <p>No classes scheduled yet. Create your first class!</p>
+                <div className="card">
+                    <div className="empty-state">
+                        <div className="empty-state-icon">📅</div>
+                        <h3>No classes scheduled yet</h3>
+                        <p>Create your first class to get started!</p>
+                    </div>
                 </div>
             ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
@@ -180,7 +183,7 @@ const Classes = () => {
             <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setError(''); }} title="📅 Schedule New Class">
                 <form onSubmit={handleCreate}>
                     {error && <div style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.875rem' }}>{error}</div>}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="form-grid">
                         <div className="input-group">
                             <label>Class Name *</label>
                             <input className="input" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required placeholder="e.g. Morning Yoga" />
@@ -192,7 +195,7 @@ const Classes = () => {
                             </select>
                         </div>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="form-grid">
                         <div className="input-group">
                             <label>Trainer Name</label>
                             <input className="input" value={formData.trainerName} onChange={e => setFormData({ ...formData, trainerName: e.target.value })} placeholder="Trainer name" />
@@ -206,7 +209,7 @@ const Classes = () => {
                         <label>Date *</label>
                         <input className="input" type="date" value={formData.scheduleDate} onChange={e => setFormData({ ...formData, scheduleDate: e.target.value })} required />
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="form-grid">
                         <div className="input-group">
                             <label>Start Time *</label>
                             <input className="input" type="time" value={formData.startTime} onChange={e => setFormData({ ...formData, startTime: e.target.value })} required />
@@ -220,7 +223,7 @@ const Classes = () => {
                         <label>Description</label>
                         <textarea className="input" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} rows={2} placeholder="Optional description..." />
                     </div>
-                    <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem' }} disabled={submitting}>
+                    <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1.5rem' }} disabled={submitting}>
                         {submitting ? 'Scheduling...' : '📅 Schedule Class'}
                     </button>
                 </form>
@@ -292,7 +295,11 @@ const Classes = () => {
                         </tbody>
                     </table>
                 ) : (
-                    <p style={{ color: 'var(--text-secondary)', textAlign: 'center' }}>No bookings yet for this class.</p>
+                    <div className="empty-state">
+                        <div className="empty-state-icon">👥</div>
+                        <h3>No bookings yet</h3>
+                        <p>No bookings have been logged for this class.</p>
+                    </div>
                 )}
             </Modal>
         </div>

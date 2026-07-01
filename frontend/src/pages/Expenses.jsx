@@ -79,56 +79,59 @@ const Expenses = () => {
                 </div>
             </div>
 
-            <div className="glass" style={{ padding: '1.5rem', borderRadius: '12px' }}>
-                <table className="table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Title</th>
-                            <th>Category</th>
-                            <th>Amount</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {expenses.length === 0 ? (
+            <div className="card" style={{ padding: 0 }}>
+                <div className="table-container">
+                    <table>
+                        <thead>
                             <tr>
-                                <td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
-                                    No expenses recorded yet.
-                                </td>
+                                <th>Date</th>
+                                <th>Title</th>
+                                <th>Category</th>
+                                <th>Amount</th>
+                                <th>Actions</th>
                             </tr>
-                        ) : (
-                            expenses.map((expense) => (
-                                <tr key={expense._id}>
-                                    <td>{new Date(expense.date).toLocaleDateString()}</td>
-                                    <td style={{ fontWeight: '600' }}>{expense.title}</td>
-                                    <td>
-                                        <span style={{
-                                            padding: '0.25rem 0.75rem',
-                                            borderRadius: '9999px',
-                                            fontSize: '0.75rem',
-                                            background: 'rgba(99, 102, 241, 0.1)',
-                                            color: 'var(--primary-color)'
-                                        }}>
-                                            {expense.category}
-                                        </span>
-                                    </td>
-                                    <td style={{ color: 'var(--danger-color)', fontWeight: '700' }}>
-                                        ₹{expense.amount.toLocaleString()}
-                                    </td>
-                                    <td>
-                                        <button
-                                            onClick={() => handleDelete(expense._id)}
-                                            style={{ color: 'var(--danger-color)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
+                        </thead>
+                        <tbody>
+                            {expenses.length === 0 ? (
+                                <tr>
+                                    <td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                                        No expenses recorded yet.
                                     </td>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                            ) : (
+                                expenses.map((expense) => (
+                                    <tr key={expense._id}>
+                                        <td>{new Date(expense.date).toLocaleDateString()}</td>
+                                        <td style={{ fontWeight: '600' }}>{expense.title}</td>
+                                        <td>
+                                            <span style={{
+                                                padding: '0.25rem 0.75rem',
+                                                borderRadius: '9999px',
+                                                fontSize: '0.75rem',
+                                                background: 'rgba(99, 102, 241, 0.1)',
+                                                color: 'var(--primary-color)'
+                                            }}>
+                                                {expense.category}
+                                            </span>
+                                        </td>
+                                        <td style={{ color: 'var(--danger-color)', fontWeight: '700' }}>
+                                            ₹{expense.amount.toLocaleString()}
+                                        </td>
+                                        <td>
+                                            <button
+                                                className="btn btn-danger"
+                                                style={{ padding: '0.4rem' }}
+                                                onClick={() => handleDelete(expense._id)}
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Add New Expense">
@@ -144,7 +147,7 @@ const Expenses = () => {
                             placeholder="e.g. Monthly Rent"
                         />
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="form-grid">
                         <div className="input-group">
                             <label>Amount (₹)</label>
                             <input
@@ -187,7 +190,7 @@ const Expenses = () => {
                             rows="3"
                         ></textarea>
                     </div>
-                    <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>
+                    <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1.5rem' }}>
                         Save Expense
                     </button>
                 </form>

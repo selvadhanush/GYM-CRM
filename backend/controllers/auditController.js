@@ -36,7 +36,7 @@ const getAuditLogs = async (req, res) => {
 // @access  Private/Admin
 const getAuditSummary = async (req, res) => {
     try {
-        const filter = req.user.role === 'superadmin' ? {} : { gymId: req.user.gymId };
+        const filter = req.user.role === 'superadmin' ? {} : { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
         
         const summary = await AuditLog.aggregate([
             { $match: filter },

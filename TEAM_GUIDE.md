@@ -184,11 +184,18 @@ Run these commands in separate terminals:
    npm run dev # spins up Vite dev server on http://localhost:5173
    ```
 3. **Start the Expo Mobile App**:
-   ```bash
-   cd Mobile
-   npm install
-   npx expo start # launches metro bundler. Scan QR on phone, or run android/ios commands
-   ```
+   * **For Android physical device**: Make sure to enable **Developer Options** on your phone, turn on **USB Debugging**, connect it to your computer, and run:
+     ```bash
+     cd Mobile
+     npx expo run:android
+     ```
+   * **Alternatively**, to launch the Metro Bundler and scan the QR code with Expo Go (or run on emulators):
+     ```bash
+     cd Mobile
+     npm install
+     npx expo start
+     ```
+
 
 ### Seeding Test Users
 If you are resetting the database or starting fresh, you can run the following seed scripts in the `backend/` directory:

@@ -5,10 +5,15 @@ const User = require('../models/User');
 // @access  Private/Admin
 const getStaff = async (req, res) => {
     try {
-        const staff = await User.find({
-            gymId: req.user.gymId,
+        const query = {
+            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
             role: { $in: ['admin', 'trainer', 'receptionist'] }
-        }).select('-password').lean();
+        };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
+
+        const staff = await User.find(query).select('-password').lean();
         res.json(staff);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching staff', error: error.message });
@@ -39,7 +44,8 @@ const createStaff = async (req, res) => {
             email: email.trim().toLowerCase(),
             password,
             role,
-            gymId: req.user.gymId
+            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
+            branchId: req.user.branchId || null
         });
 
         const result = { ...staff };
@@ -57,7 +63,11 @@ const createStaff = async (req, res) => {
 const updateStaff = async (req, res) => {
     try {
         const { name, email, password, role } = req.body;
-        const staff = await User.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
+        const staff = await User.findOne(query);
 
         if (!staff) {
             return res.status(404).json({ message: 'Staff member not found' });
@@ -98,7 +108,11 @@ const updateStaff = async (req, res) => {
 // @access  Private/Admin
 const deleteStaff = async (req, res) => {
     try {
-        const staff = await User.findOne({ _id: req.params.id, gymId: req.user.gymId });
+        const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        if (req.user.branchId) {
+            query.branchId = req.user.branchId;
+        }
+        const staff = await User.findOne(query);
         if (!staff) {
             return res.status(404).json({ message: 'Staff member not found' });
         }

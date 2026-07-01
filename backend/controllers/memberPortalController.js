@@ -398,7 +398,7 @@ const purchasePlanVerify = async (req, res) => {
             status: 'Active',
             planPrice: plan.price,
             paidAmount: plan.price,
-            gymId: req.user.gymId,
+            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
             sessionsTotal: sessionsToCredit,
             sessionsRemaining: sessionsToCredit,
         });

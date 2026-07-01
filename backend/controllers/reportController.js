@@ -11,10 +11,15 @@ const getRevenueReport = async (req, res) => {
     const start = new Date(year, month - 1, 1);
     const end = new Date(year, month, 0, 23, 59, 59);
 
-    const payments = await Payment.find({
-        gymId: req.user.gymId,
+    const query = {
+        gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
         date: { $gte: start, $lte: end }
-    }).populate('memberId', 'name');
+    };
+    if (req.user.branchId) {
+        query.branchId = req.user.branchId;
+    }
+
+    const payments = await Payment.find(query).populate('memberId', 'name');
 
     const data = payments.map(p => ({
         Date: p.date.toISOString().split('T')[0],
@@ -37,10 +42,15 @@ const getExpenseReport = async (req, res) => {
     const start = new Date(year, month - 1, 1);
     const end = new Date(year, month, 0, 23, 59, 59);
 
-    const expenses = await Expense.find({
-        gymId: req.user.gymId,
+    const query = {
+        gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
         date: { $gte: start, $lte: end }
-    });
+    };
+    if (req.user.branchId) {
+        query.branchId = req.user.branchId;
+    }
+
+    const expenses = await Expense.find(query);
 
     const data = expenses.map(e => ({
         Date: e.date.toISOString().split('T')[0],

@@ -8,7 +8,8 @@ const {
     createFitPrimePlan,
     updateFitPrimePlan,
     deleteFitPrimePlan,
-    getFitPrimePlans
+    getFitPrimePlans,
+    getOrCreateH4Gym
 } = require('../controllers/superAdminController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -16,6 +17,9 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 router.route('/gyms')
     .post(protect, authorize('superadmin'), createPartnerGym)
     .get(protect, authorize('superadmin'), getPartnerGyms);
+
+router.route('/h4-gym')
+    .get(protect, authorize('superadmin'), getOrCreateH4Gym);
 
 // Update or delete gym (incl. default session duration for FitPrime check-ins).
 router.route('/gyms/:id')

@@ -98,6 +98,9 @@ const registerUser = async (req, res) => {
 
     // Issue + email the OTP.
     const otpString = await issueOtp(email);
+    console.log(`\n==================================================`);
+    console.log(`[DEV ONLY] Generated Registration OTP for ${email}: ${otpString}`);
+    console.log(`==================================================\n`);
     try {
         await sendEmail({
             email: user.email,
@@ -187,11 +190,17 @@ const verifyOTP = async (req, res) => {
         throw new Error('User not found');
     }
 
+    if (user.isActive === false || user.status !== 'Active') {
+        res.status(403);
+        throw new Error('Your account is inactive or suspended. Please contact admin.');
+    }
+
     // Success: mark verified, clear any login lockout, delete the used OTP.
     await User.findByIdAndUpdate(user._id, {
         isVerified: true,
         failedLoginAttempts: 0,
         lockUntil: null,
+        lastLogin: new Date(),
     });
     await prisma.oTP.delete({ where: { id: otpRecord.id } }).catch(() => {});
 
@@ -208,6 +217,7 @@ const verifyOTP = async (req, res) => {
         role: user.role,
         gymId: user.gymId?._id || user.gymId,
         gymName: user.gymId?.name || null,
+        branchId: user.branchId || null,
         memberId: user.memberId,
         isVerified: true,
         createdAt: user.createdAt,
@@ -240,6 +250,11 @@ const authUser = async (req, res) => {
         throw new Error(GENERIC);
     }
 
+    if (user.isActive === false || user.status !== 'Active') {
+        res.status(403);
+        throw new Error('Your account is inactive or suspended. Please contact admin.');
+    }
+
     // Account lockout (too many failed password attempts).
     if (user.lockUntil && new Date(user.lockUntil) > new Date()) {
         const mins = Math.ceil((new Date(user.lockUntil) - new Date()) / 60000);
@@ -268,7 +283,11 @@ const authUser = async (req, res) => {
     }
 
     // Success: reset counters.
-    await User.findByIdAndUpdate(user._id, { failedLoginAttempts: 0, lockUntil: null });
+    await User.findByIdAndUpdate(user._id, { 
+        failedLoginAttempts: 0, 
+        lockUntil: null,
+        lastLogin: new Date(),
+    });
 
     logAudit(auditReq(req, { _id: user._id, name: user.name, email: user.email, role: user.role, gymId: user.gymId?._id || user.gymId }),
         'LOGIN', 'User', user._id, `${user.name} logged in`).catch(() => {});
@@ -280,6 +299,7 @@ const authUser = async (req, res) => {
         role: user.role,
         gymId: user.gymId?._id || user.gymId,
         gymName: user.gymId?.name || 'Unknown Gym',
+        branchId: user.branchId || null,
         memberId: user.memberId,
         token: generateToken(user._id),
     });
@@ -305,12 +325,20 @@ const checkUserAndSendOTP = async (req, res) => {
         return res.json({ status: 'new', message: 'User not found, redirect to registration' });
     }
 
+    if (user.isActive === false || user.status !== 'Active') {
+        res.status(403);
+        throw new Error('Your account is inactive or suspended. Please contact admin.');
+    }
+
     if (user.role === 'superadmin' || user.role === 'partner' || user.role === 'admin') {
         return res.json({ status: 'exists', role: user.role, message: 'Password required' });
     }
 
     // Issue a fresh OTP (also resets the failed-attempt counter).
     const otpString = await issueOtp(email);
+    console.log(`\n==================================================`);
+    console.log(`[DEV ONLY] Generated Login OTP for ${email}: ${otpString}`);
+    console.log(`==================================================\n`);
     try {
         await sendEmail({
             email: user.email,

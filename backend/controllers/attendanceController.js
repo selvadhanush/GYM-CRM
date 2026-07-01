@@ -8,9 +8,12 @@ const { logAudit } = require('../utils/auditLogger');
 const markAttendance = async (req, res) => {
     const { memberId } = req.body;
 
-    // Tenant isolation: the member must belong to the caller's gym. Previously
-    // this looked up by id alone, allowing cross-gym attendance marking.
-    const member = await Member.findOne({ _id: memberId, gymId: req.user.gymId });
+    // Tenant isolation: the member must belong to the caller's gym and branch if applicable.
+    const memberQuery = { _id: memberId, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+    if (req.user.branchId) {
+        memberQuery.branchId = req.user.branchId;
+    }
+    const member = await Member.findOne(memberQuery);
     if (!member) {
         res.status(404);
         throw new Error('Member not found');
@@ -19,14 +22,19 @@ const markAttendance = async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const existingAttendance = await Attendance.findOne({
+    const existingQuery = {
         memberId,
-        gymId: req.user.gymId,
+        gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
         date: {
             $gte: today,
             $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
         }
-    });
+    };
+    if (req.user.branchId) {
+        existingQuery.branchId = req.user.branchId;
+    }
+
+    const existingAttendance = await Attendance.findOne(existingQuery);
 
     if (existingAttendance) {
         res.status(400);
@@ -41,7 +49,8 @@ const markAttendance = async (req, res) => {
         memberId,
         date: now,
         checkInTime,
-        gymId: req.user.gymId
+        gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
+        branchId: req.user.branchId || null
     });
 
     if (attendance) {
@@ -62,13 +71,18 @@ const getTodayAttendance = async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const attendanceList = await Attendance.find({
-        gymId: req.user.gymId,
+    const query = {
+        gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
         date: {
             $gte: today,
             $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
         }
-    }).populate('memberId', 'name phone').lean();
+    };
+    if (req.user.branchId) {
+        query.branchId = req.user.branchId;
+    }
+
+    const attendanceList = await Attendance.find(query).populate('memberId', 'name phone').lean();
 
     res.json(attendanceList);
 };
@@ -77,10 +91,15 @@ const getTodayAttendance = async (req, res) => {
 // @route   GET /api/attendance/member/:memberId
 // @access  Private/Admin
 const getMemberAttendance = async (req, res) => {
-    const attendance = await Attendance.find({
+    const query = {
         memberId: req.params.memberId,
-        gymId: req.user.gymId
-    })
+        gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId })
+    };
+    if (req.user.branchId) {
+        query.branchId = req.user.branchId;
+    }
+
+    const attendance = await Attendance.find(query)
         .sort({ createdAt: -1 })
         .lean();
     res.json(attendance);

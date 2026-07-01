@@ -10,7 +10,7 @@ import { Clock, CheckCircle2, XCircle, Users, Activity, Play, Square } from 'luc
 
 const TrainerAttendancePage = () => {
     const { user } = useContext(AuthContext);
-    const isAdmin = user?.role === 'admin';
+    const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
     const isTrainer = user?.role === 'trainer';
 
     const [logs, setLogs] = useState([]);
@@ -197,7 +197,11 @@ const TrainerAttendancePage = () => {
                     <div className="card">
                         <h3 style={{ marginBottom: '1.25rem', fontSize: '1rem', fontWeight: '700' }}>📜 Attendance Shift History</h3>
                         {logs.length === 0 ? (
-                            <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '2rem' }}>No attendance records found.</p>
+                            <div className="empty-state">
+                                <div className="empty-state-icon">⏱️</div>
+                                <h3>No attendance records found</h3>
+                                <p>No shifts have been logged for this period yet.</p>
+                            </div>
                         ) : (
                             <div className="table-container">
                                 <table>

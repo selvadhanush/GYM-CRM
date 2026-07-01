@@ -1,4 +1,3 @@
-const mongoose = require('mongoose');
 const User = require('./models/User');
 const dotenv = require('dotenv');
 const dns = require('dns');
@@ -7,12 +6,11 @@ dotenv.config();
 
 const check = async () => {
     try {
-        await mongoose.connect(process.env.MONGO_URI);
         const users = await User.find({});
         if (users.length === 0) {
             console.log('No users found.');
         } else {
-            console.log('Users found:', users.map(u => u.email));
+            console.log('Users found:', users.map(u => ({ email: u.email, role: u.role, gymId: u.gymId })));
         }
         process.exit(0);
     } catch (e) {

@@ -170,7 +170,15 @@ const Leads = () => {
                     </thead>
                     <tbody>
                         {filtered.length === 0 ? (
-                            <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>No leads found</td></tr>
+                            <tr>
+                                <td colSpan={7}>
+                                    <div className="empty-state">
+                                        <div className="empty-state-icon">🎯</div>
+                                        <h3>No leads found</h3>
+                                        <p>Try adjusting your search query or pipeline filter.</p>
+                                    </div>
+                                </td>
+                            </tr>
                         ) : filtered.map(lead => {
                             const col = STATUS_COLORS[lead.status];
                             const followUp = lead.followUpDate ? lead.followUpDate.slice(0, 10) : null;
@@ -218,7 +226,7 @@ const Leads = () => {
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editLead ? '✏️ Edit Lead' : '🎯 Add New Lead'}>
                 <form onSubmit={handleSubmit}>
                     {error && <div style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.875rem' }}>{error}</div>}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="form-grid">
                         <div className="input-group">
                             <label>Name *</label>
                             <input className="input" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required placeholder="Full name" />
@@ -228,7 +236,7 @@ const Leads = () => {
                             <input className="input" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} required placeholder="Phone number" />
                         </div>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="form-grid">
                         <div className="input-group">
                             <label>Email</label>
                             <input className="input" type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="Email (optional)" />
@@ -240,7 +248,7 @@ const Leads = () => {
                             </select>
                         </div>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="form-grid">
                         <div className="input-group">
                             <label>Interested Plan</label>
                             <input className="input" value={formData.interestedPlan} onChange={e => setFormData({ ...formData, interestedPlan: e.target.value })} placeholder="e.g. Monthly, Annual" />
@@ -254,7 +262,7 @@ const Leads = () => {
                         <label>Notes</label>
                         <textarea className="input" rows={2} value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} placeholder="Any notes about this lead..." />
                     </div>
-                    <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem' }} disabled={submitting}>
+                    <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1.5rem' }} disabled={submitting}>
                         {submitting ? 'Saving...' : editLead ? '💾 Update Lead' : '🎯 Add Lead'}
                     </button>
                 </form>
