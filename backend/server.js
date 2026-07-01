@@ -1,6 +1,7 @@
 const express = require('express');
 const dns = require('dns');
 const helmet = require('helmet');
+// Nodemon schema reload trigger comment.
 
 // Fix for ECONNREFUSED issues on networks that block SRV records.
 // Uses Google Public DNS for internal resolution.
