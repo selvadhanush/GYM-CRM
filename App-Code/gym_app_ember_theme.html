@@ -1,0 +1,78 @@
+<div style="padding:1rem 0;">
+<div style="text-align:center; margin-bottom:2rem;">
+  <p style="font-size:12px; color:var(--text-muted); letter-spacing:0.08em; margin:0;">color system</p>
+  <h1 style="font-size:32px; font-weight:500; margin:4px 0;">Ember</h1>
+  <p style="font-size:14px; color:var(--text-secondary); margin:0;">A warm amber-gold palette for a minimal, motivating gym app</p>
+</div>
+
+<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(90px,1fr)); gap:12px; margin-bottom:2rem;">
+  <div><div style="height:64px; border-radius:12px; background:#F0A020;"></div><p style="font-size:12px; margin:6px 0 0;">Primary</p><p style="font-size:11px; color:var(--text-muted); margin:0;">F0A020</p></div>
+  <div><div style="height:64px; border-radius:12px; background:#D9860F;"></div><p style="font-size:12px; margin:6px 0 0;">Hover</p><p style="font-size:11px; color:var(--text-muted); margin:0;">D9860F</p></div>
+  <div><div style="height:64px; border-radius:12px; background:#FCE6B8;"></div><p style="font-size:12px; margin:6px 0 0;">Tint</p><p style="font-size:11px; color:var(--text-muted); margin:0;">FCE6B8</p></div>
+  <div><div style="height:64px; border-radius:12px; background:#FBF6EC;"></div><p style="font-size:12px; margin:6px 0 0;">Section</p><p style="font-size:11px; color:var(--text-muted); margin:0;">FBF6EC</p></div>
+  <div><div style="height:64px; border-radius:12px; background:#FFFFFF; border:0.5px solid var(--border);"></div><p style="font-size:12px; margin:6px 0 0;">Surface</p><p style="font-size:11px; color:var(--text-muted); margin:0;">FFFFFF</p></div>
+  <div><div style="height:64px; border-radius:12px; background:#231D14;"></div><p style="font-size:12px; margin:6px 0 0;">Ink</p><p style="font-size:11px; color:var(--text-muted); margin:0;">231D14</p></div>
+</div>
+
+<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-bottom:2rem;">
+  <div style="background:var(--surface-1); border-radius:12px; padding:1rem;">
+    <p style="font-size:12px; color:var(--text-muted); margin:0 0 8px;">semantic — success</p>
+    <div style="height:36px; border-radius:8px; background:#2F9E44; display:flex; align-items:center; padding:0 12px; color:#fff; font-size:13px;">Active pass</div>
+  </div>
+  <div style="background:var(--surface-1); border-radius:12px; padding:1rem;">
+    <p style="font-size:12px; color:var(--text-muted); margin:0 0 8px;">semantic — error</p>
+    <div style="height:36px; border-radius:8px; background:#D6453F; display:flex; align-items:center; padding:0 12px; color:#fff; font-size:13px;">Expired session</div>
+  </div>
+  <div style="background:var(--surface-1); border-radius:12px; padding:1rem;">
+    <p style="font-size:12px; color:var(--text-muted); margin:0 0 8px;">semantic — info</p>
+    <div style="height:36px; border-radius:8px; background:#2C6E8F; display:flex; align-items:center; padding:0 12px; color:#fff; font-size:13px;">Cooldown 3h</div>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:2rem;">
+  <div style="background:var(--surface-2); border:0.5px solid var(--border); border-radius:12px; padding:1.25rem;">
+    <p style="font-size:12px; color:var(--text-muted); margin:0 0 12px; letter-spacing:0.05em;">components</p>
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
+      <button style="background:#F0A020; border:none; color:#231D14; font-weight:500; padding:0 16px; height:36px; border-radius:8px; font-size:13px;">Check in</button>
+      <button style="background:transparent; border:0.5px solid var(--border-strong); color:var(--text-primary); padding:0 16px; height:36px; border-radius:8px; font-size:13px;">View plan</button>
+    </div>
+    <div style="display:flex; gap:8px; margin-bottom:14px;">
+      <span style="background:#FCE6B8; color:#7A4E08; font-size:11px; padding:4px 10px; border-radius:999px;">H4 gym</span>
+      <span style="background:#DFF3EF; color:#0F6E56; font-size:11px; padding:4px 10px; border-radius:999px;">FitPass</span>
+      <span style="background:#E7EAF0; color:#3A4356; font-size:11px; padding:4px 10px; border-radius:999px;">Staff</span>
+    </div>
+    <div style="border-top:0.5px solid var(--border); padding-top:12px; display:flex; justify-content:space-between; align-items:center; font-size:13px; margin-bottom:8px;">
+      <span>Push reminders</span>
+      <div style="width:36px; height:20px; border-radius:999px; background:#F0A020; position:relative;"><div style="width:16px; height:16px; border-radius:50%; background:#fff; position:absolute; top:2px; right:2px;"></div></div>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; font-size:13px;">
+      <span>Auto renew</span>
+      <div style="width:36px; height:20px; border-radius:999px; background:var(--border-strong); position:relative;"><div style="width:16px; height:16px; border-radius:50%; background:#fff; position:absolute; top:2px; left:2px;"></div></div>
+    </div>
+  </div>
+
+  <div style="background:var(--surface-2); border:0.5px solid var(--border); border-radius:12px; padding:1.25rem;">
+    <p style="font-size:12px; color:var(--text-muted); margin:0 0 12px; letter-spacing:0.05em;">session card</p>
+    <div style="width:40px; height:40px; border-radius:10px; background:#FCE6B8; display:flex; align-items:center; justify-content:center; margin-bottom:12px;"><i class="ti ti-flame" style="font-size:20px; color:#D9860F;" aria-hidden="true"></i></div>
+    <p style="font-weight:500; font-size:15px; margin:0 0 4px;">Session bank</p>
+    <p style="font-size:13px; color:var(--text-secondary); margin:0 0 12px; line-height:1.5;">8 sessions left, resets on your billing date.</p>
+    <p style="font-size:22px; font-weight:500; margin:0 0 12px;">8<span style="font-size:13px; color:var(--text-muted); font-weight:400;"> / 12 used</span></p>
+    <button style="width:100%; background:#231D14; color:#fff; border:none; height:38px; border-radius:8px; font-size:13px; font-weight:500;">Scan QR to check in</button>
+  </div>
+</div>
+
+<div style="background:#FBF6EC; border-radius:12px; padding:1.25rem 1.5rem;">
+  <p style="font-size:12px; color:var(--text-muted); margin:0 0 8px; letter-spacing:0.05em;">typography and icons</p>
+  <p style="font-size:20px; font-weight:500; margin:0 0 6px; color:#231D14;">Heading in ink</p>
+  <p style="font-size:14px; color:var(--text-secondary); line-height:1.6; margin:0 0 12px;">Body copy sits in a warm muted brown-gray, keeping contrast comfortable against the amber tints without ever feeling loud.</p>
+  <div style="display:flex; gap:16px; font-size:20px; color:#D9860F;">
+    <i class="ti ti-home" aria-hidden="true"></i>
+    <i class="ti ti-flame" aria-hidden="true"></i>
+    <i class="ti ti-qrcode" aria-hidden="true"></i>
+    <i class="ti ti-calendar" aria-hidden="true"></i>
+    <i class="ti ti-map-pin" aria-hidden="true"></i>
+    <i class="ti ti-user" aria-hidden="true"></i>
+    <i class="ti ti-bell" aria-hidden="true"></i>
+  </div>
+</div>
+</div>
