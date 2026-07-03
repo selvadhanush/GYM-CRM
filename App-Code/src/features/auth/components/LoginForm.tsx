@@ -6,7 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import { Input, Button, Card, Typography } from '@/components/ui';
 
-export const LoginForm: React.FC = () => {
+export const LoginForm: React.FC<{ portal: 'staff' | 'h4' | 'fitpass' }> = ({ portal }) => {
   const router = useRouter();
   const toast = useToast();
   const login = useAuth((state) => state.login);
@@ -31,16 +31,47 @@ export const LoginForm: React.FC = () => {
     setErrors({});
     setLoading(true);
 
-    const result = await login(email.trim().toLowerCase(), password);
+    const result = await login(email.trim().toLowerCase(), password, portal);
     setLoading(false);
 
     if (result.success) {
-      toast.show('Welcome back to Gym CRM Pro!', 'success');
+      toast.show('Welcome back!', 'success');
       // Redirect to superadmin dashboard
       router.replace('/(superadmin)/dashboard');
     } else {
       toast.show(result.message || 'Authentication failed', 'error');
     }
+  };
+
+  // Dynamic content based on portal type
+  const portalDetails = {
+    staff: {
+      badgeText: 'S',
+      title: 'STAFF & PARTNERS',
+      tagline: 'Access operations, analytics, and management hubs.',
+      accent: theme.colors.primary,
+      footer: 'Staff Console Mode',
+    },
+    h4: {
+      badgeText: 'H4',
+      title: 'H4 FIT CLUB',
+      tagline: 'Track physical branches and physical member tools.',
+      accent: theme.colors.success,
+      footer: 'H4 Fitness Portal',
+    },
+    fitpass: {
+      badgeText: 'FP',
+      title: 'FITPASS UNIVERSAL',
+      tagline: 'Access universal session passes and check-in portals.',
+      accent: theme.colors.info,
+      footer: 'FitPass Member Portal',
+    },
+  }[portal] || {
+    badgeText: 'G',
+    title: 'GYM CRM PRO',
+    tagline: 'The ultimate fitness management experience.',
+    accent: theme.colors.primary,
+    footer: 'Console Mode',
   };
 
   return (
@@ -54,14 +85,14 @@ export const LoginForm: React.FC = () => {
         <View style={styles.bottomBlob} />
 
         <View style={styles.inner}>
-          <Card style={styles.loginCard}>
+          <Card style={styles.loginCard} accentColor={portalDetails.accent}>
             <View style={styles.logoSection}>
-              <View style={styles.logoBadge}>
-                <Typography style={styles.logoText}>G</Typography>
+              <View style={[styles.logoBadge, { backgroundColor: portalDetails.accent }]}>
+                <Typography style={styles.logoText}>{portalDetails.badgeText}</Typography>
               </View>
-              <Typography variant="h2" style={styles.appName}>GYM CRM PRO</Typography>
+              <Typography variant="h2" style={styles.appName}>{portalDetails.title}</Typography>
               <Typography variant="caption" color="secondary" style={styles.tagline}>
-                The ultimate fitness management experience.
+                {portalDetails.tagline}
               </Typography>
             </View>
 
@@ -87,7 +118,7 @@ export const LoginForm: React.FC = () => {
               />
 
               <Button
-                title="Sign In to Dashboard"
+                title={`Sign In to ${portalDetails.title}`}
                 loading={loading}
                 onPress={handleLogin}
                 style={styles.submitBtn}
@@ -96,7 +127,7 @@ export const LoginForm: React.FC = () => {
 
             <View style={styles.footer}>
               <Typography variant="caption" color="muted" style={styles.footerText}>
-                Super Admin Console Mode
+                {portalDetails.footer}
               </Typography>
             </View>
           </Card>

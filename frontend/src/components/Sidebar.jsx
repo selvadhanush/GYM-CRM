@@ -189,7 +189,7 @@ const Sidebar = () => {
 
                 // H4 has overall branch management, H5 (sub-branch) does not
                 if (!selectedBranchId) {
-                    gymMgmtItems.push({ name: `Branches${suffix}`, path: '/branches', icon: Building2 });
+                    gymMgmtItems.push({ name: 'Branches', path: '/branches', icon: Building2 });
                 }
 
                 groups = [
