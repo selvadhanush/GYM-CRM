@@ -229,7 +229,7 @@ const verifyOTP = async (req, res) => {
 // @route   POST /api/auth/login
 // @access  Public (rate-limited + account lockout)
 const authUser = async (req, res) => {
-    const { password } = req.body;
+    const { password, portalType } = req.body;
     const email = normalizeEmail(req.body.email);
 
     if (!email || !password) {
@@ -280,6 +280,33 @@ const authUser = async (req, res) => {
 
         res.status(401);
         throw new Error(GENERIC);
+    }
+
+    // Portal validation check (applied after password match to prevent account enumeration)
+    if (portalType) {
+        const userRole = user.role;
+        const userGymName = user.gymId?.name || '';
+        const userGymId = user.gymId?._id || user.gymId || '';
+
+        if (portalType === 'staff') {
+            const isStaff = ['superadmin', 'trainer', 'partner', 'admin', 'receptionist'].includes(userRole);
+            if (!isStaff) {
+                res.status(403);
+                throw new Error('Access Denied: This portal is restricted to Staffs and Partners.');
+            }
+        } else if (portalType === 'h4') {
+            const isH4 = userRole === 'member' && (userGymName.toUpperCase() === 'H4' || userGymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd');
+            if (!isH4) {
+                res.status(403);
+                throw new Error('Access Denied: This portal is restricted to H4 Gym Members.');
+            }
+        } else if (portalType === 'fitpass') {
+            const isFitpass = userRole === 'member' && (userGymName.toUpperCase() !== 'H4' && userGymId !== '05a08fdf-7427-48a5-8b25-e18d5a5668cd');
+            if (!isFitpass) {
+                res.status(403);
+                throw new Error('Access Denied: This portal is restricted to Fitpass Members.');
+            }
+        }
     }
 
     // Success: reset counters.

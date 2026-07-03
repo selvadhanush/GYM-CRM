@@ -7,7 +7,7 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import { Toast } from '@/components/ui';
 
 function NavigationGuard() {
-  const { token, loading, initializeAuth, activeDivision } = useAuth();
+  const { token, loading, initializeAuth, activeDivision, user } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
@@ -22,31 +22,48 @@ function NavigationGuard() {
 
     const segmentsList = segments as string[];
     const inAuthGroup = segmentsList[0] === '(auth)';
-    const onPortalSelection = segmentsList[0] === '(superadmin)' && segmentsList[1] === 'portal-selection';
+    const inSuperadmin = segmentsList[0] === '(superadmin)';
+    const inFitpass = segmentsList[0] === '(fitpass)';
+    const inH4 = segmentsList[0] === '(h4)';
+    const onPortalSelection = inSuperadmin && segmentsList[1] === 'portal-selection';
 
     if (!token) {
-      // If no token, redirect to login page if we aren't already there
+      // Unauthenticated: go to gateway landing
       if (!inAuthGroup) {
-        router.replace('/login');
+        router.replace('/(auth)/landing');
       }
-    } else {
-      // User is logged in
+      return;
+    }
+
+    // Authenticated — resolve correct destination
+    const role = user?.role;
+    const isStaff = role && ['superadmin', 'partner', 'admin', 'trainer', 'receptionist'].includes(role);
+    const isMember = role === 'member';
+
+    if (isStaff) {
+      // Staff/admin portal
       if (activeDivision === null) {
-        // Must select a portal/division first
-        if (!onPortalSelection) {
-          router.replace('/(superadmin)/portal-selection');
-        }
+        if (!onPortalSelection) router.replace('/(superadmin)/portal-selection');
       } else {
-        // Portal selected, redirect to dashboard if currently on auth group or selection page
         if (inAuthGroup || onPortalSelection || !segmentsList[0]) {
           router.replace('/(superadmin)/dashboard');
         }
       }
+    } else if (isMember && activeDivision === 'h4') {
+      // H4 member portal
+      if (!inH4) router.replace('/(h4)/dashboard');
+    } else if (isMember && activeDivision === 'fitpass') {
+      // FitPass member portal
+      if (!inFitpass) router.replace('/(fitpass)/dashboard');
+    } else if (isMember && activeDivision === null) {
+      // Member logged in but division not yet set — go back to landing
+      if (!inAuthGroup) router.replace('/(auth)/landing');
     }
-  }, [token, loading, activeDivision, segments, router]);
+  }, [token, loading, activeDivision, user, segments, router]);
 
   return <Slot />;
 }
+
 
 export default function RootLayout() {
   return (

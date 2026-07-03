@@ -8,9 +8,11 @@ export interface User {
   _id: string;
   name: string;
   email: string;
-  role: 'superadmin' | 'admin' | 'receptionist' | 'trainer' | 'member';
+  role: 'superadmin' | 'admin' | 'receptionist' | 'trainer' | 'member' | 'partner';
   gymId?: string;
+  gymName?: string;
   branchId?: string;
+  memberId?: string;
 }
 
 interface AuthState {
@@ -22,7 +24,7 @@ interface AuthState {
   activeDivision: 'fitpass' | 'h4' | null;
   
   initializeAuth: () => Promise<void>;
-  login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  login: (email: string, password: string, portal: 'staff' | 'h4' | 'fitpass') => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
   changeSelectedGym: (gymId: string) => Promise<void>;
   changeSelectedBranch: (branchId: string) => Promise<void>;
@@ -73,30 +75,67 @@ export const useAuth = create<AuthState>((set, get) => {
       }
     },
 
-    login: async (email, password) => {
+    login: async (email, password, portal) => {
       try {
-        const { data } = await API_CLIENT.post('/auth/login', { email, password });
+        const { data } = await API_CLIENT.post('/auth/login', { email, password, portalType: portal });
         
-        // Enforce superadmin role check
+        const userRole = data.role;
+        const userGymName = data.gymName || '';
+        const userGymId = data.gymId || '';
+
+        // Portal-specific role and gym routing validation
+        if (portal === 'staff') {
+          const isStaff = ['superadmin', 'trainer', 'partner', 'admin', 'receptionist'].includes(userRole);
+          if (!isStaff) {
+            throw new Error('Access Denied: This portal is restricted to Staffs and Partners.');
+          }
+        } else if (portal === 'h4') {
+          const isH4 = userRole === 'member' && (userGymName.toUpperCase() === 'H4' || userGymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd');
+          if (!isH4) {
+            throw new Error('Access Denied: This portal is restricted to H4 Gym Members.');
+          }
+        } else if (portal === 'fitpass') {
+          const isFitpass = userRole === 'member' && (userGymName.toUpperCase() !== 'H4' && userGymId !== '05a08fdf-7427-48a5-8b25-e18d5a5668cd');
+          if (!isFitpass) {
+            throw new Error('Access Denied: This portal is restricted to Fitpass Members.');
+          }
+        }
+
+        // Determine active division based on user context
+        let division: 'fitpass' | 'h4' | null = null;
         if (data.role !== 'superadmin') {
-          throw new Error('Access Denied: This console is restricted to Super Admins only.');
+          const isH4Gym = userGymName.toUpperCase() === 'H4' || userGymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+          division = isH4Gym ? 'h4' : 'fitpass';
         }
 
         // Save to secure storage
         await storage.setToken(data.token);
         await storage.setItem('user', JSON.stringify(data));
         
-        // We set activeDivision to null on new login so the user is forced to select a portal
-        await storage.removeItem('activeDivision');
-        await storage.removeItem('selectedGymId');
-        await storage.removeItem('selectedBranchId');
+        if (division) {
+          await storage.setItem('activeDivision', division);
+        } else {
+          await storage.removeItem('activeDivision');
+        }
+
+        if (data.gymId) {
+          await storage.setItem('selectedGymId', data.gymId);
+        } else {
+          await storage.removeItem('selectedGymId');
+        }
+
+        if (data.branchId) {
+          await storage.setItem('selectedBranchId', data.branchId);
+        } else {
+          await storage.removeItem('selectedBranchId');
+        }
 
         set({
           token: data.token,
           user: data,
-          selectedGymId: '',
-          selectedBranchId: '',
-          activeDivision: null, // Reset to force division selection
+          selectedGymId: data.gymId || '',
+          selectedBranchId: data.branchId || '',
+          activeDivision: division,
         });
         
         return { success: true };
