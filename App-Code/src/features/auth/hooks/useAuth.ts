@@ -1,0 +1,192 @@
+import { create } from 'zustand';
+import { API_CLIENT, registerUnauthorizedHandler } from '@/lib/api-client';
+import { storage } from '@/lib/storage';
+import { queryClient } from '@/lib/query-client';
+
+export interface User {
+  id: string;
+  _id: string;
+  name: string;
+  email: string;
+  role: 'superadmin' | 'admin' | 'receptionist' | 'trainer' | 'member';
+  gymId?: string;
+  branchId?: string;
+}
+
+interface AuthState {
+  user: User | null;
+  token: string | null;
+  loading: boolean;
+  selectedGymId: string;
+  selectedBranchId: string;
+  activeDivision: 'fitpass' | 'h4' | null;
+  
+  initializeAuth: () => Promise<void>;
+  login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  logout: () => Promise<void>;
+  changeSelectedGym: (gymId: string) => Promise<void>;
+  changeSelectedBranch: (branchId: string) => Promise<void>;
+  changeActiveDivision: (division: 'fitpass' | 'h4' | null) => Promise<void>;
+}
+
+export const useAuth = create<AuthState>((set, get) => {
+  // Register interceptor handler to sync with store on 401s
+  registerUnauthorizedHandler(() => {
+    set({
+      user: null,
+      token: null,
+      selectedGymId: '',
+      selectedBranchId: '',
+      activeDivision: null,
+    });
+  });
+
+  return {
+    user: null,
+    token: null,
+    loading: true,
+    selectedGymId: '',
+    selectedBranchId: '',
+    activeDivision: null,
+
+    initializeAuth: async () => {
+      try {
+        const token = await storage.getToken();
+        const storedUser = await storage.getItem('user');
+        const selectedGymId = await storage.getItem('selectedGymId') || '';
+        const selectedBranchId = await storage.getItem('selectedBranchId') || '';
+        const activeDivision = (await storage.getItem('activeDivision') as 'fitpass' | 'h4' | null) || null;
+
+        if (token && storedUser) {
+          set({
+            token,
+            user: JSON.parse(storedUser),
+            selectedGymId,
+            selectedBranchId,
+            activeDivision,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to restore auth state', error);
+      } finally {
+        set({ loading: false });
+      }
+    },
+
+    login: async (email, password) => {
+      try {
+        const { data } = await API_CLIENT.post('/auth/login', { email, password });
+        
+        // Enforce superadmin role check
+        if (data.role !== 'superadmin') {
+          throw new Error('Access Denied: This console is restricted to Super Admins only.');
+        }
+
+        // Save to secure storage
+        await storage.setToken(data.token);
+        await storage.setItem('user', JSON.stringify(data));
+        
+        // We set activeDivision to null on new login so the user is forced to select a portal
+        await storage.removeItem('activeDivision');
+        await storage.removeItem('selectedGymId');
+        await storage.removeItem('selectedBranchId');
+
+        set({
+          token: data.token,
+          user: data,
+          selectedGymId: '',
+          selectedBranchId: '',
+          activeDivision: null, // Reset to force division selection
+        });
+        
+        return { success: true };
+      } catch (error: any) {
+        console.error('Login failed with error:', error);
+        
+        let message = 'Login failed';
+        if (error.response) {
+          const resData = error.response.data;
+          if (resData && typeof resData === 'object') {
+            message = resData.message || resData.error || JSON.stringify(resData);
+          } else if (typeof resData === 'string') {
+            message = resData;
+          }
+        } else if (error.request) {
+          message = 'No response from server. Verify the backend API is running and reachable.';
+        } else {
+          message = error.message || 'An unexpected error occurred';
+        }
+
+        return {
+          success: false,
+          message,
+        };
+      }
+    },
+
+    logout: async () => {
+      await storage.removeToken();
+      await storage.removeItem('user');
+      await storage.removeItem('selectedGymId');
+      await storage.removeItem('selectedBranchId');
+      await storage.removeItem('activeDivision');
+      
+      set({
+        user: null,
+        token: null,
+        selectedGymId: '',
+        selectedBranchId: '',
+        activeDivision: null,
+      });
+    },
+
+    changeSelectedGym: async (gymId) => {
+      if (gymId) {
+        await storage.setItem('selectedGymId', gymId);
+      } else {
+        await storage.removeItem('selectedGymId');
+      }
+      set({ selectedGymId: gymId });
+    },
+
+    changeSelectedBranch: async (branchId) => {
+      if (branchId) {
+        await storage.setItem('selectedBranchId', branchId);
+      } else {
+        await storage.removeItem('selectedBranchId');
+      }
+      set({ selectedBranchId: branchId });
+      queryClient.invalidateQueries();
+    },
+
+    changeActiveDivision: async (division) => {
+      if (division === null) {
+        await storage.removeItem('activeDivision');
+        await storage.removeItem('selectedGymId');
+        await storage.removeItem('selectedBranchId');
+        set({ activeDivision: null, selectedGymId: '', selectedBranchId: '' });
+      } else if (division === 'h4') {
+        try {
+          const { data } = await API_CLIENT.get('/superadmin/h4-gym');
+          if (data) {
+            const h4GymId = data._id || data.id;
+            await storage.setItem('selectedGymId', h4GymId);
+            await storage.setItem('activeDivision', 'h4');
+            await storage.removeItem('selectedBranchId');
+            set({ activeDivision: 'h4', selectedGymId: h4GymId, selectedBranchId: '' });
+          }
+        } catch (error) {
+          console.error('Failed to switch to H4 division:', error);
+          throw error;
+        }
+      } else {
+        await storage.setItem('activeDivision', 'fitpass');
+        await storage.removeItem('selectedGymId');
+        await storage.removeItem('selectedBranchId');
+        set({ activeDivision: 'fitpass', selectedGymId: '', selectedBranchId: '' });
+      }
+      // Force reload all query caches for the new division context
+      queryClient.invalidateQueries();
+    },
+  };
+});
