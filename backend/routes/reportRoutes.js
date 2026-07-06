@@ -4,7 +4,7 @@ const { getRevenueReport, getExpenseReport } = require('../controllers/reportCon
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.use(protect);
-router.use(authorize('admin'));
+router.use(authorize('admin', 'h4_admin'));
 
 router.get('/revenue', getRevenueReport);
 router.get('/expenses', getExpenseReport);

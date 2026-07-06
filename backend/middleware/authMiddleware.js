@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-
 const Branch = require('../models/Branch');
+const Gym = require('../models/Gym');
 
 const protect = async (req, res, next) => {
     let token;
@@ -32,6 +32,50 @@ const protect = async (req, res, next) => {
                 }
                 if (req.headers['x-branch-id']) {
                     req.user.branchId = req.headers['x-branch-id'];
+                }
+            } else if (req.user.role === 'fitpass_admin') {
+                // FitPass admin acts like superadmin but is restricted from H4 Gym and H4 branches
+                req.user.gymId = 'SYSTEM'; // Default/Global FitPass scope
+                
+                let targetGymId = req.headers['x-gym-id'];
+                if (targetGymId) {
+                    const gym = await Gym.findById(targetGymId);
+                    // Prevent switching to H4 Gym
+                    if (gym && gym.name.toUpperCase() !== 'H4') {
+                        req.user.gymId = targetGymId;
+                    }
+                }
+                
+                if (req.headers['x-branch-id'] && req.user.gymId !== 'SYSTEM') {
+                    const targetBranch = await Branch.findOne({
+                        _id: req.headers['x-branch-id'],
+                        gymId: req.user.gymId
+                    });
+                    if (targetBranch) {
+                        req.user.branchId = req.headers['x-branch-id'];
+                    } else {
+                        req.user.branchId = null; // default to consolidated reports/view
+                    }
+                } else {
+                    req.user.branchId = null;
+                }
+            } else if (req.user.role === 'h4_admin') {
+                // H4 admin is locked to the H4 gymId
+                const h4Gym = await Gym.findOne({ name: 'H4' });
+                req.user.gymId = h4Gym ? h4Gym._id.toString() : '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+                
+                if (req.headers['x-branch-id']) {
+                    const targetBranch = await Branch.findOne({ 
+                        _id: req.headers['x-branch-id'], 
+                        gymId: req.user.gymId 
+                    });
+                    if (targetBranch) {
+                        req.user.branchId = req.headers['x-branch-id'];
+                    } else {
+                        req.user.branchId = null;
+                    }
+                } else {
+                    req.user.branchId = null;
                 }
             } else if (req.user.role === 'partner') {
                 // Organization Admin is locked to their gymId

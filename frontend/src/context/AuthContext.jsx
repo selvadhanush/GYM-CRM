@@ -20,7 +20,19 @@ export const AuthProvider = ({ children }) => {
         const storedUser = localStorage.getItem('user');
         const token = localStorage.getItem('token');
         if (storedUser && token) {
-            setUser(JSON.parse(storedUser));
+            const parsedUser = JSON.parse(storedUser);
+            setUser(parsedUser);
+            
+            let division = localStorage.getItem('activeDivision');
+            if (parsedUser.role === 'h4_admin' || (parsedUser.gymName && parsedUser.gymName.toUpperCase() === 'H4') || parsedUser.gymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd') {
+                division = 'h4';
+            } else if (parsedUser.role === 'fitpass_admin') {
+                division = 'fitpass';
+            }
+            if (division) {
+                localStorage.setItem('activeDivision', division);
+                setActiveDivision(division);
+            }
         }
         setLoading(false);
     }, []);
@@ -31,6 +43,16 @@ export const AuthProvider = ({ children }) => {
             setUser(data);
             localStorage.setItem('user', JSON.stringify(data));
             localStorage.setItem('token', data.token);
+            
+            let division = localStorage.getItem('activeDivision') || 'fitpass';
+            if (data.role === 'h4_admin' || (data.gymName && data.gymName.toUpperCase() === 'H4') || data.gymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd') {
+                division = 'h4';
+            } else if (data.role === 'fitpass_admin') {
+                division = 'fitpass';
+            }
+            localStorage.setItem('activeDivision', division);
+            setActiveDivision(division);
+
             if (data.gymId) {
                 localStorage.setItem('selectedGymId', data.gymId);
                 setSelectedGymId(data.gymId);

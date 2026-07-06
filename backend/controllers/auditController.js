@@ -8,7 +8,14 @@ const getAuditLogs = async (req, res) => {
         const { action, userId, entity, limit = 100, page = 1 } = req.query;
         const filter = {};
         if (req.user.role !== 'superadmin') {
-            filter.gymId = req.user.gymId;
+            if (req.user.role === 'fitpass_admin') {
+                const Gym = require('../models/Gym');
+                const h4Gym = await Gym.findOne({ name: 'H4' });
+                const h4GymId = h4Gym ? h4Gym._id.toString() : '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+                filter.gymId = { $ne: h4GymId };
+            } else {
+                filter.gymId = req.user.gymId;
+            }
         }
         if (action) filter.action = action;
         if (userId) filter.userId = userId;
@@ -36,7 +43,17 @@ const getAuditLogs = async (req, res) => {
 // @access  Private/Admin
 const getAuditSummary = async (req, res) => {
     try {
-        const filter = req.user.role === 'superadmin' ? {} : { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        let filter = {};
+        if (req.user.role !== 'superadmin') {
+            if (req.user.role === 'fitpass_admin') {
+                const Gym = require('../models/Gym');
+                const h4Gym = await Gym.findOne({ name: 'H4' });
+                const h4GymId = h4Gym ? h4Gym._id.toString() : '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+                filter = { gymId: { $ne: h4GymId } };
+            } else {
+                filter = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+            }
+        }
         
         const summary = await AuditLog.aggregate([
             { $match: filter },

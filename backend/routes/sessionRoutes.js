@@ -15,7 +15,7 @@ const router = express.Router();
 router.post(
   '/admin-adjust',
   protect,
-  authorize('admin', 'receptionist'),
+  authorize('admin', 'receptionist', 'h4_admin'),
   validate({ body: adminAdjustSchema }),
   adminAdjustSessions
 );
@@ -24,7 +24,7 @@ router.post(
 router.get(
   '/member-summary/:memberId',
   protect,
-  authorize('admin', 'partner', 'superadmin'),
+  authorize('admin', 'partner', 'superadmin', 'fitpass_admin'),
   getMemberFitPassSummary
 );
 
@@ -32,7 +32,7 @@ router.get(
 router.get(
   '/analytics',
   protect,
-  authorize('admin', 'partner', 'superadmin'),
+  authorize('admin', 'partner', 'superadmin', 'fitpass_admin'),
   getFitPassAnalytics
 );
 

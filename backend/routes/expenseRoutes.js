@@ -4,7 +4,7 @@ const { createExpense, getExpenses, deleteExpense } = require('../controllers/ex
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.use(protect);
-router.use(authorize('admin'));
+router.use(authorize('admin', 'h4_admin'));
 
 router.route('/')
     .post(createExpense)

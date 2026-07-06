@@ -24,6 +24,7 @@ import Staff from './pages/Staff';
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
 import PartnerGyms from './pages/superadmin/PartnerGyms';
 import FitPrimePlans from './pages/superadmin/FitPrimePlans';
+import AdminManagement from './pages/superadmin/AdminManagement';
 import BodyAssessments from './pages/BodyAssessments';
 import TrainerAttendancePage from './pages/TrainerAttendancePage';
 import PayrollPage from './pages/PayrollPage';
@@ -51,8 +52,8 @@ function App() {
           <ProtectedRoute>
             <Layout>
               <Navigate to={
-                user?.role === 'superadmin' ? "/superadmin/dashboard" :
-                user?.role === 'admin' ? "/dashboard" :
+                (user?.role === 'superadmin' || user?.role === 'fitpass_admin') ? "/superadmin/dashboard" :
+                (user?.role === 'admin' || user?.role === 'h4_admin') ? "/dashboard" :
                   user?.role === 'trainer' ? "/attendance" :
                     user?.role === 'member' ? "/member-dashboard" :
                       "/members"
@@ -62,7 +63,7 @@ function App() {
         } />
 
         <Route path="/superadmin/dashboard" element={
-          <ProtectedRoute roles={['superadmin']}>
+          <ProtectedRoute roles={['superadmin', 'fitpass_admin']}>
             <Layout>
               <SuperAdminDashboard />
             </Layout>
@@ -70,7 +71,7 @@ function App() {
         } />
 
         <Route path="/superadmin/gyms" element={
-          <ProtectedRoute roles={['superadmin']}>
+          <ProtectedRoute roles={['superadmin', 'fitpass_admin']}>
             <Layout>
               <PartnerGyms />
             </Layout>
@@ -78,15 +79,23 @@ function App() {
         } />
 
         <Route path="/superadmin/plans" element={
-          <ProtectedRoute roles={['superadmin']}>
+          <ProtectedRoute roles={['superadmin', 'fitpass_admin']}>
             <Layout>
               <FitPrimePlans />
             </Layout>
           </ProtectedRoute>
         } />
 
-        <Route path="/superadmin/fitpass-analytics" element={
+        <Route path="/superadmin/admins" element={
           <ProtectedRoute roles={['superadmin']}>
+            <Layout>
+              <AdminManagement />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/superadmin/fitpass-analytics" element={
+          <ProtectedRoute roles={['superadmin', 'fitpass_admin']}>
             <Layout>
               <FitPassAnalyticsPage />
             </Layout>
@@ -94,7 +103,7 @@ function App() {
         } />
 
         <Route path="/dashboard" element={
-          <ProtectedRoute roles={['admin']}>
+          <ProtectedRoute roles={['admin', 'h4_admin']}>
             <Layout>
               <Dashboard />
             </Layout>
@@ -102,7 +111,7 @@ function App() {
         } />
 
         <Route path="/profile" element={
-          <ProtectedRoute roles={['admin']}>
+          <ProtectedRoute roles={['admin', 'h4_admin']}>
             <Layout>
               <GymProfile />
             </Layout>
@@ -110,7 +119,7 @@ function App() {
         } />
 
         <Route path="/plans" element={
-          <ProtectedRoute roles={['admin']}>
+          <ProtectedRoute roles={['admin', 'h4_admin']}>
             <Layout>
               <Plans />
             </Layout>
@@ -118,7 +127,7 @@ function App() {
         } />
 
         <Route path="/members" element={
-          <ProtectedRoute roles={['admin', 'receptionist', 'superadmin']}>
+          <ProtectedRoute roles={['admin', 'receptionist', 'superadmin', 'fitpass_admin', 'h4_admin']}>
             <Layout>
               <Members />
             </Layout>
@@ -126,7 +135,7 @@ function App() {
         } />
 
         <Route path="/payments" element={
-          <ProtectedRoute roles={['admin', 'receptionist']}>
+          <ProtectedRoute roles={['admin', 'receptionist', 'h4_admin']}>
             <Layout>
               <Payments />
             </Layout>
@@ -134,7 +143,7 @@ function App() {
         } />
 
         <Route path="/attendance" element={
-          <ProtectedRoute roles={['admin', 'trainer']}>
+          <ProtectedRoute roles={['admin', 'trainer', 'h4_admin']}>
             <Layout>
               <Attendance />
             </Layout>
@@ -142,7 +151,7 @@ function App() {
         } />
 
         <Route path="/expenses" element={
-          <ProtectedRoute roles={['admin']}>
+          <ProtectedRoute roles={['admin', 'h4_admin']}>
             <Layout>
               <Expenses />
             </Layout>
@@ -150,7 +159,7 @@ function App() {
         } />
 
         <Route path="/dues" element={
-          <ProtectedRoute roles={['admin', 'receptionist']}>
+          <ProtectedRoute roles={['admin', 'receptionist', 'h4_admin']}>
             <Layout>
               <Dues />
             </Layout>
@@ -166,7 +175,7 @@ function App() {
         } />
 
         <Route path="/reports" element={
-          <ProtectedRoute roles={['admin']}>
+          <ProtectedRoute roles={['admin', 'h4_admin']}>
             <Layout>
               <Reports />
             </Layout>
@@ -174,7 +183,7 @@ function App() {
         } />
 
         <Route path="/freeze" element={
-          <ProtectedRoute roles={['admin', 'receptionist']}>
+          <ProtectedRoute roles={['admin', 'receptionist', 'h4_admin']}>
             <Layout>
               <FreezeManagement />
             </Layout>
@@ -182,7 +191,7 @@ function App() {
         } />
 
         <Route path="/classes" element={
-          <ProtectedRoute roles={['admin', 'trainer']}>
+          <ProtectedRoute roles={['admin', 'trainer', 'h4_admin']}>
             <Layout>
               <Classes />
             </Layout>
@@ -198,7 +207,7 @@ function App() {
         } />
 
         <Route path="/leads" element={
-          <ProtectedRoute roles={['admin', 'receptionist']}>
+          <ProtectedRoute roles={['admin', 'receptionist', 'h4_admin']}>
             <Layout>
               <Leads />
             </Layout>
@@ -206,7 +215,7 @@ function App() {
         } />
 
         <Route path="/analytics" element={
-          <ProtectedRoute roles={['admin']}>
+          <ProtectedRoute roles={['admin', 'h4_admin']}>
             <Layout>
               <Analytics />
             </Layout>
@@ -222,7 +231,7 @@ function App() {
         } />
 
         <Route path="/audit" element={
-          <ProtectedRoute roles={['superadmin']}>
+          <ProtectedRoute roles={['superadmin', 'fitpass_admin']}>
             <Layout>
               <AuditLogs />
             </Layout>
@@ -230,7 +239,7 @@ function App() {
         } />
 
         <Route path="/branches" element={
-          <ProtectedRoute roles={['admin']}>
+          <ProtectedRoute roles={['admin', 'h4_admin']}>
             <Layout>
               <Branches />
             </Layout>
@@ -238,7 +247,7 @@ function App() {
         } />
 
         <Route path="/staff" element={
-          <ProtectedRoute roles={['admin']}>
+          <ProtectedRoute roles={['admin', 'h4_admin']}>
             <Layout>
               <Staff />
             </Layout>
@@ -246,7 +255,7 @@ function App() {
         } />
 
         <Route path="/body-assessments" element={
-          <ProtectedRoute roles={['admin', 'trainer', 'member']}>
+          <ProtectedRoute roles={['admin', 'trainer', 'member', 'h4_admin']}>
             <Layout>
               <BodyAssessments />
             </Layout>
@@ -254,7 +263,7 @@ function App() {
         } />
 
         <Route path="/trainer-attendance" element={
-          <ProtectedRoute roles={['admin', 'trainer']}>
+          <ProtectedRoute roles={['admin', 'trainer', 'h4_admin']}>
             <Layout>
               <TrainerAttendancePage />
             </Layout>
@@ -262,7 +271,7 @@ function App() {
         } />
 
         <Route path="/payroll" element={
-          <ProtectedRoute roles={['admin', 'trainer']}>
+          <ProtectedRoute roles={['admin', 'trainer', 'h4_admin']}>
             <Layout>
               <PayrollPage />
             </Layout>
@@ -270,7 +279,7 @@ function App() {
         } />
 
         <Route path="/equipments" element={
-          <ProtectedRoute roles={['admin', 'receptionist', 'trainer']}>
+          <ProtectedRoute roles={['admin', 'receptionist', 'trainer', 'h4_admin']}>
             <Layout>
               <Equipments />
             </Layout>

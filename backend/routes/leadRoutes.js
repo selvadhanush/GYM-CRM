@@ -3,7 +3,7 @@ const router = express.Router();
 const { getLeads, createLead, updateLead, deleteLead, getLeadSummary } = require('../controllers/leadController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
-router.use(protect, authorize('admin', 'receptionist'));
+router.use(protect, authorize('admin', 'receptionist', 'h4_admin'));
 
 router.get('/summary', getLeadSummary);
 router.route('/').get(getLeads).post(createLead);

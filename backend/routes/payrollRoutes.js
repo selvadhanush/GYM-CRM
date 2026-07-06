@@ -11,12 +11,12 @@ const {
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.route('/')
-    .get(protect, authorize('admin', 'trainer'), getPayrolls);
+    .get(protect, authorize('admin', 'trainer', 'h4_admin'), getPayrolls);
 
-router.post('/generate', protect, authorize('admin'), generateMonthlyPayroll);
-router.post('/salary-structure', protect, authorize('admin'), upsertSalaryStructure);
-router.get('/salary-structure/:trainerId', protect, authorize('admin', 'trainer'), getSalaryStructure);
-router.post('/commission', protect, authorize('admin'), addCommission);
-router.put('/:id', protect, authorize('admin'), updatePayrollStatus);
+router.post('/generate', protect, authorize('admin', 'h4_admin'), generateMonthlyPayroll);
+router.post('/salary-structure', protect, authorize('admin', 'h4_admin'), upsertSalaryStructure);
+router.get('/salary-structure/:trainerId', protect, authorize('admin', 'trainer', 'h4_admin'), getSalaryStructure);
+router.post('/commission', protect, authorize('admin', 'h4_admin'), addCommission);
+router.put('/:id', protect, authorize('admin', 'h4_admin'), updatePayrollStatus);
 
 module.exports = router;

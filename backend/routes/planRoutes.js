@@ -10,12 +10,12 @@ const {
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.route('/')
-    .get(protect, authorize('admin', 'receptionist', 'trainer', 'superadmin'), getPlans)
-    .post(protect, authorize('admin'), createPlan);
+    .get(protect, authorize('admin', 'receptionist', 'trainer', 'superadmin', 'h4_admin'), getPlans)
+    .post(protect, authorize('admin', 'h4_admin'), createPlan);
 
 router.route('/:id')
-    .get(protect, authorize('admin', 'receptionist', 'trainer', 'superadmin'), getPlanById)
-    .put(protect, authorize('admin'), updatePlan)
-    .delete(protect, authorize('admin'), deletePlan);
+    .get(protect, authorize('admin', 'receptionist', 'trainer', 'superadmin', 'h4_admin'), getPlanById)
+    .put(protect, authorize('admin', 'h4_admin'), updatePlan)
+    .delete(protect, authorize('admin', 'h4_admin'), deletePlan);
 
 module.exports = router;

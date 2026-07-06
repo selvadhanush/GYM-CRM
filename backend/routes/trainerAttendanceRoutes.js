@@ -8,7 +8,7 @@ const {
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.route('/')
-    .get(protect, authorize('admin', 'receptionist', 'trainer'), getTrainerAttendance);
+    .get(protect, authorize('admin', 'receptionist', 'trainer', 'h4_admin'), getTrainerAttendance);
 
 router.post('/checkin', protect, checkInTrainer);
 router.post('/checkout', protect, checkOutTrainer);
