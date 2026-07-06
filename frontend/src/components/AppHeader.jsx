@@ -35,9 +35,9 @@ const AppHeader = ({ onThemeToggle, isDark }) => {
 
     useEffect(() => {
         const fetchGyms = async () => {
-            if (user?.role === 'superadmin') {
+            if (user?.role === 'superadmin' || user?.role === 'fitpass_admin') {
                 try {
-                    if (activeDivision === 'h4') {
+                    if (activeDivision === 'h4' && user?.role !== 'fitpass_admin') {
                         if (!selectedGymId) return;
                         
                         // Fetch H4 gym and partner gyms to find the current gym's name
@@ -82,7 +82,7 @@ const AppHeader = ({ onThemeToggle, isDark }) => {
                 } catch (err) {
                     console.error('Failed to fetch gyms for selector:', err);
                 }
-            } else if (user?.role === 'partner') {
+            } else if (user?.role === 'partner' || user?.role === 'h4_admin') {
                 try {
                     const { data: branches } = await API.get('/branches');
                     const branchOptions = (branches || []).map(b => ({
@@ -93,7 +93,7 @@ const AppHeader = ({ onThemeToggle, isDark }) => {
                     }));
                     setGyms(branchOptions);
                 } catch (err) {
-                    console.error('Failed to fetch branches for partner:', err);
+                    console.error('Failed to fetch branches for partner/h4_admin:', err);
                 }
             }
         };
@@ -200,10 +200,10 @@ const AppHeader = ({ onThemeToggle, isDark }) => {
                 </button>
                 <h1 className="page-title">{getPageTitle()}</h1>
 
-                {((user?.role === 'superadmin' && activeDivision === 'h4') || user?.role === 'partner') && (
+                {((user?.role === 'superadmin' && activeDivision === 'h4') || user?.role === 'partner' || user?.role === 'h4_admin') && (
                     <div style={{ marginLeft: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                            {user?.role === 'partner' ? 'Active Branch:' : 'Managing Gym:'}
+                            {user?.role === 'partner' || user?.role === 'h4_admin' ? 'Active Branch:' : 'Managing Gym:'}
                         </span>
                         <select
                             className="input"
@@ -215,10 +215,10 @@ const AppHeader = ({ onThemeToggle, isDark }) => {
                                 margin: 0,
                                 backgroundPosition: 'right 0.4rem center'
                             }}
-                            value={selectedBranchId || (user?.role === 'partner' ? '' : selectedGymId)}
+                            value={selectedBranchId || (user?.role === 'partner' || user?.role === 'h4_admin' ? '' : selectedGymId)}
                             onChange={(e) => {
                                 const val = e.target.value;
-                                if (user?.role === 'partner') {
+                                if (user?.role === 'partner' || user?.role === 'h4_admin') {
                                     changeSelectedBranch(val);
                                 } else {
                                     const selectedObj = gyms.find(g => (g._id || g.id) === val);
@@ -234,7 +234,7 @@ const AppHeader = ({ onThemeToggle, isDark }) => {
                                 window.location.reload();
                             }}
                         >
-                            {user?.role === 'partner' ? (
+                            {user?.role === 'partner' || user?.role === 'h4_admin' ? (
                                 <>
                                     <option value="">-- All Branches --</option>
                                     {gyms.map(branch => (

@@ -16,7 +16,9 @@ const ProtectedRoute = ({ children, roles }) => {
     }
 
     if (roles && user.role !== 'superadmin' && !roles.includes(user.role)) {
-        const defaultPath = user.role === 'superadmin' ? '/superadmin/dashboard' :
+        const defaultPath = user.role === 'fitpass_admin' ? '/superadmin/dashboard' :
+            user.role === 'h4_admin' ? '/dashboard' :
+            user.role === 'superadmin' ? '/superadmin/dashboard' :
             user.role === 'admin' ? '/dashboard' :
                 user.role === 'trainer' ? '/attendance' :
                     user.role === 'member' ? '/member-dashboard' :

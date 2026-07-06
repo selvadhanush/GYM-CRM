@@ -269,6 +269,126 @@ const getFitPrimePlans = async (req, res) => {
     res.json(plans);
 };
 
+// --- dedicated admin management ---
+const createAdminSchema = z.object({
+    name: z.string().min(1, 'Name is required').max(120),
+    email: z.string().email('A valid email is required'),
+    password: z.string().min(6, 'Password must be at least 6 characters'),
+    role: z.enum(['fitpass_admin', 'h4_admin']),
+});
+
+const updateAdminSchema = z.object({
+    name: z.string().min(1).max(120).optional(),
+    password: z.string().min(6, 'Password must be at least 6 characters').optional(),
+    status: z.enum(['Active', 'Inactive']).optional(),
+});
+
+// @desc    Get all dedicated admins (fitpass_admin, h4_admin)
+// @route   GET /api/superadmin/admins
+// @access  Private (Super Admin)
+const getDedicatedAdmins = async (req, res) => {
+    const admins = await User.find({ role: { $in: ['fitpass_admin', 'h4_admin'] } }).select('-password').lean();
+    res.json(admins);
+};
+
+// @desc    Create a dedicated admin account
+// @route   POST /api/superadmin/admins
+// @access  Private (Super Admin)
+const createDedicatedAdmin = async (req, res) => {
+    const parsed = createAdminSchema.safeParse(req.body);
+    if (!parsed.success) {
+        res.status(400);
+        throw new Error(parsed.error.issues[0].message);
+    }
+    const { name, email, password, role } = parsed.data;
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const userExists = await User.findOne({ email: normalizedEmail });
+    if (userExists) {
+        res.status(400);
+        throw new Error('User already exists');
+    }
+
+    let gymId = 'SYSTEM';
+    if (role === 'h4_admin') {
+        const h4Gym = await Gym.findOne({ name: 'H4' });
+        gymId = h4Gym ? h4Gym._id : '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+    }
+
+    const admin = await User.create({
+        name,
+        email: normalizedEmail,
+        password,
+        role,
+        gymId,
+        isVerified: true,
+    });
+
+    if (admin) {
+        await logAudit(req, 'ADMIN_CREATED', 'User', admin._id, `Super admin created dedicated admin: ${name} (${role})`, name);
+        res.status(201).json({
+            _id: admin._id,
+            name: admin.name,
+            email: admin.email,
+            role: admin.role,
+            gymId: admin.gymId,
+        });
+    } else {
+        res.status(400);
+        throw new Error('Invalid data');
+    }
+};
+
+// @desc    Update a dedicated admin account
+// @route   PUT /api/superadmin/admins/:id
+// @access  Private (Super Admin)
+const updateDedicatedAdmin = async (req, res) => {
+    const parsed = updateAdminSchema.safeParse(req.body);
+    if (!parsed.success) {
+        res.status(400);
+        throw new Error(parsed.error.issues[0].message);
+    }
+
+    const admin = await User.findOne({ _id: req.params.id, role: { $in: ['fitpass_admin', 'h4_admin'] } });
+    if (!admin) {
+        res.status(404);
+        throw new Error('Admin not found');
+    }
+
+    const updates = parsed.data;
+    if (updates.name !== undefined) admin.name = updates.name;
+    if (updates.password !== undefined) admin.password = updates.password;
+    if (updates.status !== undefined) {
+        admin.status = updates.status;
+        admin.isActive = updates.status === 'Active';
+    }
+    await admin.save();
+
+    await logAudit(req, 'ADMIN_UPDATED', 'User', admin._id, `Updated dedicated admin: ${admin.name}`, admin.name);
+
+    res.json({
+        _id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role,
+        status: admin.status,
+    });
+};
+
+// @desc    Delete a dedicated admin account
+// @route   DELETE /api/superadmin/admins/:id
+// @access  Private (Super Admin)
+const deleteDedicatedAdmin = async (req, res) => {
+    const admin = await User.findOne({ _id: req.params.id, role: { $in: ['fitpass_admin', 'h4_admin'] } });
+    if (!admin) {
+        res.status(404);
+        throw new Error('Admin not found');
+    }
+    await admin.deleteOne();
+    await logAudit(req, 'ADMIN_DELETED', 'User', admin._id, `Super admin deleted dedicated admin: ${admin.name}`, admin.name);
+    res.json({ message: 'Dedicated admin removed' });
+};
+
 module.exports = {
     createPartnerGym,
     updatePartnerGym,
@@ -278,5 +398,9 @@ module.exports = {
     updateFitPrimePlan,
     deleteFitPrimePlan,
     getFitPrimePlans,
-    getOrCreateH4Gym
+    getOrCreateH4Gym,
+    getDedicatedAdmins,
+    createDedicatedAdmin,
+    updateDedicatedAdmin,
+    deleteDedicatedAdmin
 };

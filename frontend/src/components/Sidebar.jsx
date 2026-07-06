@@ -161,6 +161,7 @@ const Sidebar = () => {
                         { name: 'Partner Gyms', path: '/superadmin/gyms', icon: Building2 },
                         { name: 'Fit-Prime Plans', path: '/superadmin/plans', icon: Package },
                         { name: 'FitPass Reports', path: '/superadmin/fitpass-analytics', icon: Zap },
+                        { name: 'Admins Directory', path: '/superadmin/admins', icon: ShieldCheck },
                     ]
                 },
                 {
@@ -229,6 +230,73 @@ const Sidebar = () => {
                 ];
             }
         }
+    } else if (role === 'fitpass_admin') {
+        groups = [
+            {
+                label: 'Global Overview',
+                items: [
+                    { name: 'Dashboard', path: '/superadmin/dashboard', icon: LayoutDashboard },
+                ]
+            },
+            {
+                label: 'Management for Fit Pass',
+                items: [
+                    { name: 'Partner Gyms', path: '/superadmin/gyms', icon: Building2 },
+                    { name: 'Fit-Prime Plans', path: '/superadmin/plans', icon: Package },
+                    { name: 'FitPass Reports', path: '/superadmin/fitpass-analytics', icon: Zap },
+                    { name: 'Members Directory', path: '/members', icon: Users },
+                ]
+            },
+            {
+                label: 'System',
+                items: [
+                    { name: 'Audit Logs', path: '/audit', icon: History },
+                ]
+            }
+        ];
+    } else if (role === 'h4_admin') {
+        const suffix = !selectedBranchId ? ' of all branches' : '';
+        const gymMgmtItems = [
+            { name: `Gym Dashboard${suffix}`, path: '/dashboard', icon: LayoutDashboard },
+            { name: `Gym Profile${suffix}`, path: '/profile', icon: Image },
+            { name: `Members${suffix}`, path: '/members', icon: Users },
+            { name: `Leads${suffix}`, path: '/leads', icon: Target },
+            { name: `Plans${suffix}`, path: '/plans', icon: Package },
+            { name: `Classes${suffix}`, path: '/classes', icon: Dumbbell },
+            { name: `Assessments${suffix}`, path: '/body-assessments', icon: LineChart },
+            { name: `Equipments${suffix}`, path: '/equipments', icon: Wrench },
+            { name: `Staff${suffix}`, path: '/staff', icon: ShieldCheck },
+        ];
+
+        if (!selectedBranchId) {
+            gymMgmtItems.push({ name: 'Branches', path: '/branches', icon: Building2 });
+        }
+
+        groups = [
+            {
+                label: 'Gym Management',
+                items: gymMgmtItems
+            },
+            {
+                label: 'Gym Ops & Finance',
+                items: [
+                    { name: `Payments${suffix}`, path: '/payments', icon: IndianRupee },
+                    { name: `Expenses${suffix}`, path: '/expenses', icon: IndianRupee },
+                    { name: `Pending Dues${suffix}`, path: '/dues', icon: Clock },
+                    { name: `Attendance${suffix}`, path: '/attendance', icon: UserCheck },
+                    { name: `Trainer Attendance${suffix}`, path: '/trainer-attendance', icon: CalendarCheck },
+                    { name: `Payroll${suffix}`, path: '/payroll', icon: Banknote },
+                ]
+            },
+            {
+                label: 'Gym System & Reports',
+                items: [
+                    { name: `Reports${suffix}`, path: '/reports', icon: FileText },
+                    { name: `Freeze System${suffix}`, path: '/freeze', icon: Snowflake },
+                    { name: `Analytics${suffix}`, path: '/analytics', icon: LineChart },
+                ]
+            }
+        ];
     } else {
         groups = NAV_GROUPS[role] || NAV_GROUPS.member;
     }

@@ -262,7 +262,7 @@ const authUser = async (req, res) => {
         throw new Error(`Account temporarily locked. Try again in ${mins} minute(s).`);
     }
 
-    if (!user.isVerified && !['superadmin', 'admin', 'partner'].includes(user.role)) {
+    if (!user.isVerified && !['superadmin', 'admin', 'partner', 'fitpass_admin', 'h4_admin'].includes(user.role)) {
         res.status(401);
         throw new Error('Please verify your email before logging in. Request a new OTP if needed.');
     }
@@ -289,7 +289,7 @@ const authUser = async (req, res) => {
         const userGymId = user.gymId?._id || user.gymId || '';
 
         if (portalType === 'staff') {
-            const isStaff = ['superadmin', 'trainer', 'partner', 'admin', 'receptionist'].includes(userRole);
+            const isStaff = ['superadmin', 'trainer', 'partner', 'admin', 'receptionist', 'fitpass_admin', 'h4_admin'].includes(userRole);
             if (!isStaff) {
                 res.status(403);
                 throw new Error('Access Denied: This portal is restricted to Staffs and Partners.');

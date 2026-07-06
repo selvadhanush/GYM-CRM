@@ -12,17 +12,17 @@ const {
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.route('/')
-    .get(protect, authorize('admin', 'receptionist', 'superadmin'), getMembers)
-    .post(protect, authorize('admin', 'receptionist'), createMember);
+    .get(protect, authorize('admin', 'receptionist', 'superadmin', 'fitpass_admin', 'h4_admin'), getMembers)
+    .post(protect, authorize('admin', 'receptionist', 'h4_admin'), createMember);
 
-router.get('/export/csv', protect, authorize('admin'), exportMembersCSV);
-router.get('/expiring-soon', protect, authorize('admin', 'receptionist'), getExpiringSoonMembers);
+router.get('/export/csv', protect, authorize('admin', 'h4_admin'), exportMembersCSV);
+router.get('/expiring-soon', protect, authorize('admin', 'receptionist', 'h4_admin'), getExpiringSoonMembers);
 
 router.get('/status', protect, getMembers); // Optional: redundant with query params but good for clarity
 
 router.route('/:id')
-    .get(protect, authorize('admin', 'receptionist'), getMemberById)
-    .put(protect, authorize('admin', 'receptionist'), updateMember)
-    .delete(protect, authorize('admin'), deleteMember);
+    .get(protect, authorize('admin', 'receptionist', 'fitpass_admin', 'h4_admin'), getMemberById)
+    .put(protect, authorize('admin', 'receptionist', 'fitpass_admin', 'h4_admin'), updateMember)
+    .delete(protect, authorize('admin', 'h4_admin'), deleteMember);
 
 module.exports = router;

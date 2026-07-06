@@ -18,7 +18,7 @@ const Login = () => {
         setLoading(false);
         if (result.success) {
             const role = result.user.role;
-            if (role === 'superadmin') {
+            if (role === 'superadmin' || role === 'fitpass_admin') {
                 navigate('/superadmin/dashboard');
             } else if (role === 'member') {
                 navigate('/member-dashboard');

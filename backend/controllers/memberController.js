@@ -88,9 +88,23 @@ const getMembers = async (req, res) => {
     try {
         const { status, page = 1, limit = 10, search = '' } = req.query;
 
-        const query = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
-        if (req.user.branchId) {
-            query.branchId = req.user.branchId;
+        const query = {};
+        if (req.user.role === 'fitpass_admin') {
+            const Gym = require('../models/Gym');
+            const h4Gym = await Gym.findOne({ name: 'H4' });
+            const h4GymId = h4Gym ? h4Gym._id.toString() : '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+            if (req.user.gymId && req.user.gymId !== 'SYSTEM') {
+                query.gymId = req.user.gymId;
+            } else {
+                query.gymId = { $ne: h4GymId };
+            }
+        } else {
+            if (req.user.gymId) {
+                query.gymId = req.user.gymId;
+            }
+            if (req.user.branchId) {
+                query.branchId = req.user.branchId;
+            }
         }
 
         if (status) query.status = status;

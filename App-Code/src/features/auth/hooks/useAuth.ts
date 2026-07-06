@@ -8,7 +8,7 @@ export interface User {
   _id: string;
   name: string;
   email: string;
-  role: 'superadmin' | 'admin' | 'receptionist' | 'trainer' | 'member' | 'partner';
+  role: 'superadmin' | 'admin' | 'receptionist' | 'trainer' | 'member' | 'partner' | 'fitpass_admin' | 'h4_admin';
   gymId?: string;
   gymName?: string;
   branchId?: string;
@@ -85,7 +85,7 @@ export const useAuth = create<AuthState>((set, get) => {
 
         // Portal-specific role and gym routing validation
         if (portal === 'staff') {
-          const isStaff = ['superadmin', 'trainer', 'partner', 'admin', 'receptionist'].includes(userRole);
+          const isStaff = ['superadmin', 'trainer', 'partner', 'admin', 'receptionist', 'fitpass_admin', 'h4_admin'].includes(userRole);
           if (!isStaff) {
             throw new Error('Access Denied: This portal is restricted to Staffs and Partners.');
           }
