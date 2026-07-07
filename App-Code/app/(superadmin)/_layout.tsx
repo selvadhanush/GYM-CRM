@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { TouchableOpacity, StyleSheet, View } from 'react-native';
-import { LayoutDashboard, Building2, Package, History, LogOut, Shuffle, LayoutGrid } from 'lucide-react-native';
+import { LayoutDashboard, Building2, Package, History, LogOut, Shuffle, LayoutGrid, ShieldCheck } from 'lucide-react-native';
 import { theme } from '@/design-system/theme';
 import { useAuth } from '@/features/auth';
 
@@ -9,6 +9,7 @@ export default function SuperAdminLayout() {
   const logout = useAuth((state) => state.logout);
   const activeDivision = useAuth((state) => state.activeDivision);
   const changeActiveDivision = useAuth((state) => state.changeActiveDivision);
+  const user = useAuth((state) => state.user);
 
   const isH4 = activeDivision === 'h4';
 
@@ -75,6 +76,15 @@ export default function SuperAdminLayout() {
           title: 'FitPrime Plans',
           tabBarLabel: 'Plans',
           tabBarIcon: ({ color, size }) => <Package color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="admins"
+        options={{
+          title: 'Admins Directory',
+          tabBarLabel: 'Admins',
+          href: (user?.role === 'superadmin' && !isH4) ? undefined : null,
+          tabBarIcon: ({ color, size }) => <ShieldCheck color={color} size={size} />,
         }}
       />
       <Tabs.Screen
