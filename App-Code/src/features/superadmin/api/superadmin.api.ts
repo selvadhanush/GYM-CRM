@@ -316,3 +316,58 @@ export const useGenericDelete = (queryKey: string, path: string) => {
     },
   });
 };
+
+// 7. Dedicated Admins
+export interface DedicatedAdmin {
+  _id: string;
+  name: string;
+  email: string;
+  role: 'fitpass_admin' | 'h4_admin';
+  status?: string;
+}
+
+export const useDedicatedAdmins = () => {
+  return useQuery<DedicatedAdmin[]>({
+    queryKey: ['dedicated-admins'],
+    queryFn: async () => {
+      const { data } = await API_CLIENT.get('/superadmin/admins');
+      return data || [];
+    },
+  });
+};
+
+export const useCreateDedicatedAdmin = () => {
+  return useMutation({
+    mutationFn: async (payload: Omit<DedicatedAdmin, '_id' | 'status'> & { password?: string }) => {
+      const { data } = await API_CLIENT.post('/superadmin/admins', payload);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dedicated-admins'] });
+    },
+  });
+};
+
+export const useUpdateDedicatedAdmin = () => {
+  return useMutation({
+    mutationFn: async ({ id, ...payload }: Partial<Omit<DedicatedAdmin, '_id'>> & { id: string; password?: string }) => {
+      const { data } = await API_CLIENT.put(`/superadmin/admins/${id}`, payload);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dedicated-admins'] });
+    },
+  });
+};
+
+export const useDeleteDedicatedAdmin = () => {
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await API_CLIENT.delete(`/superadmin/admins/${id}`);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dedicated-admins'] });
+    },
+  });
+};
