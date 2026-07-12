@@ -34,30 +34,26 @@ const protect = async (req, res, next) => {
                     req.user.branchId = req.headers['x-branch-id'];
                 }
             } else if (req.user.role === 'fitpass_admin') {
-                // FitPass admin acts like superadmin but is restricted from H4 Gym and H4 branches
+                // FitPass admin acts like superadmin but is restricted from H4 Gym itself.
+                // However, they can access any branch that has fitPassEnabled === true.
                 req.user.gymId = 'SYSTEM'; // Default/Global FitPass scope
+                req.user.branchId = null;
                 
+                let targetBranchId = req.headers['x-branch-id'];
                 let targetGymId = req.headers['x-gym-id'];
-                if (targetGymId) {
+                
+                if (targetBranchId) {
+                    const targetBranch = await Branch.findOne({ _id: targetBranchId });
+                    if (targetBranch && targetBranch.fitPassEnabled) {
+                        req.user.gymId = targetBranch.gymId;
+                        req.user.branchId = targetBranchId;
+                    }
+                } else if (targetGymId) {
                     const gym = await Gym.findById(targetGymId);
-                    // Prevent switching to H4 Gym
+                    // Prevent switching to H4 Gym itself
                     if (gym && gym.name.toUpperCase() !== 'H4') {
                         req.user.gymId = targetGymId;
                     }
-                }
-                
-                if (req.headers['x-branch-id'] && req.user.gymId !== 'SYSTEM') {
-                    const targetBranch = await Branch.findOne({
-                        _id: req.headers['x-branch-id'],
-                        gymId: req.user.gymId
-                    });
-                    if (targetBranch) {
-                        req.user.branchId = req.headers['x-branch-id'];
-                    } else {
-                        req.user.branchId = null; // default to consolidated reports/view
-                    }
-                } else {
-                    req.user.branchId = null;
                 }
             } else if (req.user.role === 'h4_admin') {
                 // H4 admin is locked to the H4 gymId

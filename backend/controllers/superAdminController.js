@@ -159,7 +159,34 @@ const getPartnerGyms = async (req, res) => {
         };
     });
 
-    res.json(gymsWithAdmins);
+    try {
+        const prisma = require('../config/prisma');
+        const fitPassBranches = await prisma.branch.findMany({
+            where: { fitPassEnabled: true }
+        });
+
+        const branchItems = fitPassBranches.map(branch => {
+            const parentGym = allGyms.find(g => (g._id || g.id) === branch.gymId);
+            const parentName = parentGym ? parentGym.name : 'H4';
+            return {
+                _id: branch.id,
+                id: branch.id,
+                name: `${branch.name} (${parentName})`,
+                isBranch: true,
+                parentGymId: branch.gymId,
+                address: branch.address,
+                phone: branch.phone,
+                email: branch.email,
+                status: branch.isActive ? 'Active' : 'Inactive',
+                admins: []
+            };
+        });
+
+        res.json([...gymsWithAdmins, ...branchItems]);
+    } catch (err) {
+        console.error('Failed to include fitpass branches in partner list:', err);
+        res.json(gymsWithAdmins);
+    }
 };
 
 // @desc    Get or create H4 gym

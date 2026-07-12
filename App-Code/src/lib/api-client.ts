@@ -7,9 +7,10 @@ import { storage } from './storage';
 // - iOS simulator can use localhost
 // For physical devices, you should replace this with your machine's LAN IP address.
 const DEV_API_URL = Platform.select({
-  android: 'http://192.168.29.63:5000/api',
-  ios: 'http://192.168.29.63:5000/api',
-  default: 'http://192.168.29.63:5000/api',
+  android: 'http://10.107.78.238:5000/api',
+  ios: 'http://10.107.78.238:5000/api',
+  web: 'http://localhost:5000/api',
+  default: 'http://localhost:5000/api',
 });
 
 export const API_CLIENT = axios.create({

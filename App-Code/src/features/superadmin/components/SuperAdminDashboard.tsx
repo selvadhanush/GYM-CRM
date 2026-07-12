@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Dimensions, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, View, Dimensions, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
 import { LineChart, BarChart } from 'react-native-chart-kit';
+import Svg, { Line, Polyline, Circle, Text as SvgText, G } from 'react-native-svg';
 import { 
   Users, CheckCircle, AlertTriangle, Clock, Sparkles, DollarSign, 
   ArrowDown, ArrowUp, Zap, Ticket, Activity, TrendingUp, Search, MapPin, Calendar 
@@ -24,6 +25,65 @@ interface KpiData {
   subText?: string;
   extraInfo?: string;
 }
+
+const renderWebLineChart = (labels: string[], data: number[]) => {
+  const maxVal = Math.max(...data, 10);
+  const height = 180;
+  const width = 300;
+  const points = data.map((val, idx) => {
+    const x = (idx / (data.length - 1 || 1)) * (width - 40) + 20;
+    const y = height - (val / maxVal) * (height - 40) - 20;
+    return `${x},${y}`;
+  }).join(' ');
+
+  return (
+    <View style={{ width: '100%', alignItems: 'center', padding: 16 }}>
+      <Svg height={height} width="100%" viewBox={`0 0 ${width} ${height}`}>
+        <Line x1="20" y1="20" x2="20" y2={height - 20} stroke={theme.colors.border} strokeWidth="1" />
+        <Line x1="20" y1={height - 20} x2={width - 20} y2={height - 20} stroke={theme.colors.border} strokeWidth="1" />
+        <Polyline
+          fill="none"
+          stroke={theme.colors.text}
+          strokeWidth="2"
+          points={points}
+        />
+        {data.map((val, idx) => {
+          const x = (idx / (data.length - 1 || 1)) * (width - 40) + 20;
+          const y = height - (val / maxVal) * (height - 40) - 20;
+          return (
+            <G key={idx}>
+              <Circle cx={x} cy={y} r="4" fill={theme.colors.card} stroke={theme.colors.text} strokeWidth="2" />
+              <SvgText x={x} y={y - 8} fill={theme.colors.text} fontSize="8" textAnchor="middle">{`₹${val.toLocaleString()}`}</SvgText>
+              <SvgText x={x} y={height - 5} fill={theme.colors.textSecondary} fontSize="8" textAnchor="middle">{labels[idx]}</SvgText>
+            </G>
+          );
+        })}
+      </Svg>
+    </View>
+  );
+};
+
+const renderWebBarChart = (labels: string[], data: number[]) => {
+  const maxVal = Math.max(...data, 10);
+  return (
+    <View style={{ width: '100%', padding: 16, gap: 12 }}>
+      {data.map((val, idx) => {
+        const percentage = (val / maxVal) * 100;
+        return (
+          <View key={idx} style={{ width: '100%' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+              <Typography variant="caption" style={{ fontWeight: '700' }}>{labels[idx]}</Typography>
+              <Typography variant="caption" style={{ color: theme.colors.text, fontWeight: '700' }}>{`₹${val.toLocaleString()}`}</Typography>
+            </View>
+            <View style={{ height: 8, backgroundColor: theme.colors.border, borderRadius: 4, overflow: 'hidden' }}>
+              <View style={{ width: `${percentage}%`, height: '100%', backgroundColor: theme.colors.primary, borderRadius: 4 }} />
+            </View>
+          </View>
+        );
+      })}
+    </View>
+  );
+};
 
 export const SuperAdminDashboard: React.FC = () => {
   const activeDivision = useAuth((state) => state.activeDivision);
@@ -98,7 +158,7 @@ export const SuperAdminDashboard: React.FC = () => {
     backgroundGradientFrom: theme.colors.card,
     backgroundGradientTo: theme.colors.card,
     decimalPlaces: 0,
-    color: (opacity = 1) => `rgba(212, 255, 0, ${opacity})`,
+    color: (opacity = 1) => `rgba(17, 24, 39, ${opacity})`,
     labelColor: () => theme.colors.textSecondary,
     style: {
       borderRadius: theme.radii.lg,
@@ -106,7 +166,7 @@ export const SuperAdminDashboard: React.FC = () => {
     propsForDots: {
       r: '4',
       strokeWidth: '2',
-      stroke: theme.colors.primary,
+      stroke: theme.colors.text,
     },
   };
 
@@ -467,33 +527,41 @@ export const SuperAdminDashboard: React.FC = () => {
       
       <Card style={styles.chartCard}>
         <Typography variant="body" style={styles.chartTitle}>Revenue Trends</Typography>
-        <LineChart
-          data={{
-            labels: trend.labels,
-            datasets: [{ data: trend.data }],
-          }}
-          width={width - 48} // Padding adjustments
-          height={220}
-          chartConfig={chartConfig}
-          bezier
-          style={styles.chart}
-        />
+        {Platform.OS === 'web' ? (
+          renderWebLineChart(trend.labels, trend.data)
+        ) : (
+          <LineChart
+            data={{
+              labels: trend.labels,
+              datasets: [{ data: trend.data }],
+            }}
+            width={width - 48} // Padding adjustments
+            height={220}
+            chartConfig={chartConfig}
+            bezier
+            style={styles.chart}
+          />
+        )}
       </Card>
 
       <Card style={styles.chartCard}>
         <Typography variant="body" style={styles.chartTitle}>Popular Subscription Plans</Typography>
-        <BarChart
-          data={{
-            labels: planBreakdown.labels,
-            datasets: [{ data: planBreakdown.data }],
-          }}
-          width={width - 48}
-          height={220}
-          yAxisLabel="₹"
-          yAxisSuffix=""
-          chartConfig={chartConfig}
-          style={styles.chart}
-        />
+        {Platform.OS === 'web' ? (
+          renderWebBarChart(planBreakdown.labels, planBreakdown.data)
+        ) : (
+          <BarChart
+            data={{
+              labels: planBreakdown.labels,
+              datasets: [{ data: planBreakdown.data }],
+            }}
+            width={width - 48}
+            height={220}
+            yAxisLabel="₹"
+            yAxisSuffix=""
+            chartConfig={chartConfig}
+            style={styles.chart}
+          />
+        )}
       </Card>
     </ScrollView>
   );
