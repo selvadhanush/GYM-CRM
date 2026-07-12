@@ -46,25 +46,55 @@ const getFitPrimePlans = async (req, res) => {
 // @route   GET /api/member-portal/gyms
 // @access  Private/Member
 const getPartnerGyms = async (req, res) => {
-    const gyms = await Gym.find({ status: 'Active', name: { $ne: 'SYSTEM' } }).lean();
+    const allGyms = await Gym.find({ status: 'Active', name: { $ne: 'SYSTEM' } }).lean();
+    // Exclude H4 gyms from the direct partner gyms list
+    const gyms = allGyms.filter(g => !g.name || !g.name.toLowerCase().includes('h4'));
     
     try {
         const prisma = require('../config/prisma');
+        
+        // Fetch active sessions count for gyms and branches
         const activeSessionsGroupBy = await prisma.sessionCheckIn.groupBy({
-            by: ['gymId'],
+            by: ['gymId', 'branchId'],
             _count: { id: true },
             where: { status: 'active', expiresAt: { gt: new Date() } }
         });
+        
         const occupancyMap = {};
         activeSessionsGroupBy.forEach(item => {
-            occupancyMap[item.gymId] = item._count.id;
+            const key = item.branchId || item.gymId;
+            occupancyMap[key] = (occupancyMap[key] || 0) + item._count.id;
         });
 
         const gymsWithOccupancy = gyms.map(gym => ({
             ...gym,
             activeSessions: occupancyMap[gym._id?.toString() || gym.id] || 0
         }));
-        res.json(gymsWithOccupancy);
+
+        // Fetch H4 branches that have fitPassEnabled: true
+        const fitPassBranches = await prisma.branch.findMany({
+            where: { fitPassEnabled: true }
+        });
+
+        const branchGyms = fitPassBranches.map(branch => {
+            const parentGym = allGyms.find(g => (g._id || g.id) === branch.gymId);
+            const parentName = parentGym ? parentGym.name : 'H4';
+            return {
+                _id: branch.id,
+                id: branch.id,
+                name: `${branch.name} (${parentName})`,
+                isBranch: true,
+                branchId: branch.id,
+                gymId: branch.gymId,
+                address: branch.address || '',
+                phone: branch.phone || '',
+                email: branch.email || '',
+                status: branch.isActive ? 'Active' : 'Inactive',
+                activeSessions: occupancyMap[branch.id] || 0
+            };
+        });
+
+        res.json([...gymsWithOccupancy, ...branchGyms]);
     } catch (err) {
         console.error('Error fetching partner gyms occupancy:', err);
         res.json(gyms);

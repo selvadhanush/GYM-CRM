@@ -2,6 +2,8 @@
   "extends": "./node_modules/expo/tsconfig.base.json",
   "compilerOptions": {
     "strict": true,
+    "skipLibCheck": true,
+    "types": [],
     "paths": {
       "@/*": [
         "./src/*"

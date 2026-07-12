@@ -1,11 +1,11 @@
 import { colors, radii, spacing, typography } from './tokens';
 
 export const DarkTheme = {
-  dark: true,
+  dark: false,
   colors: {
     primary: colors.brand.primary,
-    background: colors.background.primary,
-    card: colors.background.secondary,
+    background: colors.background.secondary,
+    card: colors.background.primary,
     text: colors.text.primary,
     border: colors.border.default,
     notification: colors.accent,

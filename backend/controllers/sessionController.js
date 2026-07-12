@@ -482,15 +482,24 @@ const getMemberFitPassSummary = async (req, res) => {
 // @access  Private/Admin, Partner, SuperAdmin
 const getFitPassAnalytics = async (req, res) => {
   try {
-    const queryFilter = {};
+    const logsFilter = { accessStatus: 'Success' };
     if (req.user.role === 'partner') {
-      queryFilter.gymId = req.user.gymId;
+      logsFilter.gymIdVisited = req.user.gymId;
     } else if (req.user.role === 'admin') {
-      queryFilter.gymId = req.user.gymId;
+      logsFilter.gymIdVisited = req.user.gymId;
       if (req.user.branchId) {
-        queryFilter.branchId = req.user.branchId;
+        logsFilter.branchIdVisited = req.user.branchId;
+      }
+    } else if ((req.user.role === 'fitpass_admin' || req.user.role === 'superadmin') && req.user.gymId && req.user.gymId !== 'SYSTEM') {
+      logsFilter.gymIdVisited = req.user.gymId;
+      if (req.user.branchId) {
+        logsFilter.branchIdVisited = req.user.branchId;
       }
     }
+
+    const successfulVisits = await prisma.fitPassAuditLog.findMany({
+      where: logsFilter,
+    });
 
     const fitPassPlans = await prisma.plan.findMany({
       where: { gymId: 'SYSTEM' },
@@ -498,12 +507,22 @@ const getFitPassAnalytics = async (req, res) => {
     });
     const fitPassPlanIds = fitPassPlans.map(p => p.id);
 
-    const fitPassMembers = await prisma.member.findMany({
-      where: {
-        planId: { in: fitPassPlanIds },
-        ...queryFilter,
-      },
-    });
+    let fitPassMembers = [];
+    const isGlobal = !req.user.gymId || req.user.gymId === 'SYSTEM';
+    if (isGlobal) {
+      fitPassMembers = await prisma.member.findMany({
+        where: {
+          planId: { in: fitPassPlanIds }
+        }
+      });
+    } else {
+      const visitedMemberIds = [...new Set(successfulVisits.map(v => v.memberId))];
+      fitPassMembers = await prisma.member.findMany({
+        where: {
+          id: { in: visitedMemberIds }
+        }
+      });
+    }
 
     const totalFitPassMembers = fitPassMembers.length;
     const now = new Date();
@@ -518,21 +537,6 @@ const getFitPassAnalytics = async (req, res) => {
       remainingSessions += m.sessionsRemaining || 0;
     });
     const totalSessionsUsed = totalSessionsSold - remainingSessions;
-
-    // Filters for logging check-ins
-    const logsFilter = { accessStatus: 'Success' };
-    if (req.user.role === 'partner') {
-      logsFilter.organizationId = req.user.gymId;
-    } else if (req.user.role === 'admin') {
-      logsFilter.organizationId = req.user.gymId;
-      if (req.user.branchId) {
-        logsFilter.branchId = req.user.branchId;
-      }
-    }
-
-    const successfulVisits = await prisma.fitPassAuditLog.findMany({
-      where: logsFilter,
-    });
 
     // Most Visited Gyms
     const gymCounts = {};

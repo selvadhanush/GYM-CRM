@@ -13,32 +13,32 @@ export const spacing = {
 
 export const colors = {
   brand: {
-    primary: '#F0A020', // Warm Amber Gold
-    primaryHover: '#D9860F', // Dark Amber Gold
-    primaryLight: 'rgba(240, 160, 32, 0.1)',
-    primaryMuted: 'rgba(240, 160, 32, 0.2)',
+    primary: '#FFE01B', // Primary Brand Yellow
+    primaryHover: '#F5D000', // Primary Hover
+    primaryLight: '#FFF4A3', // Primary Light
+    primaryMuted: 'rgba(255, 224, 27, 0.15)',
   },
-  accent: '#FCE6B8', // Soft Amber Tint
+  accent: '#E6C800', // Primary Dark / Accent Yellow
   status: {
-    success: '#2E7D32', // Active Pass - Green
-    warning: '#D9860F',
-    error: '#C62828', // Expired Session - Red
-    info: '#1976D2', // Cooldown - Blue
+    success: '#16A34A', // Success Green
+    warning: '#F59E0B', // Warning Orange
+    error: '#DC2626', // Danger Red
+    info: '#2563EB', // Info Blue
   },
   background: {
-    primary: '#231D14', // Very dark warm brown-black background
-    secondary: '#2D251C', // Dark warm brown card background
-    tertiary: '#3D3328', // Modals / popups background
+    primary: '#FFFFFF', // Clean White Background
+    secondary: '#FAFAFA', // Soft Gray Secondary Background
+    tertiary: '#FFFFFF', // Modals / Cards Background
   },
   text: {
-    primary: '#FFFFFF',
-    secondary: '#A39686', // Warm muted brown-gray
-    muted: '#6D6154', // Muted warm brown-gray for captions
-    inverse: '#000000',
+    primary: '#111827', // Primary Dark Gray/Black Text
+    secondary: '#4B5563', // Secondary text
+    muted: '#6B7280', // Muted text
+    inverse: '#111827', // Black text on yellow buttons
   },
   border: {
-    default: '#3A3025', // Warm brown border
-    focus: '#F0A020',
+    default: '#E5E7EB', // Subtle Gray border
+    focus: '#FFE01B',
   },
 };
 
@@ -47,25 +47,25 @@ export const typography = {
     fontSize: 32,
     fontWeight: '700' as const,
     lineHeight: 38,
-    fontFamily: 'Oswald_600SemiBold',
+    fontFamily: 'System', // Cleaner enterprise fonts
   },
   h1: {
     fontSize: 24,
     fontWeight: '700' as const,
     lineHeight: 31,
-    fontFamily: 'Oswald_600SemiBold',
+    fontFamily: 'System',
   },
   h2: {
     fontSize: 20,
     fontWeight: '600' as const,
     lineHeight: 26,
-    fontFamily: 'Oswald_600SemiBold',
+    fontFamily: 'System',
   },
   h3: {
     fontSize: 18,
     fontWeight: '600' as const,
     lineHeight: 25,
-    fontFamily: 'Oswald_600SemiBold',
+    fontFamily: 'System',
   },
   body: {
     fontSize: 16,
@@ -88,9 +88,10 @@ export const typography = {
 };
 
 export const radii = {
-  sm: 6,
-  md: 8,
+  sm: 8,
+  md: 10,
   lg: 12,
-  xl: 16,
+  xl: 14,
   full: 9999,
 };
+

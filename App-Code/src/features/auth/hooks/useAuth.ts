@@ -83,19 +83,20 @@ export const useAuth = create<AuthState>((set, get) => {
         const userGymName = data.gymName || '';
         const userGymId = data.gymId || '';
 
+        const isAdministrative = ['superadmin', 'admin', 'trainer', 'receptionist', 'partner', 'fitpass_admin', 'h4_admin'].includes(userRole);
+
         // Portal-specific role and gym routing validation
         if (portal === 'staff') {
-          const isStaff = ['superadmin', 'trainer', 'partner', 'admin', 'receptionist', 'fitpass_admin', 'h4_admin'].includes(userRole);
-          if (!isStaff) {
+          if (!isAdministrative) {
             throw new Error('Access Denied: This portal is restricted to Staffs and Partners.');
           }
         } else if (portal === 'h4') {
-          const isH4 = userRole === 'member' && (userGymName.toUpperCase() === 'H4' || userGymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd');
+          const isH4 = isAdministrative || (userRole === 'member' && (userGymName.toUpperCase() === 'H4' || userGymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd'));
           if (!isH4) {
             throw new Error('Access Denied: This portal is restricted to H4 Gym Members.');
           }
         } else if (portal === 'fitpass') {
-          const isFitpass = userRole === 'member' && (userGymName.toUpperCase() !== 'H4' && userGymId !== '05a08fdf-7427-48a5-8b25-e18d5a5668cd');
+          const isFitpass = isAdministrative || (userRole === 'member' && (userGymName.toUpperCase() !== 'H4' && userGymId !== '05a08fdf-7427-48a5-8b25-e18d5a5668cd'));
           if (!isFitpass) {
             throw new Error('Access Denied: This portal is restricted to Fitpass Members.');
           }
