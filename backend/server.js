@@ -60,8 +60,10 @@ app.use(cors({
             }
             return callback(new Error(`Origin ${origin} not allowed by CORS`));
         }
-        // Prod: explicit allowlist only.
-        if (prodOrigins.includes(origin)) return callback(null, true);
+        // Prod: explicit allowlist only (ignoring trailing slashes).
+        const normalizedOrigin = origin.replace(/\/$/, '');
+        const hasMatch = prodOrigins.some(o => o.replace(/\/$/, '') === normalizedOrigin);
+        if (hasMatch) return callback(null, true);
         return callback(new Error(`Origin ${origin} not allowed by CORS`));
     },
 }));
