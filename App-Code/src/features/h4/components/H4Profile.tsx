@@ -1,14 +1,15 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { theme } from '@/design-system/theme';
+import { View, StyleSheet, ScrollView, Switch } from 'react-native';
+import { theme, useThemeStore } from '@/design-system/theme';
 import { Typography, Card, Badge } from '@/components/ui';
 import { useAuth } from '@/features/auth';
 import { useH4Plan } from '../api/h4.api';
-import { User, Mail } from 'lucide-react-native';
+import { User, Mail, Moon, Sun } from 'lucide-react-native';
 
 export function H4Profile() {
   const user = useAuth((s) => s.user);
   const { data: plan } = useH4Plan();
+  const { toggleTheme } = useThemeStore();
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -54,6 +55,27 @@ export function H4Profile() {
           </View>
         )}
       </Card>
+
+      {/* Settings / Theme Mode */}
+      <Card style={styles.card}>
+        <Typography variant="h3" style={styles.cardTitle}>App Settings</Typography>
+        <View style={styles.settingsRow}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}>
+            {theme.dark ? (
+              <Moon size={18} color={theme.colors.primary} />
+            ) : (
+              <Sun size={18} color={theme.colors.primary} />
+            )}
+            <Typography variant="bodySm">Dark Theme</Typography>
+          </View>
+          <Switch
+            value={theme.dark}
+            onValueChange={toggleTheme}
+            trackColor={{ false: '#767577', true: theme.colors.primary }}
+            thumbColor={theme.dark ? '#ffffff' : '#f4f3f4'}
+          />
+        </View>
+      </Card>
     </ScrollView>
   );
 }
@@ -75,4 +97,5 @@ const styles = StyleSheet.create({
   },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
   planRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: theme.spacing.xs },
+  settingsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: theme.spacing.xs },
 });

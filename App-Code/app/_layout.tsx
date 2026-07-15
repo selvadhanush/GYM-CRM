@@ -65,9 +65,17 @@ function NavigationGuard() {
 }
 
 
+import { useThemeStore } from '@/design-system/theme';
+
 export default function RootLayout() {
+  const { themeMode, initTheme } = useThemeStore();
+
+  useEffect(() => {
+    initTheme();
+  }, [initTheme]);
+
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider key={themeMode}>
       <QueryClientProvider client={queryClient}>
         <NavigationGuard />
         <Toast />

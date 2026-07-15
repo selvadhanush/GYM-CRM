@@ -74,26 +74,43 @@
   --secondary-color: var(--primary-hover);
 }
 
-/* ─── Dark Mode (Synced to keep consistent White+Yellow look) ─── */
+/* ─── Dark Mode (Premium Warm Amber-Gold on Dark Base) ─── */
 [data-theme="dark"] {
-  --bg: #FFFFFF;
-  --bg-secondary: #FAFAFA;
-  --bg-tertiary: #FAFAFA;
-  --sidebar-bg: #FFFFFF;
-  --text-primary: #111827;
-  --text-secondary: #4B5563;
-  --text-muted: #6B7280;
-  --border: #E5E7EB;
+  /* Brand colors */
+  --primary: #F0A020;
+  --primary-hover: #D9860F;
+  --primary-light: rgba(240, 160, 32, 0.15);
+  --primary-muted: rgba(240, 160, 32, 0.08);
 
-  --glass-bg: #FFFFFF;
-  --glass-border: #E5E7EB;
+  --accent: #D9860F;
 
-  --shadow-premium: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  /* Backgrounds */
+  --bg: #2D251C; /* Dark warm brown card background */
+  --bg-secondary: #231D14; /* Very dark warm brown-black background */
+  --bg-tertiary: #3A3025;
+  --sidebar-bg: #2D251C;
+
+  /* Text */
+  --text-primary: #FFFFFF;
+  --text-secondary: #A39686;
+  --text-muted: #6D6154;
+  --text-inverse: #231D14;
+
+  /* Borders */
+  --border: #3A3025;
+
+  /* Glassmorphism */
+  --glass-bg: rgba(45, 37, 28, 0.85);
+  --glass-border: #3A3025;
+
+  --shadow-premium: 0 4px 20px rgba(0, 0, 0, 0.25);
 
   /* Alias compat */
   --bg-color: var(--bg);
   --sidebar-color: var(--sidebar-bg);
   --border-color: var(--border);
+  --text-hover: #FFFFFF;
+  --bg-hover: var(--primary-light);
 }
 
 /* ─── Reset ─── */

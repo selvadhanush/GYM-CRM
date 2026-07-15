@@ -42,6 +42,7 @@ const prodOrigins = (process.env.CORS_ORIGINS || '')
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
+const isVercelOrigin = (value) => /^https:\/\/([a-z0-9-]+\.)?vercel\.app$/i.test(value);
 
 app.use(cors({
     credentials: true,
@@ -60,10 +61,11 @@ app.use(cors({
             }
             return callback(new Error(`Origin ${origin} not allowed by CORS`));
         }
-        // Prod: explicit allowlist only (ignoring trailing slashes).
+        // Prod: explicit allowlist only (ignoring trailing slashes),
+        // plus Vercel-hosted frontends used for deployed previews and production.
         const normalizedOrigin = origin.replace(/\/$/, '');
         const hasMatch = prodOrigins.some(o => o.replace(/\/$/, '') === normalizedOrigin);
-        if (hasMatch) return callback(null, true);
+        if (hasMatch || isVercelOrigin(normalizedOrigin)) return callback(null, true);
         return callback(new Error(`Origin ${origin} not allowed by CORS`));
     },
 }));
