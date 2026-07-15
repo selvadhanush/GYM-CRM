@@ -7,8 +7,8 @@ import { storage } from './storage';
 // - iOS simulator can use localhost
 // For physical devices, you should replace this with your machine's LAN IP address.
 const DEV_API_URL = Platform.select({
-  android: 'http://10.107.78.238:5000/api',
-  ios: 'http://10.107.78.238:5000/api',
+  android: 'http://127.0.0.1:5000/api',
+  ios: 'http://172.20.9.144:5000/api',
   web: 'http://localhost:5000/api',
   default: 'http://localhost:5000/api',
 });
