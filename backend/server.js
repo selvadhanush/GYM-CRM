@@ -75,6 +75,11 @@ if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));
 }
 
+// Universal Health Check
+app.get('/', (req, res) => {
+    res.status(200).json({ success: true, status: 'Server running' });
+});
+
 // Health Check
 app.get('/api/health', (req, res) => {
     res.status(200).json({ success: true, status: 'Server running' });
