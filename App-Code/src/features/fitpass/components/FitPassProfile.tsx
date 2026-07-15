@@ -1,14 +1,15 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { theme } from '@/design-system/theme';
+import { View, StyleSheet, ScrollView, Switch } from 'react-native';
+import { theme, useThemeStore } from '@/design-system/theme';
 import { Typography, Card, Badge, Skeleton } from '@/components/ui';
 import { useAuth } from '@/features/auth';
 import { useSessionStatus } from '../api/fitpass.api';
-import { User, Mail, Phone, Building2, Ticket } from 'lucide-react-native';
+import { User, Mail, Phone, Building2, Ticket, Moon, Sun } from 'lucide-react-native';
 
 export function FitPassProfile() {
   const user = useAuth((s) => s.user);
   const { data: session, isLoading } = useSessionStatus();
+  const { toggleTheme } = useThemeStore();
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -58,6 +59,27 @@ export function FitPassProfile() {
           </View>
         )}
       </Card>
+
+      {/* Settings / Theme Mode */}
+      <Card style={styles.card}>
+        <Typography variant="h3" style={styles.cardTitle}>App Settings</Typography>
+        <View style={styles.settingsRow}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}>
+            {theme.dark ? (
+              <Moon size={18} color={theme.colors.primary} />
+            ) : (
+              <Sun size={18} color={theme.colors.primary} />
+            )}
+            <Typography variant="bodySm">Dark Theme</Typography>
+          </View>
+          <Switch
+            value={theme.dark}
+            onValueChange={toggleTheme}
+            trackColor={{ false: '#767577', true: theme.colors.primary }}
+            thumbColor={theme.dark ? '#ffffff' : '#f4f3f4'}
+          />
+        </View>
+      </Card>
     </ScrollView>
   );
 }
@@ -81,4 +103,5 @@ const styles = StyleSheet.create({
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
   passGrid: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
   passStat: { alignItems: 'center', gap: theme.spacing.xs },
+  settingsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: theme.spacing.xs },
 });
