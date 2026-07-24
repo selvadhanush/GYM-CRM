@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { queryClient } from '@/lib/query-client';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { Toast } from '@/components/ui';
+import { useThemeStore } from '@/design-system/theme';
 
 function NavigationGuard() {
   const { token, loading, initializeAuth, activeDivision, user } = useAuth();
@@ -65,7 +66,7 @@ function NavigationGuard() {
 }
 
 
-import { useThemeStore } from '@/design-system/theme';
+
 
 export default function RootLayout() {
   const { themeMode, initTheme } = useThemeStore();

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Dumbbell, CheckCircle2, Flame, Award, Circle } from 'lucide-react-native';
 import { theme } from '@/design-system/theme';
@@ -15,16 +15,7 @@ export default function WorkoutsScreen() {
   const [completed, setCompleted] = useState<Record<number, boolean>>({});
   const [streak, setStreak] = useState(3);
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchActivePlan();
-      loadStreak();
-    } else {
-      setLoading(false);
-    }
-  }, [user]);
-
-  const fetchActivePlan = async () => {
+  const fetchActivePlan = useCallback(async () => {
     try {
       const res = await API_CLIENT.get('/workout-plans');
       if (res.data && res.data.length > 0) {
@@ -32,16 +23,24 @@ export default function WorkoutsScreen() {
       }
     } catch (err) {
       console.warn("Failed fetching mobile workout plans:", err);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, []);
 
-  const loadStreak = async () => {
+  const loadStreak = useCallback(async () => {
     if (!user?.id) return;
     const saved = await storage.getItem(`streak_${user.id}`);
     if (saved) setStreak(parseInt(saved));
-  };
+  }, [user]);
+
+  useEffect(() => {
+    const init = async () => {
+      if (user?.id) {
+        await Promise.all([fetchActivePlan(), loadStreak()]);
+      }
+      setLoading(false);
+    };
+    init();
+  }, [user?.id, fetchActivePlan, loadStreak]);
 
   const saveStreak = async (newVal: number) => {
     if (!user?.id) return;

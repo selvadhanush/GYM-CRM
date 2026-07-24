@@ -4,7 +4,7 @@ import { theme, useThemeStore } from '@/design-system/theme';
 import { Typography, Card, Badge, Input, Modal, Button } from '@/components/ui';
 import { useAuth } from '@/features/auth';
 import { useH4Plan } from '../api/h4.api';
-import { User, Mail, Phone, Moon, Sun, Edit2 } from 'lucide-react-native';
+import { Mail, Phone, Moon, Sun, Edit2 } from 'lucide-react-native';
 import { API_CLIENT } from '@/lib/api-client';
 
 export function H4Profile() {

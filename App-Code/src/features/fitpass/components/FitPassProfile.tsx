@@ -4,7 +4,7 @@ import { theme, useThemeStore } from '@/design-system/theme';
 import { Typography, Card, Badge, Skeleton, Input, Modal, Button } from '@/components/ui';
 import { useAuth } from '@/features/auth';
 import { useSessionStatus } from '../api/fitpass.api';
-import { User, Mail, Phone, Building2, Ticket, Moon, Sun, Edit2 } from 'lucide-react-native';
+import { Mail, Phone, Moon, Sun, Edit2 } from 'lucide-react-native';
 import { API_CLIENT } from '@/lib/api-client';
 
 export function FitPassProfile() {
