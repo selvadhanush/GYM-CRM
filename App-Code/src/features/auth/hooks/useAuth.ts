@@ -13,6 +13,7 @@ export interface User {
   gymName?: string;
   branchId?: string;
   memberId?: string;
+  phone?: string;
 }
 
 interface AuthState {
@@ -29,6 +30,7 @@ interface AuthState {
   changeSelectedGym: (gymId: string) => Promise<void>;
   changeSelectedBranch: (branchId: string) => Promise<void>;
   changeActiveDivision: (division: 'fitpass' | 'h4' | null) => Promise<void>;
+  updateUserLocal: (updatedUserFields: Partial<User>) => Promise<void>;
 }
 
 export const useAuth = create<AuthState>((set, get) => {
@@ -227,6 +229,14 @@ export const useAuth = create<AuthState>((set, get) => {
       }
       // Force reload all query caches for the new division context
       queryClient.invalidateQueries();
+    },
+    updateUserLocal: async (updatedUserFields) => {
+      const currentUser = get().user;
+      if (currentUser) {
+        const newUser = { ...currentUser, ...updatedUserFields };
+        await storage.setItem('user', JSON.stringify(newUser));
+        set({ user: newUser });
+      }
     },
   };
 });

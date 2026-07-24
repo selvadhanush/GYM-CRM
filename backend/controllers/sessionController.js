@@ -7,7 +7,8 @@
  *   GET    /api/member-portal/sessions/history       member's check-in history with filters
  *   POST   /api/sessions/admin-adjust                admin manually adds/removes sessions
  *   GET    /api/sessions/member-summary/:memberId    admin views member session summary
- *   GET    /api/sessions/analytics                   admin views FitPass global analytics
+ *   GET    /api/sessions/analytics                   fitpass_admin/superadmin views global analytics
+ *   GET    /api/sessions/partner-visits              partner views read-only check-in audit for their gym
  */
 const { z } = require('zod');
 const prisma = require('../config/prisma');
@@ -434,7 +435,10 @@ const getMemberFitPassSummary = async (req, res) => {
     }
 
     const successfulVisits = await prisma.fitPassAuditLog.findMany({
-      where: { memberId, accessStatus: 'Success' },
+      where: {
+        memberId,
+        accessStatus: 'Success'
+      },
       orderBy: { checkInTimestamp: 'desc' },
     });
 
@@ -654,6 +658,64 @@ const adminAdjustSessions = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Get FitPass check-in audit for a partner's own gym (read-only)
+ * @route   GET /api/sessions/partner-visits
+ * @access  Private/Partner only — strictly scoped to req.user.gymId
+ */
+const getPartnerVisitLog = async (req, res) => {
+  try {
+    const gymId = req.user.gymId;
+    if (!gymId) {
+      return res.status(403).json({ success: false, message: 'No gym associated with this account.' });
+    }
+
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const pageSize = Math.min(100, parseInt(req.query.pageSize) || 50);
+    const skip = (page - 1) * pageSize;
+
+    const where = {
+      gymIdVisited: gymId,
+      accessStatus: 'Success',
+    };
+
+    // Optional date range filter
+    if (req.query.from || req.query.to) {
+      where.checkInTimestamp = {};
+      if (req.query.from) where.checkInTimestamp.gte = new Date(req.query.from);
+      if (req.query.to)   where.checkInTimestamp.lte = new Date(req.query.to);
+    }
+
+    const [total, visits] = await Promise.all([
+      prisma.fitPassAuditLog.count({ where }),
+      prisma.fitPassAuditLog.findMany({
+        where,
+        orderBy: { checkInTimestamp: 'desc' },
+        skip,
+        take: pageSize,
+        select: {
+          id: true,
+          memberName: true,
+          checkInTimestamp: true,
+          checkOutTimestamp: true,
+          branchNameVisited: true,
+          sessionsDeducted: true,
+          accessStatus: true,
+        },
+      }),
+    ]);
+
+    return res.json({
+      success: true,
+      data: visits,
+      meta: { page, pageSize, total },
+    });
+  } catch (error) {
+    console.error('PARTNER VISIT LOG ERROR:', error.message);
+    return res.status(500).json({ success: false, message: 'Could not load visit log.' });
+  }
+};
+
 module.exports = {
   checkIn,
   getSessionStatus,
@@ -662,4 +724,5 @@ module.exports = {
   getFitPassAnalytics,
   adminAdjustSessions,
   adminAdjustSchema,
+  getPartnerVisitLog,
 };

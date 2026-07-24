@@ -37,9 +37,53 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
     }, []);
 
-    const login = async (email, password) => {
+    const login = async (email, password, selectedRole) => {
         try {
-            const { data } = await API.post('/auth/login', { email, password });
+            const portalType = selectedRole;
+            const { data } = await API.post('/auth/login', { email, password, portalType });
+
+            const roleMatches = (selRole, userRole, gymName, gymId) => {
+                if (!selRole) return true;
+                const normalizedGym = (gymName || '').toUpperCase();
+                const isH4Gym = normalizedGym === 'H4' || gymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+
+                if (selRole === 'superadmin') return userRole === 'superadmin';
+                if (selRole === 'fitpass_admin') return userRole === 'fitpass_admin';
+                if (selRole === 'h4_admin') return userRole === 'h4_admin';
+                if (selRole === 'h4_gym_admin') {
+                    return userRole === 'h4_admin' || (['admin', 'partner'].includes(userRole) && isH4Gym);
+                }
+                if (selRole === 'fitpass_partner_admin') {
+                    return ['admin', 'partner'].includes(userRole) && !isH4Gym;
+                }
+                if (selRole === 'staff') return ['receptionist', 'trainer'].includes(userRole);
+                if (selRole === 'h4_member') {
+                    return userRole === 'member' && isH4Gym;
+                }
+                if (selRole === 'fitpass_member') {
+                    return userRole === 'member' && !isH4Gym;
+                }
+                if (selRole === 'member') return userRole === 'member';
+                return false;
+            };
+
+            if (selectedRole && !roleMatches(selectedRole, data.role, data.gymName, data.gymId)) {
+                const readableRoleName = 
+                    selectedRole === 'superadmin' ? 'Super Admin' :
+                    selectedRole === 'fitpass_admin' ? 'FitPass Admin' :
+                    selectedRole === 'h4_admin' ? 'H4 Admin' :
+                    selectedRole === 'h4_gym_admin' ? 'H4 Gym Admin' :
+                    selectedRole === 'fitpass_partner_admin' ? 'Fitpass Partner Admin' :
+                    selectedRole === 'staff' ? 'Gym Staff / Trainer' :
+                    selectedRole === 'h4_member' ? 'H4 Member' :
+                    selectedRole === 'fitpass_member' ? 'Fitpass Member' :
+                    'Member';
+                return { 
+                    success: false, 
+                    message: `Access Denied: Your account is not authorized as a ${readableRoleName}.` 
+                };
+            }
+
             setUser(data);
             localStorage.setItem('user', JSON.stringify(data));
             localStorage.setItem('token', data.token);

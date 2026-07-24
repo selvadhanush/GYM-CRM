@@ -1,15 +1,63 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView, Switch } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, ScrollView, Switch, Alert } from 'react-native';
 import { theme, useThemeStore } from '@/design-system/theme';
-import { Typography, Card, Badge } from '@/components/ui';
+import { Typography, Card, Badge, Input, Modal, Button } from '@/components/ui';
 import { useAuth } from '@/features/auth';
 import { useH4Plan } from '../api/h4.api';
-import { User, Mail, Moon, Sun } from 'lucide-react-native';
+import { User, Mail, Phone, Moon, Sun, Edit2 } from 'lucide-react-native';
+import { API_CLIENT } from '@/lib/api-client';
 
 export function H4Profile() {
   const user = useAuth((s) => s.user);
+  const updateUserLocal = useAuth((s) => s.updateUserLocal);
   const { data: plan } = useH4Plan();
   const { toggleTheme } = useThemeStore();
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [profileName, setProfileName] = useState(user?.name ?? '');
+  const [profileEmail, setProfileEmail] = useState(user?.email ?? '');
+  const [profilePhone, setProfilePhone] = useState(user?.phone ?? '');
+  const [profilePassword, setProfilePassword] = useState('');
+  const [updating, setUpdating] = useState(false);
+
+  const handleOpenEdit = () => {
+    setProfileName(user?.name ?? '');
+    setProfileEmail(user?.email ?? '');
+    setProfilePhone(user?.phone ?? '');
+    setProfilePassword('');
+    setIsModalOpen(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!profileName.trim()) {
+      Alert.alert('Error', 'Name is required');
+      return;
+    }
+    setUpdating(true);
+    try {
+      await API_CLIENT.put('/member-portal/profile', {
+        name: profileName,
+        email: profileEmail,
+        phone: profilePhone,
+        password: profilePassword || undefined,
+      });
+      await updateUserLocal({
+        name: profileName,
+        email: profileEmail,
+        phone: profilePhone,
+      });
+      Alert.alert('Success', 'Profile updated successfully!');
+      setIsModalOpen(false);
+    } catch (error: any) {
+      console.error('Profile update error:', error);
+      Alert.alert(
+        'Error',
+        error.response?.data?.message || 'Failed to update profile.'
+      );
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -27,10 +75,26 @@ export function H4Profile() {
             <Badge label="H4 Member" variant="success" />
           </View>
         </View>
-        <View style={styles.infoRow}>
-          <Mail size={14} color={theme.colors.textSecondary} />
-          <Typography variant="bodySm" color="secondary">{user?.email ?? '—'}</Typography>
+        <View style={{ gap: theme.spacing.sm, marginTop: theme.spacing.sm }}>
+          <View style={styles.infoRow}>
+            <Mail size={14} color={theme.colors.textSecondary} />
+            <Typography variant="bodySm" color="secondary">{user?.email ?? '—'}</Typography>
+          </View>
+          {user?.phone && (
+            <View style={styles.infoRow}>
+              <Phone size={14} color={theme.colors.textSecondary} />
+              <Typography variant="bodySm" color="secondary">{user.phone}</Typography>
+            </View>
+          )}
         </View>
+
+        <Button
+          title="Edit Profile"
+          onPress={handleOpenEdit}
+          variant="secondary"
+          icon={<Edit2 size={16} color={theme.colors.text} />}
+          style={{ marginTop: theme.spacing.sm }}
+        />
       </Card>
 
       <Card style={styles.card}>
@@ -76,6 +140,44 @@ export function H4Profile() {
           />
         </View>
       </Card>
+
+      <Modal visible={isModalOpen} onClose={() => setIsModalOpen(false)} title="Edit Profile">
+        <View style={{ gap: theme.spacing.sm }}>
+          <Input
+            label="Name"
+            value={profileName}
+            onChangeText={setProfileName}
+            placeholder="Enter your name"
+          />
+          <Input
+            label="Email"
+            value={profileEmail}
+            onChangeText={setProfileEmail}
+            placeholder="Enter your email address"
+            keyboardType="email-address"
+          />
+          <Input
+            label="Phone"
+            value={profilePhone}
+            onChangeText={setProfilePhone}
+            placeholder="Enter your phone number"
+            keyboardType="phone-pad"
+          />
+          <Input
+            label="New Password (optional)"
+            value={profilePassword}
+            onChangeText={setProfilePassword}
+            placeholder="Leave blank to keep current"
+            secureTextEntry
+          />
+          <Button
+            title="Save Profile"
+            onPress={handleSaveProfile}
+            loading={updating}
+            style={{ marginTop: theme.spacing.md }}
+          />
+        </View>
+      </Modal>
     </ScrollView>
   );
 }

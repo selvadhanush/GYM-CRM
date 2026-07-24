@@ -56,9 +56,11 @@ const AuditLogs = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
     const [tab, setTab] = useState('timeline'); // 'timeline' | 'logins' | 'sessions'
+    const [error, setError] = useState(null);
 
     const fetchLogs = async (p = 1, action = filterAction, entity = filterEntity) => {
         try {
+            setError(null);
             const params = new URLSearchParams({ page: p, limit: 50 });
             if (action) params.append('action', action);
             if (entity) params.append('entity', entity);
@@ -66,7 +68,10 @@ const AuditLogs = () => {
             setLogs(data.logs);
             setTotalPages(data.pages);
             setTotal(data.total);
-        } catch (err) { console.error(err); }
+        } catch (err) { 
+            console.error(err); 
+            setError("Failed to fetch audit logs.");
+        }
         finally { setLoading(false); }
     };
 
@@ -74,7 +79,10 @@ const AuditLogs = () => {
         try {
             const { data } = await API.get('/audit/summary');
             setSummary(data);
-        } catch (err) { console.error(err); }
+        } catch (err) { 
+            console.error(err); 
+            setError("Failed to fetch audit summary.");
+        }
     };
 
     useEffect(() => {
@@ -111,6 +119,13 @@ const AuditLogs = () => {
 
     return (
         <div className="fade-in">
+            {error && (
+                <div style={{ background: '#fef2f2', border: '1px solid #f87171', color: '#b91c1c', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <ShieldAlert size={20} />
+                    <span>{error}</span>
+                </div>
+            )}
+            
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <div>
                     <h2 style={{ marginBottom: '0.25rem' }}>🔍 Audit Logs</h2>

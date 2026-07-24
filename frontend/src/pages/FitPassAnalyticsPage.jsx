@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import API from '../services/api';
 import { 
-  Users, CheckCircle, XCircle, Ticket, Activity, TrendingUp, Search, Calendar, MapPin, Loader, Zap
+  Users, CheckCircle, XCircle, Ticket, Activity, TrendingUp, Search, Calendar, MapPin, Loader, Zap, ChevronRight
 } from 'lucide-react';
 
 const FitPassAnalyticsPage = () => {
@@ -40,7 +40,7 @@ const FitPassAnalyticsPage = () => {
       // Query members endpoint
       const { data } = await API.get(`/members?search=${searchQuery}`);
       // Filter members who are FitPass members or show all to allow checking
-      setSearchResults(data || []);
+      setSearchResults(data.members || []);
     } catch (err) {
       console.error('Error searching members:', err);
     } finally {

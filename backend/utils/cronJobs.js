@@ -84,24 +84,40 @@ const startCronJobs = () => {
     // NOTE: intentionally does NOT call logAudit() -- session-expiry volume would
     // flood the admin AuditLogs UI. Operational visibility stays in console logs only.
     cron.schedule('* * * * *', async () => {
+        const runWithRetry = async (fn, retries = 3, delay = 2000) => {
+            for (let i = 1; i <= retries; i++) {
+                try {
+                    return await fn();
+                } catch (err) {
+                    if (i === retries) throw err;
+                    console.warn(`[SessionExpiry] Database query attempt ${i} failed. Retrying in ${delay / 1000}s... Error: ${err.message}`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+        };
+
         try {
             const now = new Date();
             const prisma = require('../config/prisma');
 
             // 1. Expire the SessionCheckIn rows.
-            const expiredRows = await prisma.sessionCheckIn.updateMany({
-                where: { status: 'active', expiresAt: { lte: now } },
-                data: { status: 'expired' },
-            });
+            const expiredRows = await runWithRetry(() =>
+                prisma.sessionCheckIn.updateMany({
+                    where: { status: 'active', expiresAt: { lte: now } },
+                    data: { status: 'expired' },
+                })
+            );
 
             if (expiredRows.count > 0) {
                 // 2. Clear the now-expired active session fields on those members.
                 // We identify them via the rows we just expired in this tick.
-                const justExpired = await prisma.sessionCheckIn.findMany({
-                    where: { status: 'expired', expiresAt: { lte: now } },
-                    select: { memberId: true, expiresAt: true },
-                    distinct: ['memberId'],
-                });
+                const justExpired = await runWithRetry(() =>
+                    prisma.sessionCheckIn.findMany({
+                        where: { status: 'expired', expiresAt: { lte: now } },
+                        select: { memberId: true, expiresAt: true },
+                        distinct: ['memberId'],
+                    })
+                );
                 for (const row of justExpired) {
                     // Conditional update: only clear if the member's session still
                     // points at this expiry (avoids clobbering a newer check-in).

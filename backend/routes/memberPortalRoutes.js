@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getMyPlan, getMyAttendance, getMyPayments, createRazorpayOrder, verifyRazorpayPayment, getFitPrimePlans, purchasePlanOrder, purchasePlanVerify, cancelMyPlan, getPartnerGyms, getDashboardData } = require('../controllers/memberPortalController');
+const { getMyPlan, getMyAttendance, getMyPayments, createRazorpayOrder, verifyRazorpayPayment, getFitPrimePlans, purchasePlanOrder, purchasePlanVerify, cancelMyPlan, getPartnerGyms, getDashboardData, updateMyProfile } = require('../controllers/memberPortalController');
 const { getMemberClasses, bookClass, cancelBooking } = require('../controllers/classController');
 const { checkIn, getSessionStatus, getSessionHistory } = require('../controllers/sessionController');
 const { protect } = require('../middleware/authMiddleware');
@@ -10,6 +10,7 @@ const { checkInSchema } = require('./sessionRoutes');
 router.use(protect);
 
 router.get('/dashboard', getDashboardData);
+router.put('/profile', updateMyProfile);
 router.get('/plan', getMyPlan);
 router.get('/fitprime-plans', getFitPrimePlans);
 router.get('/gyms', getPartnerGyms);

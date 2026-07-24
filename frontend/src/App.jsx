@@ -4,7 +4,7 @@ import { AuthContext } from './context/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
-import GymProfile from './pages/GymProfile';
+
 import Plans from './pages/Plans';
 import Members from './pages/Members';
 import Payments from './pages/Payments';
@@ -24,12 +24,18 @@ import Staff from './pages/Staff';
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
 import PartnerGyms from './pages/superadmin/PartnerGyms';
 import FitPrimePlans from './pages/superadmin/FitPrimePlans';
+import FitPassMembers from './pages/superadmin/FitPassMembers';
 import AdminManagement from './pages/superadmin/AdminManagement';
 import BodyAssessments from './pages/BodyAssessments';
 import TrainerAttendancePage from './pages/TrainerAttendancePage';
 import PayrollPage from './pages/PayrollPage';
-import Equipments from './pages/Equipments';
 import FitPassAnalyticsPage from './pages/FitPassAnalyticsPage';
+import WorkoutPlans from './pages/WorkoutPlans';
+import DietPlans from './pages/DietPlans';
+import Settings from './pages/Settings';
+import Support from './pages/Support';
+import FitPassVisitLog from './pages/FitPassVisitLog';
+import FitPassPartnerLeads from './pages/FitPassPartnerLeads';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -56,7 +62,8 @@ function App() {
                 (user?.role === 'admin' || user?.role === 'h4_admin') ? "/dashboard" :
                   user?.role === 'trainer' ? "/attendance" :
                     user?.role === 'member' ? "/member-dashboard" :
-                      "/members"
+                      user?.role === 'partner' ? "/partner/visit-log" :
+                        "/members"
               } replace />
             </Layout>
           </ProtectedRoute>
@@ -86,6 +93,14 @@ function App() {
           </ProtectedRoute>
         } />
 
+        <Route path="/superadmin/fitpass-members" element={
+          <ProtectedRoute roles={['superadmin', 'fitpass_admin']}>
+            <Layout>
+              <FitPassMembers />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
         <Route path="/superadmin/admins" element={
           <ProtectedRoute roles={['superadmin']}>
             <Layout>
@@ -110,13 +125,7 @@ function App() {
           </ProtectedRoute>
         } />
 
-        <Route path="/profile" element={
-          <ProtectedRoute roles={['admin', 'h4_admin']}>
-            <Layout>
-              <GymProfile />
-            </Layout>
-          </ProtectedRoute>
-        } />
+
 
         <Route path="/plans" element={
           <ProtectedRoute roles={['admin', 'h4_admin']}>
@@ -223,9 +232,26 @@ function App() {
         } />
 
         <Route path="/fitpass-analytics" element={
-          <ProtectedRoute roles={['admin', 'partner']}>
+          <ProtectedRoute roles={['admin', 'h4_admin']}>
             <Layout>
               <FitPassAnalyticsPage />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
+        {/* ─── FitPass Partner portal (read-only, gym-scoped) ─── */}
+        <Route path="/partner/visit-log" element={
+          <ProtectedRoute roles={['partner']}>
+            <Layout>
+              <FitPassVisitLog />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/partner/fitpass-leads" element={
+          <ProtectedRoute roles={['partner']}>
+            <Layout>
+              <FitPassPartnerLeads />
             </Layout>
           </ProtectedRoute>
         } />
@@ -278,10 +304,34 @@ function App() {
           </ProtectedRoute>
         } />
 
-        <Route path="/equipments" element={
-          <ProtectedRoute roles={['admin', 'receptionist', 'trainer', 'h4_admin']}>
+        <Route path="/workout-plans" element={
+          <ProtectedRoute roles={['admin', 'trainer', 'member', 'h4_admin']}>
             <Layout>
-              <Equipments />
+              <WorkoutPlans />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/diet-plans" element={
+          <ProtectedRoute roles={['admin', 'trainer', 'member', 'h4_admin']}>
+            <Layout>
+              <DietPlans />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/settings" element={
+          <ProtectedRoute roles={['admin', 'h4_admin', 'superadmin']}>
+            <Layout>
+              <Settings />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/support" element={
+          <ProtectedRoute roles={['admin', 'receptionist', 'trainer', 'member', 'h4_admin', 'superadmin']}>
+            <Layout>
+              <Support />
             </Layout>
           </ProtectedRoute>
         } />

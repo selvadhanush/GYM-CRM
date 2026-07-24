@@ -13,32 +13,32 @@ export const spacing = {
 
 export const colors = {
   brand: {
-    primary: '#FFE01B', // Primary Brand Yellow
-    primaryHover: '#F5D000', // Primary Hover
-    primaryLight: '#FFF4A3', // Primary Light
-    primaryMuted: 'rgba(255, 224, 27, 0.15)',
+    primary: '#F0A020', // Amber / Brand Gold
+    primaryHover: '#D9860F', // Dark Amber / Gold
+    primaryLight: '#FCE6B8', // Soft Amber Tint
+    primaryMuted: '#FBF6EC', // Cream/Soft Amber Card Accent
   },
-  accent: '#E6C800', // Primary Dark / Accent Yellow
+  accent: '#D9860F', // Dark Amber / Gold
   status: {
-    success: '#16A34A', // Success Green
-    warning: '#F59E0B', // Warning Orange
-    error: '#DC2626', // Danger Red
-    info: '#2563EB', // Info Blue
+    success: '#2E7D32', // Active Pass - Green
+    warning: '#F0A020', // Warning - Amber
+    error: '#C62828', // Expired Session - Red
+    info: '#1976D2', // Cooldown - Blue
   },
   background: {
-    primary: '#FFFFFF', // Clean White Background
-    secondary: '#FAFAFA', // Soft Gray Secondary Background
-    tertiary: '#FFFFFF', // Modals / Cards Background
+    primary: '#231D14', // Very dark warm brown-black background
+    secondary: '#2D251C', // Dark warm brown card/surface background
+    tertiary: '#2D251C',
   },
   text: {
-    primary: '#111827', // Primary Dark Gray/Black Text
-    secondary: '#4B5563', // Secondary text
-    muted: '#6B7280', // Muted text
-    inverse: '#111827', // Black text on yellow buttons
+    primary: '#FFFFFF', // Pure white for high-contrast titles
+    secondary: '#A39686', // Warm muted brown-gray body text
+    muted: '#6D6154', // Muted warm brown-gray for captions
+    inverse: '#231D14', // Inverse text
   },
   border: {
-    default: '#E5E7EB', // Subtle Gray border
-    focus: '#FFE01B',
+    default: '#3A3025', // Warm brown border
+    focus: '#F0A020',
   },
 };
 

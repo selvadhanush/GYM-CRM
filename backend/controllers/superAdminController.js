@@ -1,4 +1,5 @@
 const { z } = require('zod');
+const prisma = require('../config/prisma');
 const User = require('../models/User');
 const Gym = require('../models/Gym');
 const Plan = require('../models/Plan');
@@ -416,6 +417,274 @@ const deleteDedicatedAdmin = async (req, res) => {
     res.json({ message: 'Dedicated admin removed' });
 };
 
+// ─── SuperAdmin FitPass Analytics Endpoints ───────────────────────────────
+
+// @desc    Get paginated FitPass audit log with rich filters
+// @route   GET /api/superadmin/fitpass/audit-log
+// @access  Private (superadmin, fitpass_admin)
+const getFitPassAuditLog = async (req, res) => {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const pageSize = Math.min(100, parseInt(req.query.pageSize) || 50);
+    const skip = (page - 1) * pageSize;
+
+    const where = {};
+
+    // Optional filters
+    if (req.query.status) where.accessStatus = req.query.status;
+    if (req.query.gymId) where.gymIdVisited = req.query.gymId;
+    if (req.query.memberId) {
+        where.memberId = req.query.memberId;
+    } else if (req.query.memberName) {
+        where.memberName = { contains: req.query.memberName, mode: 'insensitive' };
+    }
+    if (req.query.from || req.query.to) {
+        where.checkInTimestamp = {};
+        if (req.query.from) where.checkInTimestamp.gte = new Date(req.query.from);
+        if (req.query.to) {
+            const to = new Date(req.query.to);
+            to.setHours(23, 59, 59, 999);
+            where.checkInTimestamp.lte = to;
+        }
+    }
+
+    const [total, logs] = await Promise.all([
+        prisma.fitPassAuditLog.count({ where }),
+        prisma.fitPassAuditLog.findMany({
+            where,
+            orderBy: { checkInTimestamp: 'desc' },
+            skip,
+            take: pageSize,
+        }),
+    ]);
+
+    res.json({
+        success: true,
+        data: logs,
+        meta: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) },
+    });
+};
+
+// @desc    Get all FitPass member roster with stats
+// @route   GET /api/superadmin/fitpass/members
+// @access  Private (superadmin, fitpass_admin)
+const getFitPassMemberRoster = async (req, res) => {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const pageSize = Math.min(100, parseInt(req.query.pageSize) || 50);
+    const skip = (page - 1) * pageSize;
+
+    // Get all SYSTEM plan IDs
+    const fitPassPlans = await prisma.plan.findMany({
+        where: { gymId: 'SYSTEM' },
+        select: { id: true, name: true, sessions: true, price: true },
+    });
+    const fitPassPlanIds = fitPassPlans.map(p => p.id);
+
+    const where = { planId: { in: fitPassPlanIds } };
+    const now = new Date();
+
+    if (req.query.status === 'Active') {
+        where.status = 'Active';
+        where.expiryDate = { gt: now };
+    } else if (req.query.status === 'Expired') {
+        where.OR = [{ status: 'Expired' }, { expiryDate: { lte: now } }];
+    }
+    if (req.query.search) {
+        where.OR = [
+            { name: { contains: req.query.search, mode: 'insensitive' } },
+            { phone: { contains: req.query.search } },
+        ];
+    }
+
+    const [total, members] = await Promise.all([
+        prisma.member.count({ where }),
+        prisma.member.findMany({
+            where,
+            orderBy: { createdAt: 'desc' },
+            skip,
+            take: pageSize,
+            select: {
+                id: true,
+                name: true,
+                phone: true,
+                email: true,
+                status: true,
+                planId: true,
+                joinDate: true,
+                expiryDate: true,
+                sessionsTotal: true,
+                sessionsRemaining: true,
+                lastCheckInAt: true,
+                gymId: true,
+            },
+        }),
+    ]);
+
+    // Attach plan info
+    const planMap = {};
+    fitPassPlans.forEach(p => { planMap[p.id] = p; });
+
+    const enriched = members.map(m => ({
+        ...m,
+        sessionsUsed: (m.sessionsTotal || 0) - (m.sessionsRemaining || 0),
+        plan: planMap[m.planId] || null,
+        isExpired: new Date(m.expiryDate) <= now,
+    }));
+
+    res.json({
+        success: true,
+        data: enriched,
+        plans: fitPassPlans,
+        meta: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) },
+    });
+};
+
+// @desc    Get FitPass revenue & plan breakdown analytics
+// @route   GET /api/superadmin/fitpass/overview
+// @access  Private (superadmin, fitpass_admin)
+const getFitPassOverview = async (req, res) => {
+    const now = new Date();
+
+    // All SYSTEM plans
+    const fitPassPlans = await prisma.plan.findMany({
+        where: { gymId: 'SYSTEM' },
+        select: { id: true, name: true, sessions: true, price: true },
+    });
+    const fitPassPlanIds = fitPassPlans.map(p => p.id);
+
+    // All FitPass members
+    const allMembers = await prisma.member.findMany({
+        where: { planId: { in: fitPassPlanIds } },
+        select: {
+            id: true, status: true, expiryDate: true,
+            sessionsTotal: true, sessionsRemaining: true,
+            planId: true, planPrice: true, paidAmount: true,
+            joinDate: true, lastCheckInAt: true,
+        },
+    });
+
+    const active = allMembers.filter(m => m.status === 'Active' && new Date(m.expiryDate) > now);
+    const expired = allMembers.filter(m => m.status !== 'Active' || new Date(m.expiryDate) <= now);
+
+    // Sessions aggregates
+    let totalSessionsSold = 0;
+    let totalSessionsRemaining = 0;
+    let totalRevenue = 0;
+    let totalPaid = 0;
+
+    allMembers.forEach(m => {
+        totalSessionsSold += m.sessionsTotal || 0;
+        totalSessionsRemaining += m.sessionsRemaining || 0;
+        totalRevenue += m.planPrice || 0;
+        totalPaid += m.paidAmount || 0;
+    });
+
+    // All check-in logs
+    const successLogs = await prisma.fitPassAuditLog.findMany({
+        where: { accessStatus: 'Success' },
+        select: {
+            gymIdVisited: true, gymName: true,
+            checkInTimestamp: true, memberId: true,
+        },
+    });
+    const failedLogs = await prisma.fitPassAuditLog.findMany({
+        where: { accessStatus: 'Failed' },
+        select: { checkInTimestamp: true, failureReason: true },
+    });
+
+    // Most visited gyms
+    const gymCounts = {};
+    successLogs.forEach(v => {
+        if (!gymCounts[v.gymIdVisited]) {
+            gymCounts[v.gymIdVisited] = { gymId: v.gymIdVisited, gymName: v.gymName, count: 0 };
+        }
+        gymCounts[v.gymIdVisited].count++;
+    });
+    const mostVisitedGyms = Object.values(gymCounts).sort((a, b) => b.count - a.count).slice(0, 10);
+
+    // Daily traffic (last 30 days)
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(now.getDate() - 30);
+    const recentLogs = successLogs.filter(v => new Date(v.checkInTimestamp) >= thirtyDaysAgo);
+    const dailyMap = {};
+    recentLogs.forEach(v => {
+        const d = v.checkInTimestamp.toISOString().split('T')[0];
+        dailyMap[d] = (dailyMap[d] || 0) + 1;
+    });
+    const dailyTraffic = Object.entries(dailyMap)
+        .map(([date, count]) => ({ date, count }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+    // Monthly traffic
+    const monthlyMap = {};
+    successLogs.forEach(v => {
+        const m = v.checkInTimestamp.toISOString().substring(0, 7);
+        monthlyMap[m] = (monthlyMap[m] || 0) + 1;
+    });
+    const monthlyTraffic = Object.entries(monthlyMap)
+        .map(([month, count]) => ({ month, count }))
+        .sort((a, b) => a.month.localeCompare(b.month));
+
+    // Plan popularity
+    const planPopularity = fitPassPlans.map(plan => {
+        const planMembers = allMembers.filter(m => m.planId === plan.id);
+        const planRevenue = planMembers.reduce((s, m) => s + (m.paidAmount || 0), 0);
+        return {
+            planId: plan.id,
+            planName: plan.name,
+            sessions: plan.sessions,
+            price: plan.price,
+            memberCount: planMembers.length,
+            revenue: planRevenue,
+        };
+    }).sort((a, b) => b.memberCount - a.memberCount);
+
+    // Avg visits per member
+    const memberVisitCounts = {};
+    successLogs.forEach(v => {
+        memberVisitCounts[v.memberId] = (memberVisitCounts[v.memberId] || 0) + 1;
+    });
+    const visitsList = Object.values(memberVisitCounts);
+    const avgVisits = visitsList.length > 0
+        ? (visitsList.reduce((s, c) => s + c, 0) / visitsList.length).toFixed(1)
+        : 0;
+
+    // Failure reason breakdown
+    const failureMap = {};
+    failedLogs.forEach(v => {
+        const reason = v.failureReason || 'Unknown';
+        failureMap[reason] = (failureMap[reason] || 0) + 1;
+    });
+    const failureBreakdown = Object.entries(failureMap)
+        .map(([reason, count]) => ({ reason, count }))
+        .sort((a, b) => b.count - a.count);
+
+    res.json({
+        success: true,
+        overview: {
+            totalMembers: allMembers.length,
+            activeMembers: active.length,
+            expiredMembers: expired.length,
+            totalSessionsSold,
+            totalSessionsUsed: totalSessionsSold - totalSessionsRemaining,
+            totalSessionsRemaining,
+            totalRevenue,
+            totalPaid,
+            totalDues: totalRevenue - totalPaid,
+            totalCheckIns: successLogs.length,
+            totalFailedAttempts: failedLogs.length,
+            avgVisitsPerMember: parseFloat(avgVisits),
+            utilizationRate: totalSessionsSold > 0
+                ? parseFloat(((totalSessionsSold - totalSessionsRemaining) / totalSessionsSold * 100).toFixed(1))
+                : 0,
+        },
+        mostVisitedGyms,
+        dailyTraffic,
+        monthlyTraffic,
+        planPopularity,
+        failureBreakdown,
+    });
+};
+
 module.exports = {
     createPartnerGym,
     updatePartnerGym,
@@ -429,5 +698,8 @@ module.exports = {
     getDedicatedAdmins,
     createDedicatedAdmin,
     updateDedicatedAdmin,
-    deleteDedicatedAdmin
+    deleteDedicatedAdmin,
+    getFitPassAuditLog,
+    getFitPassMemberRoster,
+    getFitPassOverview,
 };

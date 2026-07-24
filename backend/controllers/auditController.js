@@ -5,7 +5,7 @@ const AuditLog = require('../models/AuditLog');
 // @access  Private/Admin
 const getAuditLogs = async (req, res) => {
     try {
-        const { action, userId, entity, limit = 100, page = 1 } = req.query;
+        const { action, userId, entity, entityId, entityName, limit = 100, page = 1 } = req.query;
         const filter = {};
         if (req.user.role !== 'superadmin') {
             if (req.user.role === 'fitpass_admin') {
@@ -20,6 +20,8 @@ const getAuditLogs = async (req, res) => {
         if (action) filter.action = action;
         if (userId) filter.userId = userId;
         if (entity) filter.entity = entity;
+        if (entityId) filter.entityId = entityId;
+        if (entityName) filter.entityName = entityName;
 
 
         const skip = (parseInt(page) - 1) * parseInt(limit);

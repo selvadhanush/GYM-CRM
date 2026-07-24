@@ -48,6 +48,11 @@ export const deleteMember = async (id) => {
     return data;
 };
 
+export const getMemberAuditTrail = async (id) => {
+    const { data } = await API.get(`/members/${id}/audit`);
+    return data;
+};
+
 export const getPayments = async () => {
     const { data } = await API.get('/payments');
     return data;
@@ -174,48 +179,4 @@ export const addCommission = async (commissionData) => {
     return data;
 };
 
-// Equipments
-export const getEquipments = async (params = {}) => {
-    let url = '/equipments';
-    const query = [];
-    if (params.status) query.push(`status=${params.status}`);
-    if (params.type) query.push(`type=${params.type}`);
-    if (query.length > 0) url += `?${query.join('&')}`;
 
-    const { data } = await API.get(url);
-    return data;
-};
-
-export const createEquipment = async (equipmentData) => {
-    const { data } = await API.post('/equipments', equipmentData);
-    return data;
-};
-
-export const updateEquipment = async (id, equipmentData) => {
-    const { data } = await API.put(`/equipments/${id}`, equipmentData);
-    return data;
-};
-
-export const deleteEquipment = async (id) => {
-    const { data } = await API.delete(`/equipments/${id}`);
-    return data;
-};
-
-// Maintenance Logs
-export const getMaintenanceLogs = async (params = {}) => {
-    let url = '/equipments/maintenance/logs';
-    if (params.equipmentId) url += `?equipmentId=${params.equipmentId}`;
-
-    const { data } = await API.get(url);
-    return data;
-};
-
-export const createMaintenanceLog = async (logData) => {
-    const { data } = await API.post('/equipments/maintenance', logData);
-    return data;
-};
-
-export const deleteMaintenanceLog = async (id) => {
-    const { data } = await API.delete(`/equipments/maintenance/${id}`);
-    return data;
-};

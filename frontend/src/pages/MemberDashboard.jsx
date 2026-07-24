@@ -14,6 +14,14 @@ const MemberDashboard = () => {
     const [customAmount, setCustomAmount] = useState('');
     const qrRef = useRef(null);
 
+    // Profile edit states
+    const [profileModal, setProfileModal] = useState(false);
+    const [profileName, setProfileName] = useState('');
+    const [profileEmail, setProfileEmail] = useState('');
+    const [profilePhone, setProfilePhone] = useState('');
+    const [profilePassword, setProfilePassword] = useState('');
+    const [updatingProfile, setUpdatingProfile] = useState(false);
+
     // FitPass specific states
     const [fitPassHistory, setFitPassHistory] = useState([]);
     const [gyms, setGyms] = useState([]);
@@ -85,6 +93,35 @@ const MemberDashboard = () => {
             document.body.removeChild(script);
         };
     }, []);
+
+    const openProfileEditModal = () => {
+        setProfileName(plan?.name || '');
+        setProfileEmail(plan?.email || '');
+        setProfilePhone(plan?.phone || '');
+        setProfilePassword('');
+        setProfileModal(true);
+    };
+
+    const handleUpdateProfile = async (e) => {
+        e.preventDefault();
+        setUpdatingProfile(true);
+        try {
+            await API.put('/member-portal/profile', {
+                name: profileName,
+                email: profileEmail,
+                phone: profilePhone,
+                password: profilePassword || undefined
+            });
+            alert('Profile updated successfully!');
+            setProfileModal(false);
+            fetchMemberData();
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            alert(error.response?.data?.message || 'Failed to update profile.');
+        } finally {
+            setUpdatingProfile(false);
+        }
+    };
 
     const amountDue = plan ? (plan.planPrice - plan.paidAmount) : 0;
 
@@ -199,9 +236,18 @@ const MemberDashboard = () => {
 
     return (
         <div className="fade-in">
-            <h1 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>
-                Welcome back, {plan?.name}! 👋
-            </h1>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <h1 style={{ fontSize: '2rem', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
+                    Welcome back, {plan?.name}! 👋
+                </h1>
+                <button
+                    onClick={openProfileEditModal}
+                    className="btn btn-secondary"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'var(--border-default)', color: 'var(--text-primary)', border: '1px solid var(--border-default)' }}
+                >
+                    👤 Edit Profile
+                </button>
+            </div>
 
             {/* Top row: Plan + Balance + QR */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
@@ -517,17 +563,17 @@ const MemberDashboard = () => {
                     <div
                         onClick={e => e.stopPropagation()}
                         style={{
-                            background: 'var(--card-bg, #1e1e2e)', borderRadius: '20px',
+                            background: 'var(--bg)', borderRadius: '20px',
                             padding: '2rem', width: '100%', maxWidth: '420px',
-                            boxShadow: '0 20px 80px rgba(0,0,0,0.5)',
-                            border: '1px solid rgba(255,255,255,0.1)'
+                            boxShadow: 'var(--shadow-lg)',
+                            border: '1px solid var(--border)'
                         }}
                     >
-                        <h3 style={{ marginBottom: '0.5rem', fontSize: '1.2rem', fontWeight: '800' }}>💳 Make a Payment</h3>
+                        <h3 style={{ marginBottom: '0.5rem', fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-primary)' }}>💳 Make a Payment</h3>
                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
                             Total Due: <strong style={{ color: 'var(--danger-color)' }}>₹{amountDue}</strong>
                         </p>
-
+ 
                         {/* Quick Amount Buttons */}
                         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
                             {[
@@ -542,8 +588,8 @@ const MemberDashboard = () => {
                                     className="btn"
                                     style={{
                                         flex: 1, fontSize: '0.8rem', padding: '0.4rem 0.6rem',
-                                        background: parseFloat(customAmount) === opt.val ? 'var(--primary-color)' : 'rgba(99,102,241,0.1)',
-                                        color: parseFloat(customAmount) === opt.val ? '#fff' : 'var(--primary-color)',
+                                        background: parseFloat(customAmount) === opt.val ? 'var(--primary-color)' : 'var(--primary-light)',
+                                        color: parseFloat(customAmount) === opt.val ? 'var(--text-inverse)' : 'var(--primary-hover)',
                                         border: '1px solid var(--primary-color)',
                                         borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s'
                                     }}
@@ -553,7 +599,7 @@ const MemberDashboard = () => {
                                 </button>
                             ))}
                         </div>
-
+ 
                         {/* Custom Amount Input */}
                         <div style={{ marginBottom: '1.5rem' }}>
                             <label style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem' }}>
@@ -575,7 +621,7 @@ const MemberDashboard = () => {
                                 </p>
                             )}
                         </div>
-
+ 
                         <div style={{ display: 'flex', gap: '0.75rem' }}>
                             <button
                                 onClick={() => setPaymentModal(false)}
@@ -587,7 +633,7 @@ const MemberDashboard = () => {
                             <button
                                 onClick={handlePayment}
                                 className="btn btn-primary"
-                                style={{ flex: 2, background: 'var(--accent-color)' }}
+                                style={{ flex: 2, background: 'var(--primary-hover)' }}
                                 disabled={!customAmount || parseFloat(customAmount) <= 0 || parseFloat(customAmount) > amountDue}
                             >
                                 Pay ₹{parseFloat(customAmount) > 0 ? parseFloat(customAmount) : '—'}
@@ -617,6 +663,101 @@ const MemberDashboard = () => {
                     <button onClick={downloadQR} className="btn btn-primary" style={{ marginTop: '0.5rem' }}>
                         ⬇️ Download QR
                     </button>
+                </div>
+            )}
+
+            {/* Edit Profile Modal */}
+            {profileModal && (
+                <div
+                    onClick={() => setProfileModal(false)}
+                    style={{
+                        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        zIndex: 2000
+                    }}
+                >
+                    <form
+                        onSubmit={handleUpdateProfile}
+                        onClick={e => e.stopPropagation()}
+                        style={{
+                            background: 'var(--bg)', borderRadius: '20px',
+                            padding: '2rem', width: '90%', maxWidth: '450px',
+                            boxShadow: '0 10px 25px rgba(0,0,0,0.3)', border: '1px solid var(--border-color)',
+                            display: 'flex', flexDirection: 'column', gap: '1rem'
+                        }}
+                    >
+                        <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '800' }}>Edit Profile &amp; Credentials</h3>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
+                            Update your personal details and account login credentials.
+                        </p>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)' }}>Full Name</label>
+                            <input
+                                type="text"
+                                className="input"
+                                required
+                                value={profileName}
+                                onChange={e => setProfileName(e.target.value)}
+                                style={{ width: '100%' }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)' }}>Email Address</label>
+                            <input
+                                type="email"
+                                className="input"
+                                required
+                                value={profileEmail}
+                                onChange={e => setProfileEmail(e.target.value)}
+                                style={{ width: '100%' }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)' }}>Phone Number</label>
+                            <input
+                                type="tel"
+                                className="input"
+                                required
+                                value={profilePhone}
+                                onChange={e => setProfilePhone(e.target.value)}
+                                style={{ width: '100%' }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)' }}>New Password</label>
+                            <input
+                                type="password"
+                                className="input"
+                                placeholder="Leave blank to keep current password"
+                                value={profilePassword}
+                                onChange={e => setProfilePassword(e.target.value)}
+                                style={{ width: '100%' }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                            <button
+                                type="button"
+                                onClick={() => setProfileModal(false)}
+                                className="btn btn-secondary"
+                                style={{ flex: 1 }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                className="btn btn-primary"
+                                style={{ flex: 1 }}
+                                disabled={updatingProfile || !profileName || !profileEmail || !profilePhone}
+                            >
+                                {updatingProfile ? 'Saving...' : 'Save Changes'}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             )}
         </div>

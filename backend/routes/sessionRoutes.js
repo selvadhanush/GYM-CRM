@@ -4,7 +4,8 @@ const {
   adminAdjustSessions, 
   adminAdjustSchema,
   getMemberFitPassSummary,
-  getFitPassAnalytics
+  getFitPassAnalytics,
+  getPartnerVisitLog,
 } = require('../controllers/sessionController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const validate = require('../middleware/validate');
@@ -28,12 +29,20 @@ router.get(
   getMemberFitPassSummary
 );
 
-// Get FitPass global analytics (Admin, Partner, SuperAdmin)
+// Get FitPass global analytics (Admin, SuperAdmin, FitPass Admin only — NOT partner)
 router.get(
   '/analytics',
   protect,
-  authorize('admin', 'partner', 'superadmin', 'fitpass_admin'),
+  authorize('admin', 'superadmin', 'fitpass_admin'),
   getFitPassAnalytics
+);
+
+// Get FitPass check-in audit log for partner's own gym (read-only, scoped by gymId)
+router.get(
+  '/partner-visits',
+  protect,
+  authorize('partner'),
+  getPartnerVisitLog
 );
 
 // Zod schema reused by memberPortalRoutes.js for the check-in body.

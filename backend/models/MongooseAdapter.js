@@ -595,9 +595,7 @@ class ModelWrapper {
       trainerattendances: 'trainerAttendance',
       trainersalaries: 'trainerSalary',
       ptcommissions: 'ptCommission',
-      payrolls: 'payroll',
-      equipments: 'equipment',
-      maintenancelogs: 'maintenanceLog'
+      payrolls: 'payroll'
     };
 
     function getNestedVal(obj, path) {
