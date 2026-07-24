@@ -3,7 +3,7 @@ import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { theme } from '@/design-system/theme';
 import { Typography, Card, Badge, Skeleton, EmptyState } from '@/components/ui';
 import { useSessionHistory } from '../api/fitpass.api';
-import { Calendar, Clock, ChevronLeft, ChevronRight, Zap } from 'lucide-react-native';
+import { Clock, ChevronLeft, ChevronRight, Zap } from 'lucide-react-native';
 
 export function CheckInHistory() {
   const [page, setPage] = useState(1);

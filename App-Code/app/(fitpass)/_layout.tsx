@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { TouchableOpacity, StyleSheet, View } from 'react-native';
+import { TouchableOpacity, StyleSheet } from 'react-native';
 import { LayoutDashboard, Building2, History, User, LogOut, Dumbbell, Apple } from 'lucide-react-native';
 import { theme } from '@/design-system/theme';
 import { useAuth } from '@/features/auth';

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { QrCode, Clock, Calendar, Zap, History } from 'lucide-react-native';
 import { theme } from '@/design-system/theme';
@@ -9,12 +9,7 @@ import { useSessionStatus, useSessionHistory, usePartnerGyms } from '../api/fitp
 function SessionCard() {
   const { data, isLoading } = useSessionStatus();
 
-  const statusColor = useMemo(() => {
-    if (!data) return theme.colors.textMuted;
-    if (data.planStatus === 'Active') return theme.colors.success;
-    if (data.planStatus === 'Expired') return theme.colors.error;
-    return theme.colors.textMuted;
-  }, [data]);
+
 
   const isLiveSession = data?.currentSessionEndsAt
     ? new Date(data.currentSessionEndsAt) > new Date()

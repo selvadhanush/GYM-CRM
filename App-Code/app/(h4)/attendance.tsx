@@ -3,7 +3,7 @@ import { SafeAreaView, StyleSheet, ScrollView } from 'react-native';
 import { theme } from '@/design-system/theme';
 import { Typography, Card, Skeleton } from '@/components/ui';
 import { useH4Attendance } from '@/features/h4';
-import { CalendarCheck } from 'lucide-react-native';
+
 import { View } from 'react-native';
 
 export default function H4AttendanceScreen() {

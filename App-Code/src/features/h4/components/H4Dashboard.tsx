@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { CalendarCheck, CreditCard, Activity, TrendingUp } from 'lucide-react-native';
+import { CalendarCheck, CreditCard, Activity } from 'lucide-react-native';
 import { theme } from '@/design-system/theme';
 import { Typography, Card, Badge, Skeleton } from '@/components/ui';
 import { useH4Dashboard, useH4Plan } from '../api/h4.api';
@@ -13,7 +13,7 @@ function MembershipCard() {
 
   if (isLoading) return <Skeleton style={styles.skeletonCard} />;
 
-  const statusColor = plan?.status === 'Active' ? theme.colors.success : theme.colors.error;
+
 
   return (
     <Card style={styles.membershipCard}>

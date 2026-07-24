@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Apple, Droplet, Check, Flame } from 'lucide-react-native';
 import { theme } from '@/design-system/theme';
@@ -14,16 +14,7 @@ export default function DietsScreen() {
   const [consumed, setConsumed] = useState<Record<number, boolean>>({});
   const [water, setWater] = useState(0);
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchActiveDiet();
-      loadWaterAndConsumed();
-    } else {
-      setLoading(false);
-    }
-  }, [user]);
-
-  const fetchActiveDiet = async () => {
+  const fetchActiveDiet = useCallback(async () => {
     try {
       const res = await API_CLIENT.get('/diet-plans');
       if (res.data && res.data.length > 0) {
@@ -31,12 +22,10 @@ export default function DietsScreen() {
       }
     } catch (err) {
       console.warn("Failed fetching mobile diet plans:", err);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, []);
 
-  const loadWaterAndConsumed = async () => {
+  const loadWaterAndConsumed = useCallback(async () => {
     if (!user?.id) return;
     const savedWater = await storage.getItem(`water_${user.id}`);
     if (savedWater) setWater(parseInt(savedWater));
@@ -45,9 +34,21 @@ export default function DietsScreen() {
     if (savedConsumed) {
       try {
         setConsumed(JSON.parse(savedConsumed));
-      } catch (e) {}
+      } catch {
+        // handle error
+      }
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    const init = async () => {
+      if (user?.id) {
+        await Promise.all([fetchActiveDiet(), loadWaterAndConsumed()]);
+      }
+      setLoading(false);
+    };
+    init();
+  }, [user?.id, fetchActiveDiet, loadWaterAndConsumed]);
 
   const saveWater = async (val: number) => {
     if (!user?.id) return;
