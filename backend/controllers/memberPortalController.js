@@ -606,6 +606,80 @@ const getDashboardData = async (req, res) => {
     }
 };
 
+// @desc    Update logged in member profile and credentials
+// @route   PUT /api/member-portal/profile
+// @access  Private/Member
+const updateMyProfile = async (req, res) => {
+    if (req.user.role !== 'member' || !req.user.memberId) {
+        res.status(403);
+        throw new Error('Not authorized as a member');
+    }
+
+    try {
+        const { name, email, phone, password } = req.body;
+
+        // 1. Find and update Member record
+        const member = await Member.findById(req.user.memberId);
+        if (!member) {
+            res.status(404);
+            throw new Error('Member profile not found');
+        }
+
+        // Keep track of the old phone to potentially update default user email if default was phone-based
+        const oldPhone = member.phone;
+
+        member.name = name || member.name;
+        member.email = email || member.email;
+        member.phone = phone || member.phone;
+        await member.save();
+
+        // 2. Find and update User record (credentials & profile info)
+        const User = require('../models/User');
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            res.status(404);
+            throw new Error('User account not found');
+        }
+
+        user.name = name || user.name;
+        user.phone = phone || user.phone;
+
+        if (email) {
+            user.email = email.trim().toLowerCase();
+        } else if (phone && user.email === `${oldPhone}@gym.com`) {
+            // Update default phone-based email to match the new phone
+            user.email = `${phone}@gym.com`;
+        }
+
+        if (password) {
+            user.password = password;
+        }
+
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Profile and credentials updated successfully',
+            member: {
+                name: member.name,
+                email: member.email,
+                phone: member.phone
+            },
+            user: {
+                name: user.name,
+                email: user.email,
+                phone: user.phone
+            }
+        });
+    } catch (error) {
+        console.error('UPDATE PROFILE ERROR:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Error updating profile'
+        });
+    }
+};
+
 module.exports = {
     getMyPlan,
     getMyAttendance,
@@ -617,5 +691,6 @@ module.exports = {
     purchasePlanVerify,
     cancelMyPlan,
     getPartnerGyms,
-    getDashboardData
+    getDashboardData,
+    updateMyProfile
 };

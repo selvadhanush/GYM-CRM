@@ -1,5 +1,6 @@
 const Gym = require('../models/Gym');
 const { logAudit } = require('../utils/auditLogger');
+const prisma = require('../config/prisma');
 
 // @desc    Upload images for a gym
 // @route   POST /api/gyms/images
@@ -103,8 +104,68 @@ const updateGymImages = async (req, res) => {
     }
 };
 
+// @desc    Get gym settings
+// @route   GET /api/gyms/settings
+// @access  Private (Admin)
+const getGymSettings = async (req, res) => {
+    const gymId = req.user.gymId ? req.user.gymId.toString() : null;
+    if (!gymId || gymId === 'undefined' || gymId === 'null') return res.status(403).json({ message: 'User does not belong to a gym' });
+
+    try {
+        let settings = await prisma.gymSettings.findUnique({ where: { gymId } });
+        if (!settings) {
+            const gymExists = await prisma.gym.findUnique({ where: { id: gymId } });
+            if (!gymExists) {
+                return res.status(404).json({ message: `Gym with ID ${gymId} not found in database. Cannot create settings.` });
+            }
+            settings = await prisma.gymSettings.create({ data: { gymId } });
+        }
+        res.status(200).json(settings);
+    } catch (error) {
+        console.error('Error fetching gym settings:', error);
+        res.status(500).json({ message: 'Server error fetching gym settings', error: error.message, stack: error.stack });
+    }
+};
+
+// @desc    Update gym settings
+// @route   PUT /api/gyms/settings
+// @access  Private (Admin)
+const updateGymSettings = async (req, res) => {
+    const gymId = req.user.gymId ? req.user.gymId.toString() : null;
+    if (!gymId || gymId === 'undefined' || gymId === 'null') return res.status(403).json({ message: 'User does not belong to a gym' });
+
+    try {
+        const gymExists = await prisma.gym.findUnique({ where: { id: gymId } });
+        if (!gymExists) {
+            return res.status(404).json({ message: `Gym with ID ${gymId} not found in database. Cannot update settings.` });
+        }
+
+        const updateData = { ...req.body };
+        // Clean out fields we don't want to accidentally upsert like id, gymId, createdAt
+        delete updateData.id;
+        delete updateData.gymId;
+        delete updateData.createdAt;
+        delete updateData.updatedAt;
+
+        const settings = await prisma.gymSettings.upsert({
+            where: { gymId },
+            update: updateData,
+            create: { gymId, ...updateData }
+        });
+        
+        await logAudit(req, 'GYM_SETTINGS_UPDATED', 'GymSettings', settings.id, 'Updated gym configuration settings');
+        
+        res.status(200).json({ message: 'Settings updated successfully', settings });
+    } catch (error) {
+        console.error('Error updating gym settings:', error);
+        res.status(500).json({ message: 'Server error updating gym settings' });
+    }
+};
+
 module.exports = {
     uploadGymImages,
     getPartneredGyms,
-    updateGymImages
+    updateGymImages,
+    getGymSettings,
+    updateGymSettings
 };

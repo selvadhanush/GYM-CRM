@@ -119,7 +119,8 @@ app.use('/api/pt-sessions', require('./routes/ptSessionRoutes'));
 app.use('/api/body-assessments', require('./routes/bodyAssessmentRoutes'));
 app.use('/api/trainer-attendance', require('./routes/trainerAttendanceRoutes'));
 app.use('/api/payroll', require('./routes/payrollRoutes'));
-app.use('/api/equipments', require('./routes/equipmentRoutes'));
+app.use('/api/tickets', require('./routes/ticketRoutes'));
+
 
 // Test routes (Dev only)
 app.use('/api/test', require('./routes/testRoutes'));
@@ -133,4 +134,4 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT} (${process.env.NODE_ENV || 'development'})`);
 });
-// Nodemon trigger change for generated Prisma client
+// Nodemon reload triggered for CORS connection fixes

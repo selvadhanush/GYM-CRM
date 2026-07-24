@@ -168,7 +168,14 @@ const attemptCheckIn = async (member, gym, branch = null) => {
     },
   });
 
-  const updatedMember = await prisma.member.findUnique({ where: { id: member.id } });
+  let updatedMember = await prisma.member.findUnique({ where: { id: member.id } });
+
+  if (updatedMember && updatedMember.sessionsRemaining <= 0) {
+    updatedMember = await prisma.member.update({
+      where: { id: member.id },
+      data: { status: 'Expired' }
+    });
+  }
 
   return { ok: true, member: updatedMember, sessionCheckIn, sessionEndsAt, cooldownEndsAt };
 };

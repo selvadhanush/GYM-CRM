@@ -5,26 +5,26 @@ import { radii, spacing, typography } from './tokens';
 // Spacing, Colors, Typography, and Radii design tokens for GYM-CRM Mobile App
 // Compliance: AGENTS.md §5
 
-// Light Theme colors (Warm Yellow Light Theme)
+// Light Theme colors (Premium Warm Amber-Gold Light Theme)
 export const lightColors = {
-  primary: '#FFE01B',
-  background: '#FAFAFA',
+  primary: '#F0A020',
+  background: '#FBFBF9',
   card: '#FFFFFF',
-  text: '#111827',
-  border: '#E5E7EB',
-  notification: '#E6C800',
-  textSecondary: '#4B5563',
-  textMuted: '#6B7280',
-  textInverse: '#111827',
-  accent: '#E6C800',
-  success: '#16A34A',
-  warning: '#F59E0B',
-  error: '#DC2626',
-  info: '#2563EB',
-  bgTertiary: '#FAFAFA',
-  borderFocus: '#FFE01B',
-  brandLight: '#FFF4A3',
-  brandMuted: 'rgba(255, 224, 27, 0.15)',
+  text: '#231D14',
+  border: '#E6E2DC',
+  notification: '#D9860F',
+  textSecondary: '#6D6154',
+  textMuted: '#A39686',
+  textInverse: '#FFFFFF',
+  accent: '#D9860F',
+  success: '#2E7D32',
+  warning: '#F0A020',
+  error: '#C62828',
+  info: '#1976D2',
+  bgTertiary: '#F5F3EF',
+  borderFocus: '#F0A020',
+  brandLight: '#FCE6B8',
+  brandMuted: 'rgba(240, 160, 32, 0.15)',
 };
 
 // Dark Theme colors (Premium Amber-Gold Dark Theme)

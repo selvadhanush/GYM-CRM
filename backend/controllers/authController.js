@@ -63,12 +63,16 @@ const auditReq = (req, partialUser) => ({
 // @route   POST /api/auth/register
 // @access  Public
 const registerUser = async (req, res) => {
-    const { name, password, phone } = req.body;
+    const { name, password, phone, gymName } = req.body;
     const email = normalizeEmail(req.body.email);
 
-    if (!name || !email || !password || !phone) {
+    if (!name || !email || !password) {
         res.status(400);
-        throw new Error('Name, email, password, and phone are required');
+        throw new Error('Name, email, and password are required');
+    }
+    if (!phone && !gymName) {
+        res.status(400);
+        throw new Error('Either phone (for members) or gymName (for gym admins) must be provided');
     }
     if (password.length < 6) {
         res.status(400);
@@ -81,41 +85,74 @@ const registerUser = async (req, res) => {
         throw new Error('User already exists');
     }
 
-    const user = await User.create({
-        name,
-        email,
-        password,
-        phone,
-        gymId: 'public', // members are linked to a gym later
-        role: 'member',
-        isVerified: false,
-    });
-
-    if (!user) {
-        res.status(400);
-        throw new Error('Invalid user data');
-    }
-
-    // Issue + email the OTP.
-    const otpString = await issueOtp(email);
-    console.log(`\n==================================================`);
-    console.log(`[DEV ONLY] Generated Registration OTP for ${email}: ${otpString}`);
-    console.log(`==================================================\n`);
-    try {
-        await sendEmail({
-            email: user.email,
-            subject: 'Gym CRM - Registration Verification OTP',
-            message: `Your OTP for registration is: ${otpString}. It is valid for ${OTP_TTL_MINUTES} minutes.`,
+    if (gymName) {
+        // --- Gym Admin Registration Flow ---
+        const gym = await Gym.create({
+            name: gymName,
+            status: 'Active',
         });
-    } catch (error) {
-        console.error('Email sending failed:', error.message);
-        // Non-fatal: user can request a new OTP via the login flow.
-    }
 
-    res.status(201).json({
-        message: 'User created. Please check your email for the OTP to verify your account.',
-        email: user.email,
-    });
+        const user = await User.create({
+            name,
+            email,
+            password,
+            gymId: gym._id || gym.id,
+            role: 'admin',
+            isVerified: true,
+        });
+
+        if (!user) {
+            res.status(400);
+            throw new Error('Invalid user data');
+        }
+
+        res.status(201).json({
+            _id: user._id || user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            gymId: gym._id || gym.id,
+            gymName: gym.name,
+            memberId: user.memberId || null,
+            token: generateToken(user._id || user.id),
+        });
+    } else {
+        // --- Member Registration Flow ---
+        const user = await User.create({
+            name,
+            email,
+            password,
+            phone,
+            gymId: 'public', // members are linked to a gym later
+            role: 'member',
+            isVerified: false,
+        });
+
+        if (!user) {
+            res.status(400);
+            throw new Error('Invalid user data');
+        }
+
+        // Issue + email the OTP.
+        const otpString = await issueOtp(email);
+        console.log(`\n==================================================`);
+        console.log(`[DEV ONLY] Generated Registration OTP for ${email}: ${otpString}`);
+        console.log(`==================================================\n`);
+        try {
+            await sendEmail({
+                email: user.email,
+                subject: 'Gym CRM - Registration Verification OTP',
+                message: `Your OTP for registration is: ${otpString}. It is valid for ${OTP_TTL_MINUTES} minutes.`,
+            });
+        } catch (error) {
+            console.error('Email sending failed:', error.message);
+        }
+
+        res.status(201).json({
+            message: 'User created. Please check your email for the OTP to verify your account.',
+            email: user.email,
+        });
+    }
 };
 
 // @desc    Verify OTP (registration confirmation OR login)
@@ -287,22 +324,51 @@ const authUser = async (req, res) => {
         const userRole = user.role;
         const userGymName = user.gymId?.name || '';
         const userGymId = user.gymId?._id || user.gymId || '';
+        const normalizedGym = userGymName.toUpperCase();
+        const isH4Gym = normalizedGym === 'H4' || userGymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
 
-        if (portalType === 'staff') {
+        if (portalType === 'superadmin') {
+            if (userRole !== 'superadmin') {
+                res.status(403);
+                throw new Error('Access Denied: This portal is restricted to Super Admins.');
+            }
+        } else if (portalType === 'fitpass_admin') {
+            if (userRole !== 'fitpass_admin') {
+                res.status(403);
+                throw new Error('Access Denied: This portal is restricted to FitPass Admins.');
+            }
+        } else if (portalType === 'h4_admin') {
+            if (userRole !== 'h4_admin') {
+                res.status(403);
+                throw new Error('Access Denied: This portal is restricted to H4 Admins.');
+            }
+        } else if (portalType === 'h4_gym_admin') {
+            const isH4GymAdmin = userRole === 'h4_admin' || (['admin', 'partner'].includes(userRole) && isH4Gym);
+            if (!isH4GymAdmin) {
+                res.status(403);
+                throw new Error('Access Denied: This portal is restricted to H4 Gym Admins.');
+            }
+        } else if (portalType === 'fitpass_partner_admin') {
+            const isFitpassPartnerAdmin = ['admin', 'partner'].includes(userRole) && !isH4Gym;
+            if (!isFitpassPartnerAdmin) {
+                res.status(403);
+                throw new Error('Access Denied: This portal is restricted to Fitpass Partner Admins.');
+            }
+        } else if (portalType === 'staff') {
             const isStaff = ['superadmin', 'trainer', 'partner', 'admin', 'receptionist', 'fitpass_admin', 'h4_admin'].includes(userRole);
             if (!isStaff) {
                 res.status(403);
                 throw new Error('Access Denied: This portal is restricted to Staffs and Partners.');
             }
-        } else if (portalType === 'h4') {
-            const isH4 = userRole === 'member' && (userGymName.toUpperCase() === 'H4' || userGymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd');
-            if (!isH4) {
+        } else if (portalType === 'h4' || portalType === 'h4_member') {
+            const isH4Member = userRole === 'member' && isH4Gym;
+            if (!isH4Member) {
                 res.status(403);
                 throw new Error('Access Denied: This portal is restricted to H4 Gym Members.');
             }
-        } else if (portalType === 'fitpass') {
-            const isFitpass = userRole === 'member' && (userGymName.toUpperCase() !== 'H4' && userGymId !== '05a08fdf-7427-48a5-8b25-e18d5a5668cd');
-            if (!isFitpass) {
+        } else if (portalType === 'fitpass' || portalType === 'fitpass_member') {
+            const isFitpassMember = userRole === 'member' && !isH4Gym;
+            if (!isFitpassMember) {
                 res.status(403);
                 throw new Error('Access Denied: This portal is restricted to Fitpass Members.');
             }

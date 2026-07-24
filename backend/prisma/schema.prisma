@@ -19,8 +19,47 @@ model Gym {
   defaultSessionDurationMinutes Int      @default(120)
   createdAt                     DateTime @default(now())
   updatedAt                     DateTime @updatedAt
+  settings                      GymSettings?
 
   @@index([status])
+}
+
+model GymSettings {
+  id              String   @id @default(uuid())
+  gymId           String   @unique
+  gym             Gym      @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  
+  // Branding
+  gymName         String   @default("GYM CRM PRO")
+  tagline         String   @default("Elevate Your Fitness Operations")
+  logoUrl         String   @default("https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=80&auto=format&fit=crop&q=60")
+  brandTheme      String   @default("dark")
+  
+  // Operations
+  sessionDuration Int      @default(120)
+  scanCooldown    Int      @default(300)
+  qrRefreshRate   Int      @default(15)
+  checkInSound    Boolean  @default(true)
+  
+  // Finance
+  currency        String   @default("INR")
+  taxRate         Float    @default(18)
+  taxId           String   @default("27AAAAA1111A1Z1")
+  razorpayEnabled Boolean  @default(true)
+  razorpayKey     String   @default("rzp_test_xxxxxxxxx")
+  
+  // Notifications
+  emailAlerts     Boolean  @default(true)
+  smsAlerts       Boolean  @default(false)
+  pushAlerts      Boolean  @default(true)
+  
+  // Business Hours (Stored as JSON string)
+  hours           String   @default("{\"weekday\":\"06:00 AM - 10:00 PM\",\"saturday\":\"07:00 AM - 08:00 PM\",\"sunday\":\"08:00 AM - 02:00 PM\"}")
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([gymId])
 }
 
 model User {
@@ -446,30 +485,33 @@ model Payroll {
   updatedAt    DateTime  @updatedAt
 }
 
-model Equipment {
-  id              String           @id @default(uuid())
-  name            String
-  type            String?          // Cardio, Strength, etc.
-  purchaseDate    DateTime?
-  warrantyExpiry  DateTime?
-  serviceSchedule String?          // Monthly, Quarterly, etc.
-  status          String           @default("Active") // Active, Under Maintenance, Broken, Retired
-  gymId           String
-  branchId        String?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+model Ticket {
+  id          String   @id @default(uuid())
+  subject     String
+  category    String
+  status      String   @default("pending") // pending, resolved
+  gymId       String
+  branchId    String?
+  creatorId   String   // The user who created the ticket
+  creatorName String
+  creatorRole String
+  messages    TicketMessage[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([gymId, status])
+  @@index([creatorId])
 }
 
-model MaintenanceLog {
-  id              String    @id @default(uuid())
-  equipmentId     String
-  serviceDate     DateTime  @default(now())
-  cost            Float     @default(0)
-  description     String?
-  technicianName  String?
-  nextServiceDate DateTime?
-  gymId           String
-  branchId        String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+model TicketMessage {
+  id         String   @id @default(uuid())
+  ticketId   String
+  ticket     Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  senderId   String
+  senderName String
+  senderRole String
+  message    String
+  createdAt  DateTime @default(now())
+
+  @@index([ticketId])
 }

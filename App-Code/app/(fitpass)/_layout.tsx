@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { TouchableOpacity, StyleSheet, View } from 'react-native';
-import { LayoutDashboard, Building2, History, User, LogOut } from 'lucide-react-native';
+import { LayoutDashboard, Building2, History, User, LogOut, Dumbbell, Apple } from 'lucide-react-native';
 import { theme } from '@/design-system/theme';
 import { useAuth } from '@/features/auth';
 
@@ -35,6 +35,22 @@ export default function FitPassLayout() {
           title: 'FitPass',
           tabBarLabel: 'Home',
           tabBarIcon: ({ color, size }) => <LayoutDashboard color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="workouts"
+        options={{
+          title: 'Workouts',
+          tabBarLabel: 'Workouts',
+          tabBarIcon: ({ color, size }) => <Dumbbell color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="diets"
+        options={{
+          title: 'Diets & Hydration',
+          tabBarLabel: 'Diets',
+          tabBarIcon: ({ color, size }) => <Apple color={color} size={size} />,
         }}
       />
       <Tabs.Screen

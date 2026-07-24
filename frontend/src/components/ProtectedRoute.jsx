@@ -22,7 +22,8 @@ const ProtectedRoute = ({ children, roles }) => {
             user.role === 'admin' ? '/dashboard' :
                 user.role === 'trainer' ? '/attendance' :
                     user.role === 'member' ? '/member-dashboard' :
-                        '/members';
+                        user.role === 'partner' ? '/partner/visit-log' :
+                            '/members';
         return <Navigate to={defaultPath} replace />;
     }
 

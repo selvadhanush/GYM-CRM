@@ -3,51 +3,51 @@ import { Dimensions } from 'react-native';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export const COLORS = {
-  // Brand Orange
-  primary: '#FF7A00',
-  primaryLight: '#FF9F40',
-  primaryDark: '#E65C00',
+  // Brand Warm Amber-Gold
+  primary: '#F0A020',
+  primaryLight: '#FCE6B8',
+  primaryDark: '#D9860F',
 
   // Accents
-  secondary: '#00D4AA',
-  accent: '#A78BFA',
+  secondary: '#D9860F',
+  accent: '#D9860F',
 
   // Status
-  success: '#22C55E',
+  success: '#2E7D32',
   successLight: '#4ADE80',
-  warning: '#F59E0B',
-  warningDark: '#D97706',
-  danger: '#EF4444',
-  dangerLight: '#F87171',
+  warning: '#F0A020',
+  warningDark: '#D9860F',
+  danger: '#C62828',
+  dangerLight: '#EF5350',
 
-  // Dark Backgrounds (Spatial) -> Now Light
-  backgroundDark: '#FFFFFF',
-  backgroundCard: '#F8F9FA',
-  backgroundElevated: '#F0F0F0',
-  backgroundInput: '#E5E7EB',
-  surface: '#F9FAFB',
-  surfaceLight: '#FFFFFF',
+  // Dark Backgrounds (Spatial)
+  backgroundDark: '#231D14',
+  backgroundCard: '#2D251C',
+  backgroundElevated: '#3A3025',
+  backgroundInput: '#2D251C',
+  surface: '#2D251C',
+  surfaceLight: '#3A3025',
 
   // Text
-  textPrimary: '#000000',
-  textSecondary: '#444444',
-  textMuted: '#666666',
-  textInverse: '#FFFFFF',
+  textPrimary: '#FFFFFF',
+  textSecondary: '#A39686',
+  textMuted: '#6D6154',
+  textInverse: '#231D14',
 
   // Borders
-  border: '#E5E7EB',
-  borderLight: '#F3F4F6',
+  border: '#3A3025',
+  borderLight: '#2D251C',
 
   // Misc
   overlay: 'rgba(0, 0, 0, 0.6)',
 
   gradient: {
-    primary: ['#FF7A00', '#E65C00'] as const,
-    secondary: ['#00D4AA', '#009977'] as const,
-    accent: ['#A78BFA', '#7C3AED'] as const,
-    dark: ['#0A0A0F', '#12121A'] as const,
-    card: ['#1A1A26', '#12121A'] as const,
-    hero: ['rgba(255,122,0,0.2)', 'rgba(255,122,0,0)'] as const,
+    primary: ['#F0A020', '#D9860F'] as const,
+    secondary: ['#D9860F', '#B36B00'] as const,
+    accent: ['#F0A020', '#D9860F'] as const,
+    dark: ['#231D14', '#2D251C'] as const,
+    card: ['#2D251C', '#231D14'] as const,
+    hero: ['rgba(240,160,32,0.2)', 'rgba(240,160,32,0)'] as const,
   },
 };
 
@@ -89,21 +89,21 @@ export const FONTS = {
 
 export const SHADOWS = {
   sm: {
-    shadowColor: '#FF7A00',
+    shadowColor: '#F0A020',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 3,
   },
   md: {
-    shadowColor: '#FF7A00',
+    shadowColor: '#F0A020',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 12,
     elevation: 6,
   },
   lg: {
-    shadowColor: '#FF7A00',
+    shadowColor: '#F0A020',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 24,

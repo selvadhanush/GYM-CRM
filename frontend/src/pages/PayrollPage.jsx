@@ -10,7 +10,7 @@ import {
     addCommission
 } from '../services/apiService';
 import Modal from '../components/Modal';
-import { Banknote, Users, DollarSign, PlusCircle, CheckCircle, AlertCircle, Edit, Sparkles } from 'lucide-react';
+import { Banknote, Users, DollarSign, PlusCircle, CheckCircle, AlertCircle, Edit, Sparkles, Printer, Download } from 'lucide-react';
 
 const PayrollPage = () => {
     const { user } = useContext(AuthContext);
@@ -21,6 +21,8 @@ const PayrollPage = () => {
     const [selectedTrainerId, setSelectedTrainerId] = useState('');
     const [activeTab, setActiveTab] = useState('history');
     const [loading, setLoading] = useState(true);
+    const [selectedPayslip, setSelectedPayslip] = useState(null);
+
 
     // Filter states
     const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1);
@@ -250,7 +252,7 @@ const PayrollPage = () => {
                                                 <th>Incentives</th>
                                                 <th>Total Payout</th>
                                                 <th>Status</th>
-                                                {isAdmin && <th>Actions</th>}
+                                                <th>Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -278,22 +280,31 @@ const PayrollPage = () => {
                                                             </span>
                                                         )}
                                                     </td>
-                                                    {isAdmin && (
-                                                        <td>
-                                                            {slip.status !== 'Paid' && (
+                                                    <td>
+                                                        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                                                            <button
+                                                                className="btn"
+                                                                style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                                                                onClick={() => setSelectedPayslip(slip)}
+                                                                title="Download / Print Payslip"
+                                                            >
+                                                                <Printer size={13} /> Payslip
+                                                            </button>
+                                                            {isAdmin && slip.status !== 'Paid' && (
                                                                 <button
                                                                     className="btn btn-primary"
-                                                                    style={{ padding: '0.3rem 0.75rem', fontSize: '0.78rem', fontWeight: '700', borderRadius: '8px' }}
+                                                                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', fontWeight: '700', borderRadius: '8px' }}
                                                                     onClick={() => handleMarkAsPaid(slip._id)}
                                                                 >
                                                                     Disburse
                                                                 </button>
                                                             )}
-                                                        </td>
-                                                    )}
+                                                        </div>
+                                                    </td>
                                                 </tr>
                                             ))}
                                         </tbody>
+
                                     </table>
                                 </div>
                             )}
@@ -475,8 +486,84 @@ const PayrollPage = () => {
                     </button>
                 </form>
             </Modal>
+
+            {/* Printable Payslip Modal */}
+            <Modal isOpen={!!selectedPayslip} onClose={() => setSelectedPayslip(null)} title="📄 Official Salary Slip">
+                {selectedPayslip && (
+                    <div style={{ background: '#fff', color: '#111', padding: '1.5rem', borderRadius: '12px', fontFamily: 'sans-serif' }}>
+                        {/* Header */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #F0A020', paddingBottom: '1rem', marginBottom: '1rem' }}>
+                            <div>
+                                <h2 style={{ margin: 0, color: '#231D14', fontSize: '1.25rem', fontWeight: 800 }}>FITNESS CLUB PAYSLIP</h2>
+                                <p style={{ margin: '0.2rem 0 0', color: '#666', fontSize: '0.8rem' }}>Salary Statement & Earnings Breakdown</p>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                                <span style={{ background: selectedPayslip.status === 'Paid' ? '#E8F5E9' : '#FFEBEE', color: selectedPayslip.status === 'Paid' ? '#2E7D32' : '#C62828', padding: '0.25rem 0.6rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800 }}>
+                                    {selectedPayslip.status.toUpperCase()}
+                                </span>
+                                <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.3rem' }}>{months[selectedPayslip.month - 1]} {selectedPayslip.year}</div>
+                            </div>
+                        </div>
+
+                        {/* Employee details */}
+                        <div style={{ background: '#FBF6EC', padding: '0.875rem', borderRadius: '8px', marginBottom: '1.25rem', fontSize: '0.85rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                            <div><strong>Employee:</strong> {selectedPayslip.trainer?.name || 'Staff Member'}</div>
+                            <div><strong>Email:</strong> {selectedPayslip.trainer?.email || 'N/A'}</div>
+                            <div><strong>Role:</strong> Fitness Trainer</div>
+                            <div><strong>Pay Date:</strong> {selectedPayslip.paymentDate ? new Date(selectedPayslip.paymentDate).toLocaleDateString() : 'Pending'}</div>
+                        </div>
+
+                        {/* Breakdown Table */}
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '1px solid #ddd', background: '#f5f5f5' }}>
+                                    <th style={{ textAlign: 'left', padding: '0.5rem' }}>Earnings Component</th>
+                                    <th style={{ textAlign: 'right', padding: '0.5rem' }}>Amount (₹)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style={{ padding: '0.5rem', borderBottom: '1px solid #eee' }}>Fixed Base Salary</td>
+                                    <td style={{ padding: '0.5rem', borderBottom: '1px solid #eee', textAlign: 'right', fontWeight: 600 }}>₹{(selectedPayslip.fixedSalary || 0).toLocaleString()}</td>
+                                </tr>
+                                <tr>
+                                    <td style={{ padding: '0.5rem', borderBottom: '1px solid #eee' }}>PT Sessions Commission</td>
+                                    <td style={{ padding: '0.5rem', borderBottom: '1px solid #eee', textAlign: 'right', fontWeight: 600 }}>₹{(selectedPayslip.commissions || 0).toLocaleString()}</td>
+                                </tr>
+                                <tr>
+                                    <td style={{ padding: '0.5rem', borderBottom: '1px solid #eee' }}>Incentives & Performance Bonus</td>
+                                    <td style={{ padding: '0.5rem', borderBottom: '1px solid #eee', textAlign: 'right', fontWeight: 600 }}>₹{(selectedPayslip.incentives || 0).toLocaleString()}</td>
+                                </tr>
+                                <tr style={{ background: '#FBF6EC', fontWeight: 800, fontSize: '0.95rem' }}>
+                                    <td style={{ padding: '0.65rem' }}>Net Take-Home Payout</td>
+                                    <td style={{ padding: '0.65rem', textAlign: 'right', color: '#D9860F' }}>₹{(selectedPayslip.totalAmount || 0).toLocaleString()}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        {/* Footer & Print Button */}
+                        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+                            <button
+                                className="btn btn-primary"
+                                style={{ flex: 1, padding: '0.6rem', fontSize: '0.85rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
+                                onClick={() => window.print()}
+                            >
+                                <Printer size={16} /> Print / Save PDF
+                            </button>
+                            <button
+                                className="btn btn-secondary"
+                                style={{ flex: 1, padding: '0.6rem', fontSize: '0.85rem' }}
+                                onClick={() => setSelectedPayslip(null)}
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </Modal>
         </div>
     );
 };
 
 export default PayrollPage;
+

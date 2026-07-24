@@ -7,7 +7,8 @@ import {
     LayoutDashboard, Users, ShieldCheck, Calendar, IndianRupee,
     UserCheck, Clock, Building2, History, ChevronRight,
     ChevronLeft, LogOut, Target, Package, Banknote,
-    AlertTriangle, Receipt, CalendarCheck, Snowflake, LineChart, FileText, Home, Dumbbell, Image, Wrench, Zap
+    AlertTriangle, Receipt, CalendarCheck, Snowflake, LineChart, FileText, Home, Dumbbell, Image, Zap,
+    Settings, HelpCircle, Apple
 } from 'lucide-react';
 
 const NAV_GROUPS = {
@@ -30,6 +31,8 @@ const NAV_GROUPS = {
             label: 'System',
             items: [
                 { name: 'Audit Logs', path: '/audit', icon: History },
+                { name: 'Settings', path: '/settings', icon: Settings },
+                { name: 'Support Desk', path: '/support', icon: HelpCircle },
             ]
         }
     ],
@@ -38,13 +41,12 @@ const NAV_GROUPS = {
             label: 'Gym Management',
             items: [
                 { name: 'Gym Dashboard', path: '/dashboard', icon: LayoutDashboard },
-                { name: 'Gym Profile', path: '/profile', icon: Image },
+
                 { name: 'Members', path: '/members', icon: Users },
                 { name: 'Leads', path: '/leads', icon: Target },
                 { name: 'Plans', path: '/plans', icon: Package },
                 { name: 'Classes', path: '/classes', icon: Dumbbell },
                 { name: 'Assessments', path: '/body-assessments', icon: LineChart },
-                { name: 'Equipments', path: '/equipments', icon: Wrench },
                 { name: 'Staff', path: '/staff', icon: ShieldCheck },
                 { name: 'Branches', path: '/branches', icon: Building2 },
             ]
@@ -67,6 +69,10 @@ const NAV_GROUPS = {
                 { name: 'Freeze System', path: '/freeze', icon: Snowflake },
                 { name: 'Analytics', path: '/analytics', icon: LineChart },
                 { name: 'FitPass Reports', path: '/fitpass-analytics', icon: Zap },
+                { name: 'Workout Plans', path: '/workout-plans', icon: Dumbbell },
+                { name: 'Diet Plans', path: '/diet-plans', icon: Apple },
+                { name: 'Settings', path: '/settings', icon: Settings },
+                { name: 'Support Desk', path: '/support', icon: HelpCircle },
             ]
         }
     ],
@@ -77,7 +83,7 @@ const NAV_GROUPS = {
                 { name: 'Members', path: '/members', icon: Users },
                 { name: 'Leads', path: '/leads', icon: Target },
                 { name: 'Attendance', path: '/attendance', icon: UserCheck },
-                { name: 'Equipments', path: '/equipments', icon: Wrench },
+                { name: 'Support Desk', path: '/support', icon: HelpCircle },
             ]
         },
         {
@@ -95,9 +101,11 @@ const NAV_GROUPS = {
                 { name: 'Attendance', path: '/attendance', icon: UserCheck },
                 { name: 'Classes', path: '/classes', icon: Dumbbell },
                 { name: 'Assessments', path: '/body-assessments', icon: LineChart },
+                { name: 'Workout Plans', path: '/workout-plans', icon: Dumbbell },
+                { name: 'Diet Plans', path: '/diet-plans', icon: Apple },
                 { name: 'Check In/Out', path: '/trainer-attendance', icon: Clock },
                 { name: 'My Payroll', path: '/payroll', icon: Banknote },
-                { name: 'Equipments', path: '/equipments', icon: Wrench },
+                { name: 'Support Desk', path: '/support', icon: HelpCircle },
             ]
         }
     ],
@@ -108,6 +116,18 @@ const NAV_GROUPS = {
                 { name: 'Dashboard', path: '/member-dashboard', icon: Home },
                 { name: 'My InBody', path: '/body-assessments', icon: LineChart },
                 { name: 'Classes', path: '/member-classes', icon: Dumbbell },
+                { name: 'Workout Routine', path: '/workout-plans', icon: Dumbbell },
+                { name: 'Diet Chart', path: '/diet-plans', icon: Apple },
+                { name: 'Support Desk', path: '/support', icon: HelpCircle },
+            ]
+        }
+    ],
+    partner: [
+        {
+            label: 'FitPass Partner Portal',
+            items: [
+                { name: 'FitPass Visits', path: '/partner/visit-log', icon: Zap },
+                { name: 'FitPass Leads', path: '/partner/fitpass-leads', icon: Target },
             ]
         }
     ]
@@ -160,6 +180,7 @@ const Sidebar = () => {
                     items: [
                         { name: 'Partner Gyms', path: '/superadmin/gyms', icon: Building2 },
                         { name: 'Fit-Prime Plans', path: '/superadmin/plans', icon: Package },
+                        { name: 'FitPass Members', path: '/superadmin/fitpass-members', icon: Users },
                         { name: 'FitPass Reports', path: '/superadmin/fitpass-analytics', icon: Zap },
                         { name: 'Admins Directory', path: '/superadmin/admins', icon: ShieldCheck },
                     ]
@@ -168,6 +189,8 @@ const Sidebar = () => {
                     label: 'System',
                     items: [
                         { name: 'Audit Logs', path: '/audit', icon: History },
+                        { name: 'Settings', path: '/settings', icon: Settings },
+                        { name: 'Support Desk', path: '/support', icon: HelpCircle },
                     ]
                 }
             ];
@@ -178,13 +201,12 @@ const Sidebar = () => {
                 
                 const gymMgmtItems = [
                     { name: `Gym Dashboard${suffix}`, path: '/dashboard', icon: LayoutDashboard },
-                    { name: `Gym Profile${suffix}`, path: '/profile', icon: Image },
+
                     { name: `Members${suffix}`, path: '/members', icon: Users },
                     { name: `Leads${suffix}`, path: '/leads', icon: Target },
                     { name: `Plans${suffix}`, path: '/plans', icon: Package },
                     { name: `Classes${suffix}`, path: '/classes', icon: Dumbbell },
                     { name: `Assessments${suffix}`, path: '/body-assessments', icon: LineChart },
-                    { name: `Equipments${suffix}`, path: '/equipments', icon: Wrench },
                     { name: `Staff${suffix}`, path: '/staff', icon: ShieldCheck },
                 ];
 
@@ -216,6 +238,10 @@ const Sidebar = () => {
                             { name: `Freeze System${suffix}`, path: '/freeze', icon: Snowflake },
                             { name: `Analytics${suffix}`, path: '/analytics', icon: LineChart },
                             { name: `FitPass Reports${suffix}`, path: '/fitpass-analytics', icon: Zap },
+                            { name: `Workout Plans${suffix}`, path: '/workout-plans', icon: Dumbbell },
+                            { name: `Diet Plans${suffix}`, path: '/diet-plans', icon: Apple },
+                            { name: `Settings${suffix}`, path: '/settings', icon: Settings },
+                            { name: `Support Desk${suffix}`, path: '/support', icon: HelpCircle },
                         ]
                     }
                 ];
@@ -243,14 +269,16 @@ const Sidebar = () => {
                 items: [
                     { name: 'Partner Gyms', path: '/superadmin/gyms', icon: Building2 },
                     { name: 'Fit-Prime Plans', path: '/superadmin/plans', icon: Package },
+                    { name: 'FitPass Members', path: '/superadmin/fitpass-members', icon: Users },
                     { name: 'FitPass Reports', path: '/superadmin/fitpass-analytics', icon: Zap },
-                    { name: 'Members Directory', path: '/members', icon: Users },
                 ]
             },
             {
                 label: 'System',
                 items: [
                     { name: 'Audit Logs', path: '/audit', icon: History },
+                    { name: 'Settings', path: '/settings', icon: Settings },
+                    { name: 'Support Desk', path: '/support', icon: HelpCircle },
                 ]
             }
         ];
@@ -258,13 +286,12 @@ const Sidebar = () => {
         const suffix = !selectedBranchId ? ' of all branches' : '';
         const gymMgmtItems = [
             { name: `Gym Dashboard${suffix}`, path: '/dashboard', icon: LayoutDashboard },
-            { name: `Gym Profile${suffix}`, path: '/profile', icon: Image },
+
             { name: `Members${suffix}`, path: '/members', icon: Users },
             { name: `Leads${suffix}`, path: '/leads', icon: Target },
             { name: `Plans${suffix}`, path: '/plans', icon: Package },
             { name: `Classes${suffix}`, path: '/classes', icon: Dumbbell },
             { name: `Assessments${suffix}`, path: '/body-assessments', icon: LineChart },
-            { name: `Equipments${suffix}`, path: '/equipments', icon: Wrench },
             { name: `Staff${suffix}`, path: '/staff', icon: ShieldCheck },
         ];
 
@@ -294,6 +321,10 @@ const Sidebar = () => {
                     { name: `Reports${suffix}`, path: '/reports', icon: FileText },
                     { name: `Freeze System${suffix}`, path: '/freeze', icon: Snowflake },
                     { name: `Analytics${suffix}`, path: '/analytics', icon: LineChart },
+                    { name: `Workout Plans${suffix}`, path: '/workout-plans', icon: Dumbbell },
+                    { name: `Diet Plans${suffix}`, path: '/diet-plans', icon: Apple },
+                    { name: `Settings${suffix}`, path: '/settings', icon: Settings },
+                    { name: `Support Desk${suffix}`, path: '/support', icon: HelpCircle },
                 ]
             }
         ];
@@ -306,9 +337,21 @@ const Sidebar = () => {
     return (
         <aside className={`sidebar ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
             <div className="sidebar-logo">
-                <div className="sidebar-logo-icon">G</div>
-                {!collapsed && <span className="sidebar-logo-text">GYM CRM PRO</span>}
+                <div className="sidebar-logo-icon" style={{ background: 'linear-gradient(135deg, #F0A020, #D9860F)', color: '#231D14', boxShadow: '0 4px 16px rgba(240, 160, 32, 0.3)' }}>
+                    <Dumbbell size={22} color="#231D14" />
+                </div>
+                {!collapsed && (
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span className="sidebar-logo-text" style={{ fontSize: '1.1rem', fontWeight: '900', letterSpacing: '-0.01em', background: 'linear-gradient(135deg, #F0A020, #FFFFFF)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                            FITPRIME
+                        </span>
+                        <span style={{ fontSize: '0.62rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: '800' }}>
+                            GYM OS PRO
+                        </span>
+                    </div>
+                )}
             </div>
+
 
             {role === 'superadmin' && (
                 <div className="sidebar-division-switcher" style={{ padding: '0 0.875rem 1rem', borderBottom: '1px solid var(--border)' }}>
