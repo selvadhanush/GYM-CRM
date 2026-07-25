@@ -205,7 +205,12 @@ const generateMonthlyPayroll = async (req, res) => {
 // @access  Private (Admin/Trainer)
 const getPayrolls = async (req, res) => {
     try {
-        let query = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        let query = {};
+        if (req.query.gymId) {
+            query.gymId = req.query.gymId;
+        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
+            query.gymId = req.user.gymId;
+        }
         if (req.user.branchId) {
             query.branchId = req.user.branchId;
         }
@@ -219,23 +224,39 @@ const getPayrolls = async (req, res) => {
         if (req.query.month) query.month = Number(req.query.month);
         if (req.query.year) query.year = Number(req.query.year);
 
-        const payrolls = await Payroll.find(query).sort({ year: -1, month: -1 }).lean();
+        // Strict pagination parameters with hard cap at 100
+        const page = Math.max(parseInt(req.query.page) || 1, 1);
+        const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), 100);
+        const skip = (page - 1) * limit;
 
-        // Populate Trainer details
-        const formatted = [];
-        for (const p of payrolls) {
-            const trQuery = { _id: p.trainerId };
-            if (req.user.branchId) {
-                trQuery.branchId = req.user.branchId;
-            }
-            const trainerObj = await User.findOne(trQuery).select('-password');
-            formatted.push({
+        const total = await Payroll.countDocuments(query);
+        const payrolls = await Payroll.find(query)
+            .sort({ year: -1, month: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean();
+
+        // Batched Trainer lookup ONLY
+        const trainerIds = [...new Set(payrolls.map(p => p.trainerId).filter(Boolean))];
+        const trainers = trainerIds.length > 0
+            ? await User.find({ _id: { $in: trainerIds } }).select('id name email role phone').lean()
+            : [];
+
+        const trainerMap = new Map((trainers || []).map(t => [t._id ? t._id.toString() : t.id, t]));
+
+        const formatted = payrolls.map(p => {
+            const t = p.trainerId ? trainerMap.get(p.trainerId.toString()) : null;
+            return {
                 ...p,
-                trainer: trainerObj ? { id: trainerObj.id, name: trainerObj.name, email: trainerObj.email } : null
-            });
-        }
+                trainer: t ? { id: t.id || t._id, name: t.name, email: t.email } : null
+            };
+        });
 
-        res.json(formatted);
+        res.json({
+            success: true,
+            data: formatted,
+            meta: { page, limit, total }
+        });
     } catch (error) {
         console.error("GET PAYROLLS ERROR:", error);
         res.status(500).json({ success: false, message: error.message });

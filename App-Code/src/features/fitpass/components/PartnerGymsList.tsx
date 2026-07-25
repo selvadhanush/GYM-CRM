@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, TextInput, TouchableOpacity, Linking } from 'react-native';
 import { theme } from '@/design-system/theme';
 import { Typography, Card, Badge, Skeleton, EmptyState } from '@/components/ui';
-import { Building2, MapPin, Phone, Search, Zap, CheckCircle2 } from 'lucide-react-native';
+import { Building2, MapPin, Phone, Search, Zap, CheckCircle } from 'lucide-react-native';
 import { usePartnerGyms } from '../api/fitpass.api';
 
 export function PartnerGymsList() {
@@ -95,7 +95,7 @@ export function PartnerGymsList() {
                     .filter((b: any) => b.fitPassEnabled !== false)
                     .map((branch: any) => (
                       <View key={branch._id || branch.id} style={styles.branchChip}>
-                        <CheckCircle2 size={10} color={theme.colors.success} />
+                        <CheckCircle size={10} color={theme.colors.success} />
                         <Typography variant="caption" color="secondary" style={{ marginLeft: 4 }}>{branch.name}</Typography>
                       </View>
                     ))}

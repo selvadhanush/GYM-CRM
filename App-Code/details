@@ -1,0 +1,12 @@
+👑 Super Admin Access
+(For managing the entire CRM system across all gyms)
+
+Role	Email	Password
+Super Admin	superadmin@gymcrm.com	superpassword
+🏢 Gym-Specific Roles (Fitprime Gym)
+Role	Email	Password
+Gym Admin	admin@fitprime.com	adminpassword123
+Member / User	user@fitprime.com	userpassword123
+🏢 Gym-Specific Roles (Elite Fitness Center)
+Role	Email	Password
+Gym Admin	admin@example.com	admin123

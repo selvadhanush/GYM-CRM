@@ -8,15 +8,15 @@
 /* ─── CSS Variables (Warm Amber-Gold Core Theme) ─── */
 :root, [data-theme="dark"] {
   /* Brand Colors (Warm Amber-Gold Palette - AGENTS.md §5.2) */
-  --primary: #F0A020;
-  --primary-hover: #D9860F;
+  --primary: #FF5F1F;
+  --primary-hover: #E04E10;
   --primary-dark: #D9860F;
-  --primary-light: rgba(240, 160, 32, 0.15);
-  --primary-muted: rgba(240, 160, 32, 0.08);
+  --primary-light: #FFECE5;
+  --primary-muted: rgba(255, 95, 31, 0.18);
 
-  --accent: #D9860F;
+  --accent: #E04E10;
   --success: #2E7D32;
-  --warning: #F0A020;
+  --warning: #FF5F1F;
   --danger: #C62828;
   --info: #1976D2;
 
@@ -2210,5 +2210,119 @@ tbody tr:hover {
   color: #EF4444;
   border: 1px solid rgba(198, 40, 40, 0.3);
 }
+
+/* ─── Gym Profile & Gallery Styling ─── */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-16);
+  margin-top: 1rem;
+}
+
+.gallery-item-wrapper {
+  position: relative;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--bg-tertiary);
+  aspect-ratio: 4/3;
+  transition: var(--transition);
+}
+
+.gallery-item-wrapper:hover {
+  border-color: rgba(240, 160, 32, 0.4);
+  box-shadow: var(--shadow-md);
+}
+
+.gallery-item {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gallery-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 12, 8, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  opacity: 0;
+  transition: var(--transition);
+}
+
+.gallery-item:hover .gallery-overlay {
+  opacity: 1;
+}
+
+.gallery-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gallery-controls button {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.gallery-controls button:hover:not(:disabled) {
+  background: var(--primary);
+  color: var(--text-inverse);
+  border-color: var(--primary);
+}
+
+.gallery-controls button.delete-btn:hover:not(:disabled) {
+  background: var(--danger);
+  color: #FFFFFF;
+  border-color: var(--danger);
+}
+
+.gallery-controls button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.gallery-index {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.empty-gallery {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  gap: 8px;
+  text-align: center;
+}
+
 
 

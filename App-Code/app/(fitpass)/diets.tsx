@@ -5,7 +5,7 @@ import { theme } from '@/design-system/theme';
 import { Typography, Card } from '@/components/ui';
 import { API_CLIENT } from '@/lib/api-client';
 import { storage } from '@/lib/storage';
-import { useAuth } from '@/features/auth';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 export default function DietsScreen() {
   const user = useAuth((s) => s.user);

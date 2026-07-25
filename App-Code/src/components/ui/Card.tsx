@@ -24,16 +24,16 @@ export const Card: React.FC<CardProps> = ({ children, accentColor, style }) => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.radii.lg,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
     padding: theme.spacing.lg,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: '#EAE7E1',
     marginBottom: theme.spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowRadius: 12,
+    elevation: 3,
   },
 });

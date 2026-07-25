@@ -1,10 +1,12 @@
 import React from 'react';
-import { StyleSheet, View, TouchableOpacity, ScrollView } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, ScrollView, Image, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Shield, Globe, Lock } from 'lucide-react-native';
+import { Globe, ArrowRight, ShieldCheck, Lock } from 'lucide-react-native';
 import { theme } from '@/design-system/theme';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { Typography, Card } from '@/components/ui';
+import { Typography } from '@/components/ui';
+
+const H4_LOGO = require('../../assets/h4.jpeg');
 
 export default function PortalSelectionScreen() {
   const changeActiveDivision = useAuth((state) => state.changeActiveDivision);
@@ -21,128 +23,214 @@ export default function PortalSelectionScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container} bounces={false}>
-      <View style={styles.header}>
-        <Shield size={44} color={theme.colors.primary} style={styles.logo} />
-        <Typography variant="h1" style={styles.title}>
-          ZIPPY PRIME PORTAL
-        </Typography>
-        <Typography variant="bodySm" color="secondary" style={styles.subtitle}>
-          Welcome, {user?.name || 'Super Admin'}. Please choose the administration console you wish to access.
-        </Typography>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.container} bounces={false} showsVerticalScrollIndicator={false}>
+        {/* Header Section */}
+        <View style={styles.header}>
+          <View style={styles.h4LogoContainer}>
+            <Image source={H4_LOGO} style={styles.h4LogoImage} resizeMode="cover" />
+          </View>
+          <Typography variant="h1" style={styles.title}>
+            SUPER ADMIN PORTAL
+          </Typography>
+          <Typography variant="bodySm" color="secondary" style={styles.subtitle}>
+            Welcome, {user?.name || 'Super Admin'}. Please choose the administration console you wish to access.
+          </Typography>
+        </View>
 
-      <View style={styles.grid}>
-        <TouchableOpacity
-          onPress={() => handleSelect('fitpass')}
-          activeOpacity={0.8}
-          style={styles.cardWrapper}
-        >
-          <Card accentColor={theme.colors.primary} style={styles.selectionCard}>
-            <View style={styles.iconContainer}>
-              <Globe size={32} color={theme.colors.primary} />
+        {/* Portal Cards Selection */}
+        <View style={styles.grid}>
+          {/* FitPass Portal Card */}
+          <TouchableOpacity
+            onPress={() => handleSelect('fitpass')}
+            activeOpacity={0.88}
+            style={styles.cardWrapper}
+          >
+            <View style={[styles.portalCard, styles.fitpassBorder]}>
+              <View style={styles.cardHeaderRow}>
+                <View style={[styles.iconContainer, { backgroundColor: 'rgba(255, 224, 27, 0.15)' }]}>
+                  <Globe size={28} color="#D99B00" strokeWidth={2.2} />
+                </View>
+                <View style={styles.arrowBadge}>
+                  <ArrowRight size={18} color="#1A1510" strokeWidth={2.5} />
+                </View>
+              </View>
+
+              <Typography variant="h2" style={styles.cardTitle}>
+                FitPass Portal
+              </Typography>
+              <Typography variant="bodySm" color="secondary" style={styles.cardDesc}>
+                Manage global partner gyms, subscription plans, platform revenue, and system-wide audit records.
+              </Typography>
             </View>
-            <Typography variant="h2" style={styles.cardTitle}>
-              FitPass Portal
-            </Typography>
-            <Typography variant="caption" color="secondary" style={styles.cardDesc}>
-              Manage global partner gyms, subscription plans, platform revenue, and system-wide audit records.
-            </Typography>
-          </Card>
-        </TouchableOpacity>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => handleSelect('h4')}
-          activeOpacity={0.8}
-          style={styles.cardWrapper}
-        >
-          <Card accentColor={theme.colors.success} style={styles.selectionCard}>
-            <View style={[styles.iconContainer, { backgroundColor: 'rgba(0, 255, 102, 0.1)' }]}>
-              <Shield size={32} color={theme.colors.success} />
+          {/* H4 Gym Portal Card */}
+          <TouchableOpacity
+            onPress={() => handleSelect('h4')}
+            activeOpacity={0.88}
+            style={styles.cardWrapper}
+          >
+            <View style={[styles.portalCard, styles.h4Border]}>
+              <View style={styles.cardHeaderRow}>
+                <View style={[styles.iconContainer, { backgroundColor: 'rgba(46, 125, 50, 0.12)' }]}>
+                  <ShieldCheck size={28} color="#2E7D32" strokeWidth={2.2} />
+                </View>
+                <View style={styles.arrowBadge}>
+                  <ArrowRight size={18} color="#1A1510" strokeWidth={2.5} />
+                </View>
+              </View>
+
+              <Typography variant="h2" style={styles.cardTitle}>
+                H4 Gym Portal
+              </Typography>
+              <Typography variant="bodySm" color="secondary" style={styles.cardDesc}>
+                Access physical H4 branches database, check-ins, local member listings, trainer payroll, and expenses.
+              </Typography>
             </View>
-            <Typography variant="h2" style={styles.cardTitle}>
-              H4 Gym Portal
-            </Typography>
-            <Typography variant="caption" color="secondary" style={styles.cardDesc}>
-              Access physical H4 branches database, check-ins, local member listings, trainer payroll, and expenses.
-            </Typography>
-          </Card>
-        </TouchableOpacity>
-      </View>
+          </TouchableOpacity>
+        </View>
 
-      <Typography variant="caption" color="muted" style={styles.footerText}>
-        <Lock size={12} color={theme.colors.textMuted} /> Secured Super-Admin Management Access
-      </Typography>
-    </ScrollView>
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Lock size={14} color="#9B9084" />
+          <Typography variant="caption" color="muted" style={styles.footerText}>
+            Secured Super-Admin Management Access
+          </Typography>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
   container: {
     flexGrow: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: theme.spacing.lg,
+    paddingHorizontal: 24,
+    paddingVertical: 36,
   },
   header: {
     alignItems: 'center',
-    marginBottom: theme.spacing['2xl'],
-    maxWidth: 320,
+    marginBottom: 36,
+    maxWidth: 340,
+    width: '100%',
   },
-  logo: {
-    marginBottom: theme.spacing.md,
+  h4LogoContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#ffe01b',
+    overflow: 'hidden',
+    marginBottom: 20,
+    shadowColor: '#ffe01b',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  h4LogoImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 22,
   },
   title: {
-    ...theme.typography.h1,
-    color: theme.colors.text,
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#1A1510',
     textAlign: 'center',
-    letterSpacing: 1,
-    marginBottom: theme.spacing.sm,
+    letterSpacing: 0.5,
+    marginBottom: 8,
   },
   subtitle: {
-    ...theme.typography.bodySm,
-    color: theme.colors.textSecondary,
+    fontSize: 14,
+    color: '#655B50',
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 22,
+    fontWeight: '500',
   },
   grid: {
     width: '100%',
-    maxWidth: 380,
-    gap: theme.spacing.md,
+    maxWidth: 400,
+    gap: 20,
   },
   cardWrapper: {
     width: '100%',
   },
-  selectionCard: {
-    padding: theme.spacing.lg,
-    backgroundColor: theme.colors.bgTertiary,
-    minHeight: 140,
-    justifyContent: 'center',
+  portalCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: '#EAE7E1',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  fitpassBorder: {
+    borderLeftWidth: 5,
+    borderLeftColor: '#ffe01b',
+  },
+  h4Border: {
+    borderLeftWidth: 5,
+    borderLeftColor: '#2E7D32',
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   iconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: theme.radii.md,
-    backgroundColor: theme.colors.brandMuted,
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: theme.spacing.md,
+  },
+  arrowBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F8F6F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#EAE7E1',
   },
   cardTitle: {
-    ...theme.typography.h2,
-    color: theme.colors.text,
-    marginBottom: theme.spacing.xs,
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1A1510',
+    marginBottom: 6,
   },
   cardDesc: {
-    ...theme.typography.caption,
-    color: theme.colors.textSecondary,
-    lineHeight: 16,
+    fontSize: 14,
+    color: '#655B50',
+    lineHeight: 20,
+    fontWeight: '400',
   },
-  footerText: {
-    marginTop: theme.spacing['2xl'],
+  footer: {
+    marginTop: 40,
     flexDirection: 'row',
     alignItems: 'center',
-    color: theme.colors.textMuted,
+    gap: 6,
+  },
+  footerText: {
+    fontSize: 12,
+    color: '#9B9084',
+    fontWeight: '600',
   },
 });

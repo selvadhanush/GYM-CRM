@@ -1,6 +1,6 @@
 import React from 'react';
-import { StyleSheet, View, Text, Modal as RNModal, TouchableOpacity, ScrollView } from 'react-native';
-import { X } from 'lucide-react-native';
+import { StyleSheet, View, Text, Modal as RNModal, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import { X, ChevronDown } from 'lucide-react-native';
 import { theme } from '@/design-system/theme';
 
 interface ModalProps {
@@ -8,6 +8,7 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  fullScreen?: boolean;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -15,39 +16,50 @@ export const Modal: React.FC<ModalProps> = ({
   onClose,
   title,
   children,
+  fullScreen = true,
 }) => {
   return (
     <RNModal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="slide"
       onRequestClose={onClose}
     >
-      <TouchableOpacity
-        style={styles.overlay}
-        activeOpacity={1}
-        onPress={onClose}
-      >
+      <View style={[styles.overlay, fullScreen && styles.fullScreenOverlay]}>
         <TouchableOpacity
-          style={styles.modalContent}
+          style={styles.backdropTouch}
           activeOpacity={1}
-          onPress={(e) => e.stopPropagation()}
-        >
-          <View style={styles.header}>
-            <Text style={styles.title} numberOfLines={1}>{title}</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
-              <X color={theme.colors.textSecondary} size={20} />
-            </TouchableOpacity>
-          </View>
-          <ScrollView
-            style={styles.body}
-            contentContainerStyle={styles.bodyContent}
-            keyboardShouldPersistTaps="handled"
-          >
-            {children}
-          </ScrollView>
-        </TouchableOpacity>
-      </TouchableOpacity>
+          onPress={onClose}
+        />
+        <View style={[styles.modalContent, fullScreen && styles.fullScreenModalContent]}>
+          <SafeAreaView style={styles.safeContainer}>
+            {/* Top Grab Handle */}
+            <View style={styles.dragHandleContainer}>
+              <View style={styles.dragHandle} />
+            </View>
+
+            {/* Header Bar */}
+            <View style={styles.header}>
+              <View style={styles.headerTitleGroup}>
+                <Text style={styles.title} numberOfLines={1}>{title}</Text>
+              </View>
+              <TouchableOpacity onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
+                <ChevronDown color={theme.colors.textSecondary} size={24} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Scrollable Body Content */}
+            <ScrollView
+              style={styles.body}
+              contentContainerStyle={styles.bodyContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              {children}
+            </ScrollView>
+          </SafeAreaView>
+        </View>
+      </View>
     </RNModal>
   );
 };
@@ -55,25 +67,54 @@ export const Modal: React.FC<ModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: theme.spacing.lg,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    justifyContent: 'flex-end',
+  },
+  fullScreenOverlay: {
+    justifyContent: 'flex-end',
+  },
+  backdropTouch: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   modalContent: {
     backgroundColor: theme.colors.background,
-    borderRadius: theme.radii.lg,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     borderWidth: 1,
     borderColor: theme.colors.border,
     width: '100%',
-    maxWidth: 440,
-    maxHeight: '80%',
+    maxHeight: '92%',
+    height: '92%',
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.5,
-    shadowRadius: 30,
-    elevation: 10,
+    shadowOffset: { width: 0, height: -10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  fullScreenModalContent: {
+    height: '94%',
+    maxHeight: '94%',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+  },
+  safeContainer: {
+    flex: 1,
+  },
+  dragHandleContainer: {
+    alignItems: 'center',
+    paddingTop: 10,
+    paddingBottom: 4,
+  },
+  dragHandle: {
+    width: 40,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: theme.colors.border,
   },
   header: {
     flexDirection: 'row',
@@ -84,23 +125,28 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: theme.colors.border,
   },
-  title: {
-    ...theme.typography.h3,
-    color: theme.colors.text,
+  headerTitleGroup: {
     flex: 1,
-    marginRight: theme.spacing.md,
+  },
+  title: {
+    ...theme.typography.h2,
+    color: theme.colors.text,
+    fontSize: 20,
+    fontWeight: '800',
   },
   closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: theme.radii.sm,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: theme.colors.bgTertiary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   body: {
-    flexGrow: 0,
+    flex: 1,
   },
   bodyContent: {
     padding: theme.spacing.lg,
+    paddingBottom: theme.spacing['2xl'],
   },
 });

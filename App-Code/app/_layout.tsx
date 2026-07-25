@@ -29,9 +29,9 @@ function NavigationGuard() {
     const onPortalSelection = inSuperadmin && segmentsList[1] === 'portal-selection';
 
     if (!token) {
-      // Unauthenticated: go to gateway landing
+      // Unauthenticated: go to unified login page
       if (!inAuthGroup) {
-        router.replace('/(auth)/landing');
+        router.replace('/(auth)/login');
       }
       return;
     }
@@ -57,8 +57,8 @@ function NavigationGuard() {
       // FitPass member portal
       if (!inFitpass) router.replace('/(fitpass)/dashboard');
     } else if (isMember && activeDivision === null) {
-      // Member logged in but division not yet set — go back to landing
-      if (!inAuthGroup) router.replace('/(auth)/landing');
+      // Member logged in but division not yet set — go to login page
+      if (!inAuthGroup) router.replace('/(auth)/login');
     }
   }, [token, loading, activeDivision, user, segments, router]);
 

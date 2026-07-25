@@ -5,52 +5,52 @@ import { radii, spacing, typography } from './tokens';
 // Spacing, Colors, Typography, and Radii design tokens for GYM-CRM Mobile App
 // Compliance: AGENTS.md §5
 
-// Light Theme colors (Premium Warm Amber-Gold Light Theme)
+// Light Theme colors (Vibrant Electric Orange Theme)
 export const lightColors = {
-  primary: '#F0A020',
-  background: '#FBFBF9',
+  primary: '#FF5F1F', // Vibrant Electric Orange
+  background: '#FFFFFF',
   card: '#FFFFFF',
-  text: '#231D14',
-  border: '#E6E2DC',
-  notification: '#D9860F',
-  textSecondary: '#6D6154',
-  textMuted: '#A39686',
+  text: '#1A1510',
+  border: '#EAE7E1',
+  notification: '#E04E10',
+  textSecondary: '#655B50',
+  textMuted: '#9B9084',
   textInverse: '#FFFFFF',
-  accent: '#D9860F',
+  accent: '#E04E10',
   success: '#2E7D32',
-  warning: '#F0A020',
+  warning: '#FF5F1F',
   error: '#C62828',
   info: '#1976D2',
-  bgTertiary: '#F5F3EF',
-  borderFocus: '#F0A020',
-  brandLight: '#FCE6B8',
-  brandMuted: 'rgba(240, 160, 32, 0.15)',
+  bgTertiary: '#F8F6F0',
+  borderFocus: '#FF5F1F',
+  brandLight: '#FFF0EA',
+  brandMuted: 'rgba(255, 95, 31, 0.18)',
 };
 
-// Dark Theme colors (Premium Amber-Gold Dark Theme)
+// Dark Theme colors (Premium Dark Theme with Vibrant Orange accent)
 export const darkColors = {
-  primary: '#F0A020', // Amber-Gold
+  primary: '#FF5F1F', // Vibrant Electric Orange
   background: '#231D14', // Very dark warm brown-black
   card: '#2D251C', // Dark warm brown card/surface
   text: '#FFFFFF', // White text
   border: '#3A3025', // Warm brown border
-  notification: '#D9860F',
+  notification: '#E04E10',
   textSecondary: '#A39686',
   textMuted: '#6D6154',
   textInverse: '#231D14',
-  accent: '#D9860F',
+  accent: '#E04E10',
   success: '#2E7D32',
-  warning: '#F59E0B',
+  warning: '#FF5F1F',
   error: '#C62828',
   info: '#1976D2',
   bgTertiary: '#3A3025',
-  borderFocus: '#F0A020',
-  brandLight: '#FCE6B8',
-  brandMuted: 'rgba(240, 160, 32, 0.15)',
+  borderFocus: '#FF5F1F',
+  brandLight: '#3F2518',
+  brandMuted: 'rgba(255, 95, 31, 0.18)',
 };
 
 // Global reactive reference for active theme mode
-export let activeThemeMode: 'light' | 'dark' = 'dark'; // Default to dark premium theme
+export let activeThemeMode: 'light' | 'dark' = 'light'; // Default to light minimalistic theme
 
 export function setActiveThemeMode(mode: 'light' | 'dark') {
   activeThemeMode = mode;
@@ -64,7 +64,7 @@ interface ThemeState {
 }
 
 export const useThemeStore = create<ThemeState>((set) => ({
-  themeMode: 'dark', // Default to premium dark base theme
+  themeMode: 'light', // Default to minimalistic light theme
   initTheme: async () => {
     try {
       const saved = await storage.getItem('app-theme');

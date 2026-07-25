@@ -47,36 +47,60 @@ const getPlans = async (req, res) => {
         if (req.user.role === 'member') {
             query.memberId = req.user.memberId;
         } else if (req.user.role === 'trainer') {
-            // Option to filter by trainer
             query.trainerId = req.user.id;
         }
 
-        // If searching for specific member's plans
         if (req.query.memberId) {
             query.memberId = req.query.memberId;
         }
 
-        const plans = await WorkoutPlan.find(query).lean();
+        // Strict pagination parameters with hard cap at 100
+        const page = Math.max(parseInt(req.query.page) || 1, 1);
+        const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), 100);
+        const skip = (page - 1) * limit;
 
-        const formatted = [];
-        for (const p of plans) {
+        const total = await WorkoutPlan.countDocuments(query);
+        const plans = await WorkoutPlan.find(query)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean();
+
+        // Batched multi-entity lookup (Trainer + Member)
+        const memberIds = [...new Set(plans.map(p => p.memberId).filter(Boolean))];
+        const trainerIds = [...new Set(plans.map(p => p.trainerId).filter(Boolean))];
+
+        const [members, trainers] = await Promise.all([
+            memberIds.length > 0 ? Member.find({ _id: { $in: memberIds } }).select('id name phone email').lean() : [],
+            trainerIds.length > 0 ? User.find({ _id: { $in: trainerIds } }).select('id name email role phone').lean() : []
+        ]);
+
+        const memberMap = new Map((members || []).map(m => [m._id ? m._id.toString() : m.id, m]));
+        const trainerMap = new Map((trainers || []).map(t => [t._id ? t._id.toString() : t.id, t]));
+
+        const formatted = plans.map(p => {
+            let parsedExercises = p.exercises;
             if (p.exercises && typeof p.exercises === 'string') {
                 try {
-                    p.exercises = JSON.parse(p.exercises);
+                    parsedExercises = JSON.parse(p.exercises);
                 } catch (e) {}
             }
-            // Populate member and trainer manually
-            const memberObj = await Member.findOne({ _id: p.memberId });
-            const trainerObj = p.trainerId ? await User.findOne({ _id: p.trainerId }).select('-password') : null;
-            
-            formatted.push({
-                ...p,
-                member: memberObj || null,
-                trainer: trainerObj || null
-            });
-        }
+            const m = p.memberId ? memberMap.get(p.memberId.toString()) : null;
+            const t = p.trainerId ? trainerMap.get(p.trainerId.toString()) : null;
 
-        res.json(formatted);
+            return {
+                ...p,
+                exercises: parsedExercises,
+                member: m ? { id: m.id || m._id, name: m.name, phone: m.phone, email: m.email } : null,
+                trainer: t ? { id: t.id || t._id, name: t.name, email: t.email } : null
+            };
+        });
+
+        res.json({
+            success: true,
+            data: formatted,
+            meta: { page, limit, total }
+        });
     } catch (error) {
         console.error("GET WORKOUT PLANS ERROR:", error);
         res.status(500).json({ success: false, message: error.message });

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, Animated, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CheckCircle2, AlertTriangle, AlertCircle, Info, X } from 'lucide-react-native';
+import { CheckCircle, AlertTriangle, AlertCircle, Info, X } from 'lucide-react-native';
 import { theme } from '@/design-system/theme';
 import { useToast } from '@/hooks/useToast';
 
@@ -31,7 +31,7 @@ export const Toast: React.FC = () => {
   const getToastStyle = () => {
     switch (type) {
       case 'success':
-        return { border: theme.colors.success, bg: '#10b98115', icon: <CheckCircle2 color={theme.colors.success} size={18} /> };
+        return { border: theme.colors.success, bg: '#10b98115', icon: <CheckCircle color={theme.colors.success} size={18} /> };
       case 'error':
         return { border: theme.colors.error, bg: '#ef444415', icon: <AlertCircle color={theme.colors.error} size={18} /> };
       case 'warning':

@@ -55,21 +55,47 @@ const assignTrainer = async (req, res) => {
 // @access  Private/Admin/Trainer
 const getAssignments = async (req, res) => {
     try {
-        const assignments = await MemberTrainerAssignment.find({ gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) }).lean();
-        
-        // Populate member and trainer manually since PerformPopulate in MongooseAdapter is basic
-        const populated = [];
-        for (const assoc of assignments) {
-            const memberObj = await Member.findOne({ _id: assoc.memberId });
-            const trainerObj = await User.findOne({ _id: assoc.trainerId }).select('-password');
-            populated.push({
-                ...assoc,
-                member: memberObj || null,
-                trainer: trainerObj || null
-            });
-        }
+        const query = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
 
-        res.json(populated);
+        // Strict pagination parameters with hard cap at 100
+        const page = Math.max(parseInt(req.query.page) || 1, 1);
+        const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), 100);
+        const skip = (page - 1) * limit;
+
+        const total = await MemberTrainerAssignment.countDocuments(query);
+        const assignments = await MemberTrainerAssignment.find(query)
+            .sort({ assignedDate: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean();
+        
+        // Batched multi-entity lookup (Member + Trainer)
+        const memberIds = [...new Set(assignments.map(a => a.memberId).filter(Boolean))];
+        const trainerIds = [...new Set(assignments.map(a => a.trainerId).filter(Boolean))];
+
+        const [members, trainers] = await Promise.all([
+            memberIds.length > 0 ? Member.find({ _id: { $in: memberIds } }).select('id name phone email').lean() : [],
+            trainerIds.length > 0 ? User.find({ _id: { $in: trainerIds } }).select('id name email role phone').lean() : []
+        ]);
+
+        const memberMap = new Map((members || []).map(m => [m._id ? m._id.toString() : m.id, m]));
+        const trainerMap = new Map((trainers || []).map(t => [t._id ? t._id.toString() : t.id, t]));
+
+        const populated = assignments.map(assoc => {
+            const m = assoc.memberId ? memberMap.get(assoc.memberId.toString()) : null;
+            const t = assoc.trainerId ? trainerMap.get(assoc.trainerId.toString()) : null;
+            return {
+                ...assoc,
+                member: m ? { id: m.id || m._id, name: m.name, phone: m.phone, email: m.email } : null,
+                trainer: t ? { id: t.id || t._id, name: t.name, email: t.email } : null
+            };
+        });
+
+        res.json({
+            success: true,
+            data: populated,
+            meta: { page, limit, total }
+        });
     } catch (error) {
         console.error("GET ASSIGNMENTS ERROR:", error);
         res.status(500).json({ success: false, message: error.message });

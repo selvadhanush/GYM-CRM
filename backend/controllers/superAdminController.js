@@ -685,6 +685,82 @@ const getFitPassOverview = async (req, res) => {
     });
 };
 
+// @desc    Adjust FitPass subscriber session credits
+// @route   POST /api/superadmin/fitpass/users/:memberId/adjust-sessions
+// @access  Private (superadmin, fitpass_admin)
+const adjustUserSessions = async (req, res) => {
+    const { memberId } = req.params;
+    const { delta, reason } = req.body;
+
+    if (delta === undefined || isNaN(Number(delta))) {
+        res.status(400);
+        throw new Error('Valid numeric session delta is required');
+    }
+
+    const member = await prisma.member.findUnique({ where: { id: memberId } });
+    if (!member) {
+        res.status(404);
+        throw new Error('Member not found');
+    }
+
+    const newSessions = Math.max(0, (member.sessionsRemaining || 0) + Number(delta));
+    const newTotal = Number(delta) > 0 ? (member.sessionsTotal || 0) + Number(delta) : (member.sessionsTotal || 0);
+
+    const updated = await prisma.member.update({
+        where: { id: memberId },
+        data: {
+            sessionsRemaining: newSessions,
+            sessionsTotal: newTotal,
+        },
+    });
+
+    await logAudit(req, 'FITPASS_SESSIONS_ADJUSTED', 'Member', memberId, `Super admin adjusted sessions by ${delta} (Reason: ${reason || 'Admin adjustment'}). New balance: ${newSessions}`, member.name);
+
+    res.json({
+        success: true,
+        data: updated,
+        message: `Sessions adjusted successfully. New balance: ${newSessions}`,
+    });
+};
+
+// @desc    Update FitPass subscriber status or extend membership expiry
+// @route   PUT /api/superadmin/fitpass/users/:memberId/status
+// @access  Private (superadmin, fitpass_admin)
+const updateFitpassUserStatus = async (req, res) => {
+    const { memberId } = req.params;
+    const { status, extendDays, expiryDate } = req.body;
+
+    const member = await prisma.member.findUnique({ where: { id: memberId } });
+    if (!member) {
+        res.status(404);
+        throw new Error('Member not found');
+    }
+
+    const dataToUpdate = {};
+    if (status) dataToUpdate.status = status;
+
+    if (expiryDate) {
+        dataToUpdate.expiryDate = new Date(expiryDate);
+    } else if (extendDays && !isNaN(Number(extendDays))) {
+        const currentExpiry = new Date(member.expiryDate > new Date() ? member.expiryDate : new Date());
+        currentExpiry.setDate(currentExpiry.getDate() + Number(extendDays));
+        dataToUpdate.expiryDate = currentExpiry;
+    }
+
+    const updated = await prisma.member.update({
+        where: { id: memberId },
+        data: dataToUpdate,
+    });
+
+    await logAudit(req, 'FITPASS_USER_UPDATED', 'Member', memberId, `Updated FitPass user status/expiry: ${status || 'No status change'}`, member.name);
+
+    res.json({
+        success: true,
+        data: updated,
+        message: 'Member account updated successfully',
+    });
+};
+
 module.exports = {
     createPartnerGym,
     updatePartnerGym,
@@ -702,4 +778,6 @@ module.exports = {
     getFitPassAuditLog,
     getFitPassMemberRoster,
     getFitPassOverview,
+    adjustUserSessions,
+    updateFitpassUserStatus,
 };

@@ -6,7 +6,12 @@ const Member = require('../models/Member');
 // @access  Private/Admin/Trainer
 const getClasses = async (req, res) => {
     try {
-        const query = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        const query = {};
+        if (req.query.gymId) {
+            query.gymId = req.query.gymId;
+        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
+            query.gymId = req.user.gymId;
+        }
         if (req.user.branchId) query.branchId = req.user.branchId;
         const classes = await GymClass.find(query)
             .sort({ scheduleDate: 1 })

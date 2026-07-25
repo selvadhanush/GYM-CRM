@@ -7,7 +7,12 @@ const { logAudit } = require('../utils/auditLogger');
 // @route   GET /api/branches
 const getBranches = async (req, res) => {
     try {
-        const query = { gymId: req.user.gymId };
+        const query = {};
+        if (req.query.gymId) {
+            query.gymId = req.query.gymId;
+        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
+            query.gymId = req.user.gymId;
+        }
         if (req.user.branchId) {
             query._id = req.user.branchId;
         }
@@ -15,9 +20,10 @@ const getBranches = async (req, res) => {
 
         // Attach member/revenue counts per branch
         const enriched = await Promise.all(branches.map(async (b) => {
-            const memberCount = await Member.countDocuments({ gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }), branchId: b._id });
+            const gymFilter = b.gymId ? { gymId: b.gymId } : {};
+            const memberCount = await Member.countDocuments({ ...gymFilter, branchId: b._id });
             const revenueAgg = await Payment.aggregate([
-                { $match: { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }), branchId: b._id } },
+                { $match: { ...gymFilter, branchId: b._id } },
                 { $group: { _id: null, total: { $sum: '$amount' } } }
             ]);
             return { ...b, memberCount, totalRevenue: revenueAgg[0]?.total || 0 };

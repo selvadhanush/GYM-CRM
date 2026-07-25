@@ -162,10 +162,29 @@ const updateGymSettings = async (req, res) => {
     }
 };
 
+// @desc    Get all gyms (for gym profile / operations hub)
+// @route   GET /api/gyms
+// @access  Private
+const getGyms = async (req, res) => {
+    try {
+        const query = {};
+        if (req.user && req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
+            query.id = req.user.gymId;
+        }
+        const gyms = await Gym.find(query);
+        res.status(200).json(gyms);
+    } catch (error) {
+        console.error('Error fetching gyms:', error);
+        res.status(500).json({ message: 'Server error fetching gyms' });
+    }
+};
+
 module.exports = {
+    getGyms,
     uploadGymImages,
     getPartneredGyms,
     updateGymImages,
     getGymSettings,
     updateGymSettings
 };
+

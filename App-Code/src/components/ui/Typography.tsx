@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, TextProps, StyleSheet, TextStyle } from 'react-native';
+import { Text, TextProps, StyleSheet, TextStyle, Platform } from 'react-native';
 import { theme } from '@/design-system/theme';
 
 export type TypographyVariant = 'display' | 'h1' | 'h2' | 'h3' | 'body' | 'bodySm' | 'caption';
@@ -79,6 +79,10 @@ export const Typography: React.FC<TypographyProps> = ({
 
 const styles = StyleSheet.create({
   text: {
-    fontFamily: 'System', // Fallback to system fonts for native safety
+    fontFamily: Platform.select({
+      ios: 'System',
+      android: 'sans-serif-medium',
+      default: 'sans-serif',
+    }),
   },
 });

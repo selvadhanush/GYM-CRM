@@ -3,7 +3,7 @@ import { StyleSheet, View, FlatList, TouchableOpacity } from 'react-native';
 import { 
   LogIn, LogOut, UserPlus, UserCog, UserMinus, DollarSign, ArrowDown, ArrowUp, 
   Clipboard, Calendar, Target, Snowflake, Sun, Building, Settings, ShieldAlert, 
-  Scan, MapPin, ChevronLeft, ChevronRight 
+  Scan, MapPin, ChevronLeft, ChevronRight, History
 } from 'lucide-react-native';
 import { theme } from '@/design-system/theme';
 import { useAuditLogs, useAuditSummary } from '../api/superadmin.api';
@@ -94,10 +94,10 @@ export const AuditLogsList: React.FC = () => {
 
   if (summaryLoading || logsLoading) {
     return (
-      <View>
-        <Skeleton height={40} style={{ marginBottom: theme.spacing.lg }} />
+      <View style={styles.loadingWrapper}>
+        <Skeleton height={40} style={{ borderRadius: 16, marginBottom: theme.spacing.lg }} />
         {Array.from({ length: 4 }).map((_, idx) => (
-          <Skeleton key={idx} height={80} style={{ marginBottom: theme.spacing.md }} />
+          <Skeleton key={idx} height={80} style={{ borderRadius: 16, marginBottom: theme.spacing.md }} />
         ))}
       </View>
     );
@@ -141,7 +141,7 @@ export const AuditLogsList: React.FC = () => {
             activeOpacity={0.8}
           >
             <Typography style={[styles.tabText, tab === t && styles.activeTabText]}>
-              {t === 'timeline' ? 'Activity' : t === 'sessions' ? 'Sessions' : 'Logins'}
+              {t === 'timeline' ? 'Activity Log' : t === 'sessions' ? 'Sessions' : 'Auth Logins'}
             </Typography>
           </TouchableOpacity>
         ))}
@@ -152,7 +152,7 @@ export const AuditLogsList: React.FC = () => {
         <View style={styles.controlsRow}>
           <View style={styles.control}>
             <Select
-              label="Action"
+              label="Filter Action"
               options={actionOptions}
               value={filterAction}
               onValueChange={handleActionChange}
@@ -160,7 +160,7 @@ export const AuditLogsList: React.FC = () => {
           </View>
           <View style={styles.control}>
             <Select
-              label="Entity"
+              label="Filter Entity"
               options={entityOptions}
               value={filterEntity}
               onValueChange={handleEntityChange}
@@ -175,17 +175,17 @@ export const AuditLogsList: React.FC = () => {
           data={displayLogs}
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => {
-            const color = ACTION_COLORS[item.action] || '#6b7280';
-            const icon = ACTION_ICONS[item.action] || <Settings size={16} color="#6b7280" />;
+            const color = ACTION_COLORS[item.action] || theme.colors.textSecondary;
+            const icon = ACTION_ICONS[item.action] || <Settings size={16} color={theme.colors.textSecondary} />;
             return (
-              <Card style={styles.logCard}>
+              <View style={styles.logCard}>
                 <View style={styles.logHeader}>
                   <View style={[styles.iconWrapper, { backgroundColor: `${color}18` }]}>
                     {icon}
                   </View>
                   <View style={{ flex: 1 }}>
                     <View style={styles.badgeRow}>
-                      <Badge label={item.action.replace(/_/g, ' ')} variant="info" style={{ backgroundColor: `${color}25` }} />
+                      <Badge label={item.action.replace(/_/g, ' ')} variant="info" />
                       <Typography variant="caption" color="muted" style={styles.logTime}>{formatDate(item.createdAt)}</Typography>
                     </View>
                     <Typography variant="bodySm" style={styles.logDetails}>{item.details}</Typography>
@@ -194,7 +194,7 @@ export const AuditLogsList: React.FC = () => {
                     </Typography>
                   </View>
                 </View>
-              </Card>
+              </View>
             );
           }}
           ListEmptyComponent={
@@ -238,36 +238,36 @@ export const AuditLogsList: React.FC = () => {
           data={sessionList}
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => {
-            const color = ACTION_COLORS[item.action] || '#6b7280';
-            const icon = ACTION_ICONS[item.action] || <Settings size={16} color="#6b7280" />;
+            const color = ACTION_COLORS[item.action] || theme.colors.textSecondary;
+            const icon = ACTION_ICONS[item.action] || <Settings size={16} color={theme.colors.textSecondary} />;
             return (
-              <Card style={styles.logCard}>
+              <View style={styles.logCard}>
                 <View style={styles.logHeader}>
                   <View style={[styles.iconWrapper, { backgroundColor: `${color}18` }]}>
                     {icon}
                   </View>
                   <View style={{ flex: 1 }}>
                     <View style={styles.badgeRow}>
-                      <Typography variant="caption" color="brand" style={styles.sessionAction}>{item.action.replace(/_/g, ' ')}</Typography>
+                      <Typography variant="caption" style={styles.sessionAction}>{item.action.replace(/_/g, ' ')}</Typography>
                       <Typography variant="caption" color="muted" style={styles.logTime}>{formatDate(item.createdAt)}</Typography>
                     </View>
                     <Typography variant="bodySm" style={styles.logDetails}>{item.details}</Typography>
                     {item.entityName && (
-                      <Typography variant="caption" color="brand" style={styles.sessionEntity}>Member: {item.entityName}</Typography>
+                      <Typography variant="caption" style={styles.sessionEntity}>Member: {item.entityName}</Typography>
                     )}
                     <Typography variant="caption" color="secondary" style={styles.logUser}>
                       Checked in by {item.userName} ({item.userRole})
                     </Typography>
                   </View>
                 </View>
-              </Card>
+              </View>
             );
           }}
           ListEmptyComponent={
             <EmptyState
               iconText="🏃"
               title="No Session Activity"
-              description="No FitPrime universal check-in sessions or blocked activities found."
+              description="No FitPrime check-in sessions or blocked activities found."
             />
           }
           showsVerticalScrollIndicator={false}
@@ -279,7 +279,7 @@ export const AuditLogsList: React.FC = () => {
           data={loginsList}
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => (
-            <Card style={styles.logCard}>
+            <View style={styles.logCard}>
               <View style={styles.loginCardRow}>
                 <View style={{ flex: 1 }}>
                   <Typography variant="body" style={styles.loginUserTitle}>{item.userName}</Typography>
@@ -293,7 +293,7 @@ export const AuditLogsList: React.FC = () => {
                   <Typography variant="caption" color="muted" style={styles.loginTimeText}>{formatDate(item.createdAt)}</Typography>
                 </View>
               </View>
-            </Card>
+            </View>
           )}
           ListEmptyComponent={
             <EmptyState
@@ -312,13 +312,21 @@ export const AuditLogsList: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: theme.colors.background,
+    paddingHorizontal: 20,
+    paddingTop: theme.spacing.md,
+  },
+  loadingWrapper: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: theme.spacing.md,
   },
   tabsRow: {
     flexDirection: 'row',
-    backgroundColor: theme.colors.bgTertiary,
-    borderRadius: theme.radii.md,
-    padding: theme.spacing.xs,
-    marginBottom: theme.spacing.lg,
+    backgroundColor: theme.colors.card,
+    borderRadius: 16,
+    padding: 4,
+    marginBottom: theme.spacing.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
@@ -327,32 +335,37 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.sm,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: theme.radii.sm,
+    borderRadius: 12,
     minHeight: 40,
   },
   activeTabBtn: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: theme.colors.bgTertiary,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
   },
   tabText: {
-    ...theme.typography.caption,
+    fontSize: 12,
     fontWeight: '700',
     color: theme.colors.textSecondary,
-    textTransform: 'uppercase',
   },
   activeTabText: {
-    color: theme.colors.textInverse,
+    color: theme.colors.primary,
   },
   controlsRow: {
     flexDirection: 'row',
     gap: theme.spacing.sm,
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
   },
   control: {
     flex: 1,
   },
   logCard: {
+    backgroundColor: theme.colors.card,
+    borderRadius: 16,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   logHeader: {
     flexDirection: 'row',
@@ -362,7 +375,7 @@ const styles = StyleSheet.create({
   iconWrapper: {
     width: 36,
     height: 36,
-    borderRadius: theme.radii.full,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -373,28 +386,23 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.xs,
   },
   logTime: {
-    ...theme.typography.caption,
     color: theme.colors.textMuted,
   },
   logDetails: {
-    ...theme.typography.bodySm,
     color: theme.colors.text,
     fontWeight: '600',
     marginVertical: 2,
   },
   logUser: {
-    ...theme.typography.caption,
     color: theme.colors.textSecondary,
     fontSize: 11,
     marginTop: 2,
   },
   sessionAction: {
-    ...theme.typography.caption,
     fontWeight: '800',
     color: theme.colors.primary,
   },
   sessionEntity: {
-    ...theme.typography.caption,
     color: theme.colors.primary,
     fontWeight: '700',
     marginTop: 2,
@@ -405,12 +413,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loginUserTitle: {
-    ...theme.typography.body,
     fontWeight: '700',
     color: theme.colors.text,
   },
   loginEmail: {
-    ...theme.typography.caption,
     color: theme.colors.textSecondary,
     marginTop: 2,
   },
@@ -418,12 +424,10 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.xs,
   },
   loginIp: {
-    fontFamily: 'System',
     fontSize: 11,
     color: theme.colors.textMuted,
   },
   loginTimeText: {
-    ...theme.typography.caption,
     color: theme.colors.textMuted,
     marginTop: theme.spacing.sm,
   },
@@ -437,7 +441,7 @@ const styles = StyleSheet.create({
   pageBtn: {
     width: 36,
     height: 36,
-    borderRadius: theme.radii.sm,
+    borderRadius: 10,
     backgroundColor: theme.colors.bgTertiary,
     borderWidth: 1,
     borderColor: theme.colors.border,
@@ -445,7 +449,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pageText: {
-    ...theme.typography.bodySm,
     color: theme.colors.textSecondary,
     fontWeight: '600',
   },

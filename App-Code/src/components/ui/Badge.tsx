@@ -11,27 +11,27 @@ interface BadgeProps {
 }
 
 export const Badge: React.FC<BadgeProps> = ({ label, variant = 'info', style }) => {
-  const getBadgeColors = (): { bg: string; text: string } => {
+  const getBadgeColors = (): { bg: string; text: string; border: string } => {
     switch (variant) {
       case 'active':
       case 'success':
-        return { bg: 'rgba(0, 255, 102, 0.1)', text: theme.colors.success };
+        return { bg: 'rgba(46, 125, 50, 0.12)', text: '#2E7D32', border: 'rgba(46, 125, 50, 0.3)' };
       case 'expired':
       case 'error':
-        return { bg: 'rgba(255, 0, 68, 0.1)', text: theme.colors.error };
+        return { bg: 'rgba(198, 40, 40, 0.12)', text: '#C62828', border: 'rgba(198, 40, 40, 0.3)' };
       case 'frozen':
       case 'warning':
-        return { bg: 'rgba(255, 214, 0, 0.1)', text: theme.colors.warning };
+        return { bg: 'rgba(217, 155, 0, 0.15)', text: '#D99B00', border: 'rgba(217, 155, 0, 0.35)' };
       case 'info':
       default:
-        return { bg: 'rgba(0, 255, 255, 0.1)', text: theme.colors.info };
+        return { bg: 'rgba(255, 224, 27, 0.18)', text: '#1A1510', border: 'rgba(255, 224, 27, 0.45)' };
     }
   };
 
   const colors = getBadgeColors();
 
   return (
-    <View style={[styles.badge, { backgroundColor: colors.bg }, style]}>
+    <View style={[styles.badge, { backgroundColor: colors.bg, borderColor: colors.border }, style]}>
       <Text style={[styles.text, { color: colors.text }]}>{label}</Text>
     </View>
   );
@@ -40,15 +40,17 @@ export const Badge: React.FC<BadgeProps> = ({ label, variant = 'info', style }) 
 const styles = StyleSheet.create({
   badge: {
     alignSelf: 'flex-start',
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: theme.radii.full,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
   },
   text: {
-    ...theme.typography.caption,
-    fontWeight: '700',
+    fontSize: 10,
+    fontWeight: '800',
     textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
 });

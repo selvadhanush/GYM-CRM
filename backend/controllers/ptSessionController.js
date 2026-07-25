@@ -71,23 +71,51 @@ const getSessions = async (req, res) => {
             query.trainerId = req.query.trainerId;
         }
 
-        const sessions = await PtSession.find(query).lean();
+        // Strict pagination parameters with hard cap at 100
+        const page = Math.max(parseInt(req.query.page) || 1, 1);
+        const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), 100);
+        const skip = (page - 1) * limit;
 
-        const formatted = [];
-        for (const s of sessions) {
-            const memberObj = await Member.findOne({ _id: s.memberId });
-            const trainerObj = await User.findOne({ _id: s.trainerId }).select('-password');
-            const packageObj = s.packageId ? await PtPackage.findOne({ _id: s.packageId }) : null;
+        const total = await PtSession.countDocuments(query);
+        const sessions = await PtSession.find(query)
+            .sort({ sessionDate: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean();
 
-            formatted.push({
+        // Batched 3-entity lookup (Member + Trainer + PtPackage)
+        const memberIds = [...new Set(sessions.map(s => s.memberId).filter(Boolean))];
+        const trainerIds = [...new Set(sessions.map(s => s.trainerId).filter(Boolean))];
+        const packageIds = [...new Set(sessions.map(s => s.packageId).filter(Boolean))];
+
+        const [members, trainers, packages] = await Promise.all([
+            memberIds.length > 0 ? Member.find({ _id: { $in: memberIds } }).select('id name phone email').lean() : [],
+            trainerIds.length > 0 ? User.find({ _id: { $in: trainerIds } }).select('id name email role phone').lean() : [],
+            packageIds.length > 0 ? PtPackage.find({ _id: { $in: packageIds } }).select('id name price sessionCount').lean() : []
+        ]);
+
+        const memberMap = new Map((members || []).map(m => [m._id ? m._id.toString() : m.id, m]));
+        const trainerMap = new Map((trainers || []).map(t => [t._id ? t._id.toString() : t.id, t]));
+        const packageMap = new Map((packages || []).map(p => [p._id ? p._id.toString() : p.id, p]));
+
+        const formatted = sessions.map(s => {
+            const m = s.memberId ? memberMap.get(s.memberId.toString()) : null;
+            const t = s.trainerId ? trainerMap.get(s.trainerId.toString()) : null;
+            const pkg = s.packageId ? packageMap.get(s.packageId.toString()) : null;
+
+            return {
                 ...s,
-                member: memberObj || null,
-                trainer: trainerObj || null,
-                package: packageObj || null
-            });
-        }
+                member: m ? { id: m.id || m._id, name: m.name, phone: m.phone, email: m.email } : null,
+                trainer: t ? { id: t.id || t._id, name: t.name, email: t.email } : null,
+                package: pkg ? { id: pkg.id || pkg._id, name: pkg.name, price: pkg.price, sessionCount: pkg.sessionCount } : null
+            };
+        });
 
-        res.json(formatted);
+        res.json({
+            success: true,
+            data: formatted,
+            meta: { page, limit, total }
+        });
     } catch (error) {
         console.error("GET PT SESSIONS ERROR:", error);
         res.status(500).json({ success: false, message: error.message });

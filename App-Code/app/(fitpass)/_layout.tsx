@@ -3,7 +3,7 @@ import { Tabs } from 'expo-router';
 import { TouchableOpacity, StyleSheet } from 'react-native';
 import { LayoutDashboard, Building2, History, User, LogOut, Dumbbell, Apple } from 'lucide-react-native';
 import { theme } from '@/design-system/theme';
-import { useAuth } from '@/features/auth';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 export default function FitPassLayout() {
   const logout = useAuth((s) => s.logout);
@@ -15,8 +15,9 @@ export default function FitPassLayout() {
         headerTitleStyle: styles.headerTitle,
         headerTintColor: theme.colors.text,
         tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: theme.colors.info,
-        tabBarInactiveTintColor: theme.colors.textSecondary,
+        tabBarActiveTintColor: '#FF5F1F', // Electric Orange
+        tabBarInactiveTintColor: theme.colors.textMuted,
+        tabBarLabelStyle: styles.tabBarLabel,
         headerRight: () => (
           <TouchableOpacity
             onPress={logout}
@@ -34,7 +35,7 @@ export default function FitPassLayout() {
         options={{
           title: 'FitPass',
           tabBarLabel: 'Home',
-          tabBarIcon: ({ color, size }) => <LayoutDashboard color={color} size={size} />,
+          tabBarIcon: ({ color }) => <LayoutDashboard color={color} size={22} />,
         }}
       />
       <Tabs.Screen
@@ -42,7 +43,7 @@ export default function FitPassLayout() {
         options={{
           title: 'Workouts',
           tabBarLabel: 'Workouts',
-          tabBarIcon: ({ color, size }) => <Dumbbell color={color} size={size} />,
+          tabBarIcon: ({ color }) => <Dumbbell color={color} size={22} />,
         }}
       />
       <Tabs.Screen
@@ -50,7 +51,7 @@ export default function FitPassLayout() {
         options={{
           title: 'Diets & Hydration',
           tabBarLabel: 'Diets',
-          tabBarIcon: ({ color, size }) => <Apple color={color} size={size} />,
+          tabBarIcon: ({ color }) => <Apple color={color} size={22} />,
         }}
       />
       <Tabs.Screen
@@ -58,7 +59,7 @@ export default function FitPassLayout() {
         options={{
           title: 'Partner Gyms',
           tabBarLabel: 'Gyms',
-          tabBarIcon: ({ color, size }) => <Building2 color={color} size={size} />,
+          tabBarIcon: ({ color }) => <Building2 color={color} size={22} />,
         }}
       />
       <Tabs.Screen
@@ -66,7 +67,7 @@ export default function FitPassLayout() {
         options={{
           title: 'Check-in History',
           tabBarLabel: 'History',
-          tabBarIcon: ({ color, size }) => <History color={color} size={size} />,
+          tabBarIcon: ({ color }) => <History color={color} size={22} />,
         }}
       />
       <Tabs.Screen
@@ -74,7 +75,7 @@ export default function FitPassLayout() {
         options={{
           title: 'Profile',
           tabBarLabel: 'Profile',
-          tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
+          tabBarIcon: ({ color }) => <User color={color} size={22} />,
         }}
       />
       {/* QR scanner — hidden tab, accessed via button press */}
@@ -104,9 +105,19 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
-    height: 60,
-    paddingBottom: 8,
-    paddingTop: 8,
+    height: 64,
+    paddingBottom: 6,
+    paddingTop: 6,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+  },
+  tabBarLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    paddingBottom: 2,
   },
   headerBtn: {
     width: 40,

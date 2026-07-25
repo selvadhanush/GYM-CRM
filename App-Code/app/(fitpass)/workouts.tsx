@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Dumbbell, CheckCircle2, Flame, Award, Circle } from 'lucide-react-native';
+import { Dumbbell, CheckCircle, Flame, Award, Circle } from 'lucide-react-native';
 import { theme } from '@/design-system/theme';
 import { Typography, Card } from '@/components/ui';
 import { API_CLIENT } from '@/lib/api-client';
 import { storage } from '@/lib/storage';
-import { useAuth } from '@/features/auth';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 export default function WorkoutsScreen() {
   const user = useAuth((s) => s.user);
@@ -133,7 +133,7 @@ export default function WorkoutsScreen() {
                   >
                     <View style={styles.exLeft}>
                       {isDone ? (
-                        <CheckCircle2 size={22} color={theme.colors.success} />
+                        <CheckCircle size={22} color={theme.colors.success} />
                       ) : (
                         <Circle size={22} color={theme.colors.border} />
                       )}

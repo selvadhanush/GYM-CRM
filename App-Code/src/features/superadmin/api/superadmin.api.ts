@@ -161,6 +161,18 @@ export const useCreateFitPrimePlan = () => {
   });
 };
 
+export const useUpdateFitPrimePlan = () => {
+  return useMutation({
+    mutationFn: async ({ id, ...payload }: { id: string; name?: string; sessions?: number; price?: number }) => {
+      const { data } = await API_CLIENT.put(`/superadmin/plans/${id}`, payload);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fitprime-plans'] });
+    },
+  });
+};
+
 export const useDeleteFitPrimePlan = () => {
   return useMutation({
     mutationFn: async (id: string) => {
@@ -260,7 +272,7 @@ export const useDeleteBranch = () => {
 };
 
 // 6. Generic H4 Module List Query
-export const useGenericList = <T>(queryKey: string, path: string) => {
+export const useGenericList = <T>(queryKey: string, path: string, options?: { enabled?: boolean }) => {
   return useQuery<T[]>({
     queryKey: [queryKey],
     queryFn: async () => {
@@ -278,6 +290,7 @@ export const useGenericList = <T>(queryKey: string, path: string) => {
       }
       return Array.isArray(data) ? data : [];
     },
+    enabled: options?.enabled,
   });
 };
 

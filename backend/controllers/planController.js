@@ -38,12 +38,16 @@ const createPlan = async (req, res) => {
 // @access  Private/Admin
 const getPlans = async (req, res) => {
     try {
-        const plans = await Plan.find({
-            $or: [
+        const query = {};
+        if (req.query.gymId) {
+            query.gymId = req.query.gymId;
+        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
+            query.$or = [
                 { gymId: 'SYSTEM' },
                 { gymId: req.user.gymId, branchId: req.user.branchId || null }
-            ]
-        }).lean();
+            ];
+        }
+        const plans = await Plan.find(query).lean();
         res.json(plans);
     } catch (error) {
         console.error("GET PLANS ERROR:", error);
