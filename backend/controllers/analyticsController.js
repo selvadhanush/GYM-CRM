@@ -224,6 +224,7 @@ const getAnalytics = catchAsync(async (req, res, next) => {
                 pendingLeads,
                 lostLeads,
                 conversionRate
+            }
         });
 });
 
