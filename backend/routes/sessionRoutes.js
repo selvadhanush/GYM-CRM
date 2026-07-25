@@ -33,7 +33,7 @@ router.get(
 router.get(
   '/analytics',
   protect,
-  authorize('admin', 'superadmin', 'fitpass_admin'),
+  authorize('admin', 'superadmin', 'fitpass_admin', 'h4_admin'),
   getFitPassAnalytics
 );
 

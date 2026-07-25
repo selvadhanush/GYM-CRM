@@ -240,6 +240,7 @@ const Sidebar = () => {
                             { name: `FitPass Reports${suffix}`, path: '/fitpass-analytics', icon: Zap },
                             { name: `Workout Plans${suffix}`, path: '/workout-plans', icon: Dumbbell },
                             { name: `Diet Plans${suffix}`, path: '/diet-plans', icon: Apple },
+                            { name: 'Audit Logs', path: '/audit', icon: History },
                             { name: `Settings${suffix}`, path: '/settings', icon: Settings },
                             { name: `Support Desk${suffix}`, path: '/support', icon: HelpCircle },
                         ]
@@ -323,6 +324,7 @@ const Sidebar = () => {
                     { name: `Analytics${suffix}`, path: '/analytics', icon: LineChart },
                     { name: `Workout Plans${suffix}`, path: '/workout-plans', icon: Dumbbell },
                     { name: `Diet Plans${suffix}`, path: '/diet-plans', icon: Apple },
+                    { name: 'Audit Logs', path: '/audit', icon: History },
                     { name: `Settings${suffix}`, path: '/settings', icon: Settings },
                     { name: `Support Desk${suffix}`, path: '/support', icon: HelpCircle },
                 ]
@@ -354,8 +356,8 @@ const Sidebar = () => {
 
 
             {role === 'superadmin' && (
-                <div className="sidebar-division-switcher" style={{ padding: '0 0.875rem 1rem', borderBottom: '1px solid var(--border)' }}>
-                    <div style={{ display: 'flex', gap: '0.25rem', background: 'var(--bg-tertiary)', padding: '0.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+                <div className="sidebar-division-switcher">
+                    <div className="sidebar-division-switcher-inner">
                         <button
                             onClick={() => handleDivisionChange('fitpass')}
                             style={{

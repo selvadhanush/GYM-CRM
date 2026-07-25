@@ -395,6 +395,43 @@ textarea {
 .sidebar.collapsed .sidebar-group-label {
   opacity: 0;
   pointer-events: none;
+  display: none;
+}
+
+.sidebar.collapsed .sidebar-nav {
+  padding: 1.25rem 0.5rem;
+}
+
+.sidebar.collapsed .nav-link {
+  padding: 0.75rem;
+  justify-content: center;
+}
+
+.sidebar.collapsed .sidebar-logo {
+  padding: 1.5rem 0;
+  justify-content: center;
+}
+
+.sidebar-division-switcher {
+  padding: 0 0.875rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-division-switcher-inner {
+  display: flex;
+  gap: 0.25rem;
+  background: var(--bg-tertiary);
+  padding: 0.25rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+
+.sidebar.collapsed .sidebar-division-switcher {
+  padding: 0 0.25rem 1rem;
+}
+
+.sidebar.collapsed .sidebar-division-switcher-inner {
+  flex-direction: column;
 }
 
 .sidebar-collapse-btn {
@@ -896,7 +933,7 @@ tbody tr {
 }
 
 tbody tr:hover {
-  background: #F9FAFB;
+  background: var(--bg-tertiary);
 }
 
 /* ─── Badges ─── */

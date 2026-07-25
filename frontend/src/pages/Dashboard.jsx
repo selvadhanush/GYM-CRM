@@ -3,7 +3,7 @@ import { getStats, getMembers } from '../services/apiService';
 import { AuthContext } from '../context/AuthContext';
 import API from '../services/api';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie } from 'recharts';
-import { Users, CheckCircle2, AlertTriangle, Clock, Sparkles, IndianRupee, TrendingDown, TrendingUp, Megaphone, Check, QrCode } from 'lucide-react';
+import { Users, CheckCircle2, AlertTriangle, Clock, Sparkles, IndianRupee, TrendingDown, TrendingUp, Megaphone, Check, QrCode, Calendar, Phone } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 
 const COLORS = ['var(--primary-color)', 'var(--accent-color)', '#a855f7', '#d946ef', '#f43f5e'];
@@ -312,10 +312,27 @@ const Dashboard = () => {
                                 </thead>
                                 <tbody>
                                     {activeLiveSessions.map(session => (
-                                        <tr key={session.id}>
-                                            <td style={{ fontWeight: 600 }}>{session.memberName}</td>
-                                            <td>{session.memberPhone}</td>
-                                            <td><LiveSessionTimer expiresAt={session.expiresAt} /></td>
+                                        <tr key={session.id} style={{ transition: 'var(--transition)' }}>
+                                            <td>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 600 }}>
+                                                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--success), #10B981)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 'bold', boxShadow: '0 0 10px rgba(16, 185, 129, 0.3)' }}>
+                                                        {session.memberName.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    {session.memberName}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
+                                                    <Phone size={14} />
+                                                    {session.memberPhone}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                    <Clock size={14} style={{ color: 'var(--success)' }} />
+                                                    <LiveSessionTimer expiresAt={session.expiresAt} />
+                                                </div>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -342,10 +359,27 @@ const Dashboard = () => {
                                 </thead>
                                 <tbody>
                                     {recentCheckins.map(checkin => (
-                                        <tr key={checkin.id}>
-                                            <td style={{ fontWeight: 600 }}>{checkin.memberName}</td>
-                                            <td>{new Date(checkin.date).toLocaleDateString()}</td>
-                                            <td>{checkin.checkInTime}</td>
+                                        <tr key={checkin.id} style={{ transition: 'var(--transition)' }}>
+                                            <td>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 600 }}>
+                                                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                                        {checkin.memberName.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    {checkin.memberName}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
+                                                    <Calendar size={14} />
+                                                    {new Date(checkin.date).toLocaleDateString()}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
+                                                    <Clock size={14} />
+                                                    {checkin.checkInTime}
+                                                </div>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>

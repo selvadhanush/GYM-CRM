@@ -177,7 +177,7 @@ function FitPrimePlans() {
                 </div>
             )}
             {successMsg && (
-                <div className="success-message" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0.85rem 1.25rem', backgroundColor: 'rgba(46, 125, 50, 0.15)', border: '1px solid rgba(46, 125, 50, 0.3)', color: '#4ADE80', borderRadius: 'var(--radius-md)' }}>
+                <div className="success-message" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0.85rem 1.25rem', backgroundColor: 'rgba(46, 125, 50, 0.15)', border: '1px solid rgba(46, 125, 50, 0.3)', color: '#2E7D32', borderRadius: 'var(--radius-md)' }}>
                     <Sparkles size={18} />
                     <span>{successMsg}</span>
                 </div>

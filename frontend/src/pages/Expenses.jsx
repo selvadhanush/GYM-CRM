@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
 import Modal from '../components/Modal';
@@ -18,7 +18,7 @@ const Expenses = () => {
 
     const categories = ['Rent', 'Electricity', 'Maintenance', 'Salaries', 'Equipment', 'Marketing', 'Others'];
 
-    const fetchExpenses = async () => {
+    const fetchExpenses = useCallback(async () => {
         try {
             const { data } = await API.get('/expenses');
             setExpenses(data);
@@ -27,11 +27,11 @@ const Expenses = () => {
             console.error('Error fetching expenses:', error);
             setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         fetchExpenses();
-    }, []);
+    }, [fetchExpenses]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

@@ -3,7 +3,7 @@ const router = express.Router();
 const { getAuditLogs, getAuditSummary } = require('../controllers/auditController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
-router.use(protect, authorize('superadmin', 'fitpass_admin'));
+router.use(protect, authorize('superadmin', 'fitpass_admin', 'h4_admin'));
 router.get('/summary', getAuditSummary);
 router.get('/', getAuditLogs);
 
