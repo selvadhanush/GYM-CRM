@@ -1,3 +1,5 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const Attendance = require('../models/Attendance');
 const Member = require('../models/Member');
 const { logAudit } = require('../utils/auditLogger');
@@ -5,7 +7,7 @@ const { logAudit } = require('../utils/auditLogger');
 // @desc    Mark attendance for a member (traditional gym check-in by staff)
 // @route   POST /api/attendance
 // @access  Private/Admin
-const markAttendance = async (req, res) => {
+const markAttendance = catchAsync(async (req, res, next) => {
     const { memberId } = req.body;
 
     // Tenant isolation: the member must belong to the caller's gym and branch if applicable.
@@ -67,20 +69,17 @@ const markAttendance = async (req, res) => {
 // @desc    Get today's attendance
 // @route   GET /api/attendance/today
 // @access  Private/Admin
-const getTodayAttendance = async (req, res) => {
+const getTodayAttendance = catchAsync(async (req, res, next) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const query = {
-        gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
+        ...req.tenantFilter,
         date: {
             $gte: today,
             $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
         }
     };
-    if (req.user.branchId) {
-        query.branchId = req.user.branchId;
-    }
 
     const attendanceList = await Attendance.find(query).populate('memberId', 'name phone').lean();
 
@@ -90,7 +89,7 @@ const getTodayAttendance = async (req, res) => {
 // @desc    Get attendance history for a member
 // @route   GET /api/attendance/member/:memberId
 // @access  Private/Admin
-const getMemberAttendance = async (req, res) => {
+const getMemberAttendance = catchAsync(async (req, res, next) => {
     const query = {
         memberId: req.params.memberId,
         gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId })

@@ -1,3 +1,5 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const Payment = require('../models/Payment');
 const Member = require('../models/Member');
 const { logAudit } = require('../utils/auditLogger');
@@ -5,7 +7,7 @@ const { logAudit } = require('../utils/auditLogger');
 // @desc    Add a new payment
 // @route   POST /api/payments
 // @access  Private/Admin
-const addPayment = async (req, res) => {
+const addPayment = catchAsync(async (req, res, next) => {
     const { memberId, amount, method, date } = req.body;
 
     // Tenant isolation: the member must belong to the caller's gym.
@@ -44,32 +46,21 @@ const addPayment = async (req, res) => {
 // @desc    Get all payments
 // @route   GET /api/payments
 // @access  Private/Admin
-const getPayments = async (req, res) => {
+const getPayments = catchAsync(async (req, res, next) => {
     try {
-        const query = {};
-        if (req.query.gymId) {
-            query.gymId = req.query.gymId;
-        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
-            query.gymId = req.user.gymId;
-        }
-        if (req.user.branchId) {
-            query.branchId = req.user.branchId;
-        }
+        const query = { ...req.tenantFilter };
         const payments = await Payment.find(query)
             .populate('memberId', 'name phone')
             .sort({ createdAt: -1 })
             .lean();
         res.json(payments);
-    } catch (error) {
-        console.error('Get Payments Error:', error);
-        res.status(500).json({ message: 'Error fetching payments', error: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get payment history for a specific member
 // @route   GET /api/payments/member/:memberId
 // @access  Private/Admin
-const getMemberPayments = async (req, res) => {
+const getMemberPayments = catchAsync(async (req, res, next) => {
     const query = {
         memberId: req.params.memberId,
         gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId })
@@ -86,7 +77,7 @@ const getMemberPayments = async (req, res) => {
 // @desc    Create Razorpay Order
 // @route   POST /api/payments/razorpay/order
 // @access  Private
-const createRazorpayOrder = async (req, res) => {
+const createRazorpayOrder = catchAsync(async (req, res, next) => {
     try {
         const { amount, currency = 'INR', memberId } = req.body;
         const keyId = process.env.RAZORPAY_KEY_ID;
@@ -116,16 +107,13 @@ const createRazorpayOrder = async (req, res) => {
             keyId: keyId || 'rzp_test_placeholder',
             isMock: true
         });
-    } catch (err) {
-        console.error('Razorpay Order Error:', err);
-        res.status(500).json({ success: false, message: 'Failed to create payment order', error: err.message });
-    }
+    } catch (err) { next(err); }
 };
 
 // @desc    Verify Razorpay Payment Signature and Record Payment
 // @route   POST /api/payments/razorpay/verify
 // @access  Private
-const verifyRazorpayPayment = async (req, res) => {
+const verifyRazorpayPayment = catchAsync(async (req, res, next) => {
     try {
         const { memberId, amount, razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
 
@@ -150,10 +138,7 @@ const verifyRazorpayPayment = async (req, res) => {
         await logAudit(req, 'PAYMENT_ADDED', 'Payment', payment._id, `Recorded online Razorpay payment of ₹${amount} for ${member.name}`, member.name);
 
         res.json({ success: true, payment });
-    } catch (err) {
-        console.error('Razorpay Verification Error:', err);
-        res.status(500).json({ success: false, message: 'Payment verification failed', error: err.message });
-    }
+    } catch (err) { next(err); }
 };
 
 module.exports = {

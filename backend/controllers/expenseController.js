@@ -1,10 +1,12 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const Expense = require('../models/Expense');
 const { logAudit } = require('../utils/auditLogger');
 
 // @desc    Create a new expense
 // @route   POST /api/expenses
 // @access  Private/Admin
-const createExpense = async (req, res) => {
+const createExpense = catchAsync(async (req, res, next) => {
     const { title, amount, category, description, date } = req.body;
 
     const expense = await Expense.create({
@@ -29,16 +31,8 @@ const createExpense = async (req, res) => {
 // @desc    Get all expenses for a gym
 // @route   GET /api/expenses
 // @access  Private/Admin
-const getExpenses = async (req, res) => {
-    const query = {};
-    if (req.query.gymId) {
-        query.gymId = req.query.gymId;
-    } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
-        query.gymId = req.user.gymId;
-    }
-    if (req.user.branchId) {
-        query.branchId = req.user.branchId;
-    }
+const getExpenses = catchAsync(async (req, res, next) => {
+    const query = { ...req.tenantFilter };
     const expenses = await Expense.find(query).sort({ date: -1 });
     res.json(expenses);
 };
@@ -46,7 +40,7 @@ const getExpenses = async (req, res) => {
 // @desc    Delete an expense
 // @route   DELETE /api/expenses/:id
 // @access  Private/Admin
-const deleteExpense = async (req, res) => {
+const deleteExpense = catchAsync(async (req, res, next) => {
     const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
     if (req.user.branchId) {
         query.branchId = req.user.branchId;

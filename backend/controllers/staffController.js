@@ -1,33 +1,26 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const User = require('../models/User');
 
 // @desc    Get all staff members
 // @route   GET /api/staff
 // @access  Private/Admin
-const getStaff = async (req, res) => {
+const getStaff = catchAsync(async (req, res, next) => {
     try {
         const query = {
-            role: { $in: ['admin', 'trainer', 'receptionist'] }
+            role: { $in: ['admin', 'trainer', 'receptionist'] },
+            ...req.tenantFilter
         };
-        if (req.query.gymId) {
-            query.gymId = req.query.gymId;
-        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
-            query.gymId = req.user.gymId;
-        }
-        if (req.user.branchId) {
-            query.branchId = req.user.branchId;
-        }
 
         const staff = await User.find(query).select('-password').lean();
         res.json(staff);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching staff', error: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Create a new staff member
 // @route   POST /api/staff
 // @access  Private/Admin
-const createStaff = async (req, res) => {
+const createStaff = catchAsync(async (req, res, next) => {
     try {
         const { name, email, password, role } = req.body;
         if (!name || !email || !password || !role) {
@@ -56,15 +49,13 @@ const createStaff = async (req, res) => {
         delete result.password;
 
         res.status(201).json(result);
-    } catch (error) {
-        res.status(500).json({ message: 'Error creating staff', error: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Update a staff member
 // @route   PUT /api/staff/:id
 // @access  Private/Admin
-const updateStaff = async (req, res) => {
+const updateStaff = catchAsync(async (req, res, next) => {
     try {
         const { name, email, password, role } = req.body;
         const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
@@ -102,15 +93,13 @@ const updateStaff = async (req, res) => {
         delete result.password;
 
         res.json(result);
-    } catch (error) {
-        res.status(500).json({ message: 'Error updating staff', error: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Delete a staff member
 // @route   DELETE /api/staff/:id
 // @access  Private/Admin
-const deleteStaff = async (req, res) => {
+const deleteStaff = catchAsync(async (req, res, next) => {
     try {
         const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
         if (req.user.branchId) {
@@ -127,9 +116,7 @@ const deleteStaff = async (req, res) => {
 
         await staff.deleteOne();
         res.json({ message: 'Staff member removed' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error deleting staff', error: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 module.exports = {

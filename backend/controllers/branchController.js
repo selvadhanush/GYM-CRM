@@ -1,3 +1,5 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const Branch = require('../models/Branch');
 const Member = require('../models/Member');
 const Payment = require('../models/Payment');
@@ -5,16 +7,12 @@ const { logAudit } = require('../utils/auditLogger');
 
 // @desc    Get all branches for a gym
 // @route   GET /api/branches
-const getBranches = async (req, res) => {
+const getBranches = catchAsync(async (req, res, next) => {
     try {
-        const query = {};
-        if (req.query.gymId) {
-            query.gymId = req.query.gymId;
-        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
-            query.gymId = req.user.gymId;
-        }
-        if (req.user.branchId) {
-            query._id = req.user.branchId;
+        const query = { ...req.tenantFilter };
+        if (query.branchId) {
+            query._id = query.branchId;
+            delete query.branchId;
         }
         const branches = await Branch.find(query).lean();
 
@@ -30,12 +28,10 @@ const getBranches = async (req, res) => {
         }));
 
         res.json(enriched);
-    } catch (err) {
-        res.status(500).json({ message: 'Error fetching branches', error: err.message });
-    }
+    } catch (err) { next(err); }
 };
 
-const createBranch = async (req, res) => {
+const createBranch = catchAsync(async (req, res, next) => {
     try {
         if (req.user.branchId) {
             return res.status(403).json({ message: 'Branch administrators cannot create branches' });
@@ -54,14 +50,12 @@ const createBranch = async (req, res) => {
         });
         await logAudit(req, 'BRANCH_CREATED', 'Branch', branch._id, `Branch "${name}" created`, name);
         res.status(201).json(branch);
-    } catch (err) {
-        res.status(500).json({ message: 'Error creating branch', error: err.message });
-    }
+    } catch (err) { next(err); }
 };
 
 // @desc    Update a branch
 // @route   PUT /api/branches/:id
-const updateBranch = async (req, res) => {
+const updateBranch = catchAsync(async (req, res, next) => {
     try {
         if (req.user.branchId) {
             return res.status(403).json({ message: 'Branch administrators cannot modify branches' });
@@ -74,14 +68,12 @@ const updateBranch = async (req, res) => {
         if (!branch) return res.status(404).json({ message: 'Branch not found' });
         await logAudit(req, 'BRANCH_UPDATED', 'Branch', branch._id, `Branch "${branch.name}" updated`, branch.name);
         res.json(branch);
-    } catch (err) {
-        res.status(500).json({ message: 'Error updating branch', error: err.message });
-    }
+    } catch (err) { next(err); }
 };
 
 // @desc    Delete a branch
 // @route   DELETE /api/branches/:id
-const deleteBranch = async (req, res) => {
+const deleteBranch = catchAsync(async (req, res, next) => {
     try {
         if (req.user.branchId) {
             return res.status(403).json({ message: 'Branch administrators cannot delete branches' });
@@ -90,14 +82,12 @@ const deleteBranch = async (req, res) => {
         if (!branch) return res.status(404).json({ message: 'Branch not found' });
         await logAudit(req, 'BRANCH_DELETED', 'Branch', branch._id, `Branch "${branch.name}" deleted`, branch.name);
         res.json({ message: 'Branch deleted' });
-    } catch (err) {
-        res.status(500).json({ message: 'Error deleting branch', error: err.message });
-    }
+    } catch (err) { next(err); }
 };
 
 // @desc    Get members for a specific branch
 // @route   GET /api/branches/:id/members
-const getBranchMembers = async (req, res) => {
+const getBranchMembers = catchAsync(async (req, res, next) => {
     try {
         if (req.user.branchId && req.user.branchId !== req.params.id) {
             return res.status(403).json({ message: 'Access denied to this branch\'s members' });
@@ -105,9 +95,7 @@ const getBranchMembers = async (req, res) => {
         const members = await Member.find({ gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }), branchId: req.params.id })
             .populate('planId', 'name').sort({ createdAt: -1 });
         res.json(members);
-    } catch (err) {
-        res.status(500).json({ message: 'Error fetching branch members', error: err.message });
-    }
+    } catch (err) { next(err); }
 };
 
 module.exports = { getBranches, createBranch, updateBranch, deleteBranch, getBranchMembers };

@@ -4,3 +4,30 @@ node_modules/
 .DS_Store
 nul
 backend/nul
+
+# Credentials / sensitive files
+App-Code/details
+
+# Root-level debug/test scripts (keep in scripts/ if needed)
+backend/audit-members.js
+backend/check-users.js
+backend/check_plans.js
+backend/check_plans_prisma.js
+backend/create-fitprime-users.js
+backend/createSuperAdmin.js
+backend/debug-counts.js
+backend/fix-strict-sync.js
+backend/migrate-data.js
+backend/mongo-diagnose.js
+backend/query-otp.js
+backend/seed.js
+backend/set-otp.js
+backend/sync-db-logic.js
+backend/test-analytics.js
+backend/test-db.js
+backend/test-dns-bypass.js
+backend/test-member-summary.js
+backend/test-prisma.js
+backend/test_api.js
+backend/test_branches.js
+backend/test_prisma.js

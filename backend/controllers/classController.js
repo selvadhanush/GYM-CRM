@@ -1,18 +1,14 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const GymClass = require('../models/GymClass');
 const Member = require('../models/Member');
 
 // @desc    Get all classes for a gym
 // @route   GET /api/classes
 // @access  Private/Admin/Trainer
-const getClasses = async (req, res) => {
+const getClasses = catchAsync(async (req, res, next) => {
     try {
-        const query = {};
-        if (req.query.gymId) {
-            query.gymId = req.query.gymId;
-        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
-            query.gymId = req.user.gymId;
-        }
-        if (req.user.branchId) query.branchId = req.user.branchId;
+        const query = { ...req.tenantFilter };
         const classes = await GymClass.find(query)
             .sort({ scheduleDate: 1 })
             .lean();
@@ -22,15 +18,13 @@ const getClasses = async (req, res) => {
             seatsAvailable: c.maxSeats - (c.bookings?.length || 0)
         }));
         res.json(result);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching classes', error: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Create a class
 // @route   POST /api/classes
 // @access  Private/Admin/Trainer
-const createClass = async (req, res) => {
+const createClass = catchAsync(async (req, res, next) => {
     try {
         const { name, type, description, trainerName, scheduleDate, startTime, endTime, maxSeats } = req.body;
         if (!name || !type || !scheduleDate || !startTime || !endTime || !maxSeats) {
@@ -50,30 +44,26 @@ const createClass = async (req, res) => {
             bookings: []
         });
         res.status(201).json(gymClass);
-    } catch (error) {
-        res.status(500).json({ message: 'Error creating class', error: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Delete a class
 // @route   DELETE /api/classes/:id
 // @access  Private/Admin
-const deleteClass = async (req, res) => {
+const deleteClass = catchAsync(async (req, res, next) => {
     try {
         const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
         if (req.user.branchId) query.branchId = req.user.branchId;
         const gymClass = await GymClass.findOneAndDelete(query);
         if (!gymClass) return res.status(404).json({ message: 'Class not found' });
         res.json({ message: 'Class deleted' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error deleting class', error: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get bookings for a class
 // @route   GET /api/classes/:id/bookings
 // @access  Private/Admin/Trainer
-const getClassBookings = async (req, res) => {
+const getClassBookings = catchAsync(async (req, res, next) => {
     try {
         const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
         if (req.user.branchId) query.branchId = req.user.branchId;
@@ -81,15 +71,13 @@ const getClassBookings = async (req, res) => {
             .populate('bookings.memberId', 'name phone');
         if (!gymClass) return res.status(404).json({ message: 'Class not found' });
         res.json(gymClass);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching bookings', error: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Member books a class slot
 // @route   POST /api/member-portal/classes/:id/book
 // @access  Private/Member
-const bookClass = async (req, res) => {
+const bookClass = catchAsync(async (req, res, next) => {
     try {
         const gymClass = await GymClass.findById(req.params.id);
         if (!gymClass) return res.status(404).json({ message: 'Class not found' });
@@ -115,15 +103,13 @@ const bookClass = async (req, res) => {
             message: 'Class booked successfully',
             seatsAvailable: gymClass.maxSeats - gymClass.bookings.length
         });
-    } catch (error) {
-        res.status(500).json({ message: 'Error booking class', error: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Member cancels a class booking
 // @route   DELETE /api/member-portal/classes/:id/book
 // @access  Private/Member
-const cancelBooking = async (req, res) => {
+const cancelBooking = catchAsync(async (req, res, next) => {
     try {
         const gymClass = await GymClass.findById(req.params.id);
         if (!gymClass) return res.status(404).json({ message: 'Class not found' });
@@ -140,15 +126,13 @@ const cancelBooking = async (req, res) => {
             message: 'Booking cancelled',
             seatsAvailable: gymClass.maxSeats - gymClass.bookings.length
         });
-    } catch (error) {
-        res.status(500).json({ message: 'Error cancelling booking', error: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Member views available classes
 // @route   GET /api/member-portal/classes
 // @access  Private/Member
-const getMemberClasses = async (req, res) => {
+const getMemberClasses = catchAsync(async (req, res, next) => {
     try {
         const member = await Member.findById(req.user.memberId).select('gymId');
         if (!member) return res.status(404).json({ message: 'Member not found' });
@@ -166,15 +150,13 @@ const getMemberClasses = async (req, res) => {
             isBooked: c.bookings?.some(b => b && (b.memberId || b).toString() === req.user.memberId.toString()) || false
         }));
         res.json(result);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching classes', error: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Admin books a class for a member
 // @route   POST /api/classes/:id/book
 // @access  Private/Admin or Trainer
-const adminBookClass = async (req, res) => {
+const adminBookClass = catchAsync(async (req, res, next) => {
     try {
         const { memberId } = req.body;
         if (!memberId) {
@@ -207,15 +189,13 @@ const adminBookClass = async (req, res) => {
             message: 'Class booked successfully by admin',
             bookings: gymClass.bookings
         });
-    } catch (error) {
-        res.status(500).json({ message: 'Error booking class', error: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Admin cancels a member booking
 // @route   DELETE /api/classes/:id/bookings/:memberId
 // @access  Private/Admin or Trainer
-const adminCancelBooking = async (req, res) => {
+const adminCancelBooking = catchAsync(async (req, res, next) => {
     try {
         const { memberId } = req.params;
         const gymClass = await GymClass.findById(req.params.id);
@@ -233,9 +213,7 @@ const adminCancelBooking = async (req, res) => {
             message: 'Booking cancelled by admin',
             bookings: gymClass.bookings
         });
-    } catch (error) {
-        res.status(500).json({ message: 'Error cancelling booking', error: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 module.exports = { 

@@ -1,3 +1,5 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const WorkoutPlan = require('../models/WorkoutPlan');
 const Member = require('../models/Member');
 const User = require('../models/User');
@@ -5,7 +7,7 @@ const User = require('../models/User');
 // @desc    Create a workout plan for a member
 // @route   POST /api/workout-plans
 // @access  Private/Admin/Trainer
-const createPlan = async (req, res) => {
+const createPlan = catchAsync(async (req, res, next) => {
     try {
         const { memberId, name, startDate, endDate, exercises } = req.body;
 
@@ -30,16 +32,13 @@ const createPlan = async (req, res) => {
         });
 
         res.status(201).json(plan);
-    } catch (error) {
-        console.error("CREATE WORKOUT PLAN ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get all workout plans
 // @route   GET /api/workout-plans
 // @access  Private/Admin/Trainer/Member
-const getPlans = async (req, res) => {
+const getPlans = catchAsync(async (req, res, next) => {
     try {
         let query = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
 
@@ -101,16 +100,13 @@ const getPlans = async (req, res) => {
             data: formatted,
             meta: { page, limit, total }
         });
-    } catch (error) {
-        console.error("GET WORKOUT PLANS ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get single workout plan
 // @route   GET /api/workout-plans/:id
 // @access  Private/Admin/Trainer/Member
-const getPlanById = async (req, res) => {
+const getPlanById = catchAsync(async (req, res, next) => {
     try {
         const plan = await WorkoutPlan.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
 
@@ -137,16 +133,13 @@ const getPlanById = async (req, res) => {
         } else {
             res.status(404).json({ success: false, message: 'Workout plan not found' });
         }
-    } catch (error) {
-        console.error("GET WORKOUT PLAN BY ID ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Update workout plan
 // @route   PUT /api/workout-plans/:id
 // @access  Private/Admin/Trainer
-const updatePlan = async (req, res) => {
+const updatePlan = catchAsync(async (req, res, next) => {
     try {
         const { name, startDate, endDate, exercises, trainerId } = req.body;
 
@@ -171,16 +164,13 @@ const updatePlan = async (req, res) => {
         } else {
             res.status(404).json({ success: false, message: 'Workout plan not found' });
         }
-    } catch (error) {
-        console.error("UPDATE WORKOUT PLAN ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Delete workout plan
 // @route   DELETE /api/workout-plans/:id
 // @access  Private/Admin/Trainer
-const deletePlan = async (req, res) => {
+const deletePlan = catchAsync(async (req, res, next) => {
     try {
         const plan = await WorkoutPlan.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
 
@@ -190,10 +180,7 @@ const deletePlan = async (req, res) => {
         } else {
             res.status(404).json({ success: false, message: 'Workout plan not found' });
         }
-    } catch (error) {
-        console.error("DELETE WORKOUT PLAN ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 module.exports = {

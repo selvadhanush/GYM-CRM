@@ -23,6 +23,9 @@ const protect = async (req, res, next) => {
             }
 
             req.user = user;
+            if (req.log) {
+                req.log = req.log.child({ userId: user._id || user.id });
+            }
 
             // Enforce hierarchical authentication scoping
             if (req.user.role === 'superadmin') {

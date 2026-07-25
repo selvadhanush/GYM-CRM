@@ -2,10 +2,11 @@ const express = require('express');
 const router = express.Router();
 const { getBranches, createBranch, updateBranch, deleteBranch, getBranchMembers } = require('../controllers/branchController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+const tenantFilter = require('../middleware/tenantFilter');
 
 router.use(protect);
 router.route('/')
-    .get(authorize('admin', 'receptionist', 'trainer', 'superadmin', 'fitpass_admin', 'h4_admin'), getBranches)
+    .get(authorize('admin', 'receptionist', 'trainer', 'superadmin', 'fitpass_admin', 'h4_admin'), tenantFilter, getBranches)
     .post(authorize('admin', 'fitpass_admin', 'h4_admin'), createBranch);
 
 router.route('/:id')

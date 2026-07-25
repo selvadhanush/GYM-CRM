@@ -9,9 +9,10 @@ const {
     addCommission
 } = require('../controllers/payrollController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+const tenantFilter = require('../middleware/tenantFilter');
 
 router.route('/')
-    .get(protect, authorize('admin', 'trainer', 'h4_admin'), getPayrolls);
+    .get(protect, authorize('admin', 'trainer', 'h4_admin'), tenantFilter, getPayrolls);
 
 router.post('/generate', protect, authorize('admin', 'h4_admin'), generateMonthlyPayroll);
 router.post('/salary-structure', protect, authorize('admin', 'h4_admin'), upsertSalaryStructure);

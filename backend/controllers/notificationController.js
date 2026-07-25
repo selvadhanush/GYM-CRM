@@ -1,3 +1,5 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const Notification = require('../models/Notification');
 const Member = require('../models/Member');
 const User = require('../models/User');
@@ -5,7 +7,7 @@ const User = require('../models/User');
 // @desc    Get unread notifications and auto-generate alerts
 // @route   GET /api/notifications
 // @access  Private
-const getNotifications = async (req, res) => {
+const getNotifications = catchAsync(async (req, res, next) => {
     try {
         // 1. Auto-generate alerts before fetching
         await generateAutomatedAlerts(req.user);
@@ -15,20 +17,13 @@ const getNotifications = async (req, res) => {
             .limit(20);
 
         res.json(notifications);
-    } catch (error) {
-        console.error("GET NOTIFICATIONS ERROR:", error);
-        res.status(500).json({
-            success: false,
-            message: error.message,
-            stack: error.stack
-        });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Mark notification as read
 // @route   PUT /api/notifications/:id
 // @access  Private
-const markAsRead = async (req, res) => {
+const markAsRead = catchAsync(async (req, res, next) => {
     try {
         const notification = await Notification.findById(req.params.id);
 
@@ -39,20 +34,13 @@ const markAsRead = async (req, res) => {
         } else {
             res.status(404).json({ success: false, message: 'Notification not found' });
         }
-    } catch (error) {
-        console.error("MARK NOTIFICATION READ ERROR:", error);
-        res.status(500).json({
-            success: false,
-            message: error.message,
-            stack: error.stack
-        });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Create gym-wide announcement
 // @route   POST /api/notifications/announcement
 // @access  Private/Admin
-const createAnnouncement = async (req, res) => {
+const createAnnouncement = catchAsync(async (req, res, next) => {
     try {
         const { message } = req.body;
 
@@ -73,14 +61,7 @@ const createAnnouncement = async (req, res) => {
 
         await Notification.insertMany(notifications);
         res.status(201).json({ message: 'Announcement sent to all users' });
-    } catch (error) {
-        console.error("CREATE ANNOUNCEMENT ERROR:", error);
-        res.status(500).json({
-            success: false,
-            message: error.message,
-            stack: error.stack
-        });
-    }
+    } catch (error) { next(error); }
 };
 
 // Helper logic to find members with expiries or dues

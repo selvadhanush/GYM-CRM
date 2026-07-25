@@ -1,3 +1,5 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const Payment = require('../models/Payment');
 const Expense = require('../models/Expense');
 const Member = require('../models/Member');
@@ -8,7 +10,7 @@ const { jsonToCsv } = require('../utils/csvUtils');
 // @desc    Download monthly revenue report
 // @route   GET /api/reports/revenue
 // @access  Private/Admin
-const getRevenueReport = async (req, res) => {
+const getRevenueReport = catchAsync(async (req, res, next) => {
     const { month, year } = req.query;
     const start = new Date(year, month - 1, 1);
     const end = new Date(year, month, 0, 23, 59, 59);
@@ -39,7 +41,7 @@ const getRevenueReport = async (req, res) => {
 // @desc    Download monthly expense report
 // @route   GET /api/reports/expenses
 // @access  Private/Admin
-const getExpenseReport = async (req, res) => {
+const getExpenseReport = catchAsync(async (req, res, next) => {
     const { month, year } = req.query;
     const start = new Date(year, month - 1, 1);
     const end = new Date(year, month, 0, 23, 59, 59);
@@ -70,7 +72,7 @@ const getExpenseReport = async (req, res) => {
 // @desc    Get report summary dashboard data
 // @route   GET /api/reports/summary?year=YYYY
 // @access  Private/Admin
-const getReportSummary = async (req, res) => {
+const getReportSummary = catchAsync(async (req, res, next) => {
     try {
         const year = parseInt(req.query.year) || new Date().getFullYear();
         const gymId = req.user.gymId;
@@ -295,10 +297,7 @@ const getReportSummary = async (req, res) => {
             memberStatusSummary,
             topMetrics,
         });
-    } catch (err) {
-        console.error('[getReportSummary]', err);
-        res.status(500).json({ message: 'Failed to generate report summary', error: err.message });
-    }
+    } catch (err) { next(err); }
 };
 
 module.exports = {

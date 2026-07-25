@@ -1,9 +1,11 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const Member = require('../models/Member');
 
 // @desc    Freeze a member's membership
 // @route   POST /api/members/:id/freeze
 // @access  Private/Admin/Receptionist
-const freezeMember = async (req, res) => {
+const freezeMember = catchAsync(async (req, res, next) => {
     try {
         const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
         if (req.user.branchId) {
@@ -20,16 +22,13 @@ const freezeMember = async (req, res) => {
         await member.save();
 
         res.json({ message: 'Member membership frozen successfully', member });
-    } catch (error) {
-        console.error('Freeze error:', error);
-        res.status(500).json({ message: 'Failed to freeze member', error: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Unfreeze a member's membership (adds frozen days to expiry)
 // @route   POST /api/members/:id/unfreeze
 // @access  Private/Admin/Receptionist
-const unfreezeMember = async (req, res) => {
+const unfreezeMember = catchAsync(async (req, res, next) => {
     try {
         const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
         if (req.user.branchId) {
@@ -66,16 +65,13 @@ const unfreezeMember = async (req, res) => {
             newExpiryDate: member.expiryDate,
             member
         });
-    } catch (error) {
-        console.error('Unfreeze error:', error);
-        res.status(500).json({ message: 'Failed to unfreeze member', error: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get freeze history for a member
 // @route   GET /api/members/:id/freeze-history
 // @access  Private/Admin/Receptionist
-const getFreezeHistory = async (req, res) => {
+const getFreezeHistory = catchAsync(async (req, res, next) => {
     try {
         const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
         if (req.user.branchId) {
@@ -84,9 +80,7 @@ const getFreezeHistory = async (req, res) => {
         const member = await Member.findOne(query).select('name freezeHistory status');
         if (!member) return res.status(404).json({ message: 'Member not found' });
         res.json({ name: member.name, status: member.status, freezeHistory: member.freezeHistory });
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching freeze history', error: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 module.exports = { freezeMember, unfreezeMember, getFreezeHistory };

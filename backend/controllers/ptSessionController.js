@@ -1,3 +1,5 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const PtSession = require('../models/PtSession');
 const Member = require('../models/Member');
 const User = require('../models/User');
@@ -6,7 +8,7 @@ const PtPackage = require('../models/PtPackage');
 // @desc    Create/Schedule a Personal Training session
 // @route   POST /api/pt-sessions
 // @access  Private/Admin/Trainer
-const createSession = async (req, res) => {
+const createSession = catchAsync(async (req, res, next) => {
     try {
         const { memberId, trainerId, packageId, sessionDate, notes } = req.body;
 
@@ -45,16 +47,13 @@ const createSession = async (req, res) => {
         });
 
         res.status(201).json(session);
-    } catch (error) {
-        console.error("CREATE PT SESSION ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get all PT sessions
 // @route   GET /api/pt-sessions
 // @access  Private/Admin/Trainer/Member
-const getSessions = async (req, res) => {
+const getSessions = catchAsync(async (req, res, next) => {
     try {
         let query = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
 
@@ -116,16 +115,13 @@ const getSessions = async (req, res) => {
             data: formatted,
             meta: { page, limit, total }
         });
-    } catch (error) {
-        console.error("GET PT SESSIONS ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get single PT session
 // @route   GET /api/pt-sessions/:id
 // @access  Private/Admin/Trainer/Member
-const getSessionById = async (req, res) => {
+const getSessionById = catchAsync(async (req, res, next) => {
     try {
         const session = await PtSession.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
 
@@ -147,16 +143,13 @@ const getSessionById = async (req, res) => {
         } else {
             res.status(404).json({ success: false, message: 'Session not found' });
         }
-    } catch (error) {
-        console.error("GET PT SESSION BY ID ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Update PT session status or details
 // @route   PUT /api/pt-sessions/:id
 // @access  Private/Admin/Trainer
-const updateSession = async (req, res) => {
+const updateSession = catchAsync(async (req, res, next) => {
     try {
         const { sessionDate, status, notes, trainerId } = req.body;
 
@@ -179,16 +172,13 @@ const updateSession = async (req, res) => {
         } else {
             res.status(404).json({ success: false, message: 'Session not found' });
         }
-    } catch (error) {
-        console.error("UPDATE PT SESSION ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Delete PT session
 // @route   DELETE /api/pt-sessions/:id
 // @access  Private/Admin/Trainer
-const deleteSession = async (req, res) => {
+const deleteSession = catchAsync(async (req, res, next) => {
     try {
         const session = await PtSession.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
 
@@ -198,10 +188,7 @@ const deleteSession = async (req, res) => {
         } else {
             res.status(404).json({ success: false, message: 'Session not found' });
         }
-    } catch (error) {
-        console.error("DELETE PT SESSION ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 module.exports = {

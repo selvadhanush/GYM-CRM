@@ -13,11 +13,12 @@
  * with a `Retry-After`-style message.
  */
 const rateLimit = require('express-rate-limit');
+const env = require('../config/env');
 
 const trustProxyNote = 'Behind a reverse proxy set app.set("trust proxy", N).';
 
 // Slightly relaxed in development so testing isn't painful.
-const isProd = process.env.NODE_ENV === 'production';
+const isProd = env.isProduction;
 
 const basicMessage = (retrySec) => ({
   success: false,

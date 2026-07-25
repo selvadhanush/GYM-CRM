@@ -1,3 +1,5 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const Member = require('../models/Member');
 const Attendance = require('../models/Attendance');
 const Payment = require('../models/Payment');
@@ -6,11 +8,12 @@ const Gym = require('../models/Gym');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const { expireIfDue } = require('../utils/sessionHelpers');
+const env = require('../config/env');
 
 // @desc    Get logged in member profile/plan
 // @route   GET /api/member-portal/plan
 // @access  Private/Member
-const getMyPlan = async (req, res) => {
+const getMyPlan = catchAsync(async (req, res, next) => {
     if (req.user.role !== 'member' || !req.user.memberId) {
         res.status(403);
         throw new Error('Not authorized as a member');
@@ -27,12 +30,12 @@ const getMyPlan = async (req, res) => {
     await expireIfDue(member);
 
     res.json(member);
-};
+});
 
 // @desc    Get Fit-Prime (Global) Plans
 // @route   GET /api/member-portal/fitprime-plans
 // @access  Private/Member
-const getFitPrimePlans = async (req, res) => {
+const getFitPrimePlans = catchAsync(async (req, res, next) => {
     if (req.user.role !== 'member') {
         res.status(403);
         throw new Error('Not authorized as a member');
@@ -40,12 +43,12 @@ const getFitPrimePlans = async (req, res) => {
 
     const plans = await Plan.find({ gymId: 'SYSTEM' }).lean();
     res.json(plans);
-};
+});
 
 // @desc    Get all active partner gyms
 // @route   GET /api/member-portal/gyms
 // @access  Private/Member
-const getPartnerGyms = async (req, res) => {
+const getPartnerGyms = catchAsync(async (req, res, next) => {
     const allGyms = await Gym.find({ status: 'Active', name: { $ne: 'SYSTEM' } }).lean();
     // Exclude H4 gyms from the direct partner gyms list
     const gyms = allGyms.filter(g => !g.name || !g.name.toLowerCase().includes('h4'));
@@ -99,12 +102,12 @@ const getPartnerGyms = async (req, res) => {
         console.error('Error fetching partner gyms occupancy:', err);
         res.json(gyms);
     }
-};
+});
 
 // @desc    Get logged in member attendance
 // @route   GET /api/member-portal/attendance
 // @access  Private/Member
-const getMyAttendance = async (req, res) => {
+const getMyAttendance = catchAsync(async (req, res, next) => {
     if (req.user.role !== 'member' || !req.user.memberId) {
         res.status(403);
         throw new Error('Not authorized as a member');
@@ -136,12 +139,12 @@ const getMyAttendance = async (req, res) => {
     combined.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     res.json(combined);
-};
+});
 
 // @desc    Get logged in member payments
 // @route   GET /api/member-portal/payments
 // @access  Private/Member
-const getMyPayments = async (req, res) => {
+const getMyPayments = catchAsync(async (req, res, next) => {
     if (req.user.role !== 'member' || !req.user.memberId) {
         res.status(403);
         throw new Error('Not authorized as a member');
@@ -149,12 +152,12 @@ const getMyPayments = async (req, res) => {
 
     const payments = await Payment.find({ memberId: req.user.memberId }).sort({ date: -1 });
     res.json(payments);
-};
+});
 
 // @desc    Create Razorpay Order
 // @route   POST /api/member-portal/payment/create-order
 // @access  Private/Member
-const createRazorpayOrder = async (req, res) => {
+const createRazorpayOrder = catchAsync(async (req, res, next) => {
     try {
         if (!req.user?.memberId) {
             return res.status(403).json({ message: 'Not authorized as a member (no memberId in token)' });
@@ -228,12 +231,12 @@ const createRazorpayOrder = async (req, res) => {
             details: error.error?.description || error.description || 'Check server logs for details'
         });
     }
-};
+});
 
 // @desc    Verify Razorpay Payment
 // @route   POST /api/member-portal/payment/verify
 // @access  Private/Member
-const verifyRazorpayPayment = async (req, res) => {
+const verifyRazorpayPayment = catchAsync(async (req, res, next) => {
     try {
         const { razorpay_order_id, razorpay_payment_id, razorpay_signature, amount_paid } = req.body || {};
 
@@ -297,88 +300,73 @@ const verifyRazorpayPayment = async (req, res) => {
                 message: 'Payment verification failed'
             });
         }
-    } catch (error) {
-        console.error('PAYMENT VERIFICATION ERROR:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error verifying payment',
-            error: error.message
-        });
-    }
-};
+    } catch (error) { next(error); }
+});
 
 // @desc    Create Razorpay Order for Plan Purchase
 // @route   POST /api/member-portal/purchase-plan/create-order
 // @access  Private/Member
-const purchasePlanOrder = async (req, res) => {
-    try {
-        const { planId } = req.body;
-        // Allow users without memberId to buy a plan (it's their first plan)
+const purchasePlanOrder = catchAsync(async (req, res, next) => {
+    const { planId } = req.body;
 
-        const plan = await Plan.findById(planId);
-        if (!plan) {
-            return res.status(404).json({ message: 'Plan not found' });
-        }
+    const plan = await Plan.findById(planId);
+    if (!plan) {
+        return res.status(404).json({ message: 'Plan not found' });
+    }
 
-        const amountInPaise = Math.round(plan.price * 100);
+    const amountInPaise = Math.round(plan.price * 100);
 
-        const userIdString = req.user && req.user._id ? req.user._id.toString() : 'mockuser';
-        const receiptId = `rcpt_plan_${userIdString.slice(-6)}_${Date.now()}`;
+    const userIdString = req.user && req.user._id ? req.user._id.toString() : 'mockuser';
+    const receiptId = `rcpt_plan_${userIdString.slice(-6)}_${Date.now()}`;
 
-        // Mock mode is only available in non-production. In production a missing
-        // real key is a hard error (would otherwise let members "buy" plans for free).
-        const isMockEnv = !process.env.RAZORPAY_KEY_ID ||
-                          !process.env.RAZORPAY_KEY_SECRET ||
-                          process.env.RAZORPAY_KEY_ID === 'your_razorpay_key_id';
-        if (isMockEnv && process.env.NODE_ENV === 'production') {
-            console.error('Razorpay keys missing in production; refusing to create a mock order.');
-            return res.status(503).json({ message: 'Payments are not configured.' });
-        }
+    const isMockEnv = !process.env.RAZORPAY_KEY_ID ||
+                      !process.env.RAZORPAY_KEY_SECRET ||
+                      process.env.RAZORPAY_KEY_ID === 'your_razorpay_key_id';
+    if (isMockEnv && env.isProduction) {
+        console.error('Razorpay keys missing in production; refusing to create a mock order.');
+        return res.status(503).json({ message: 'Payments are not configured.' });
+    }
 
-        if (isMockEnv) {
-            const mockOrder = {
-                id: `order_mock_${crypto.randomBytes(8).toString('hex')}`,
-                amount: amountInPaise,
-                currency: "INR",
-                receipt: receiptId,
-                status: "created",
-                is_mock: true,
-                notes: { newPlanId: planId.toString() }
-            };
-            return res.status(201).json(mockOrder);
-        }
-
-        const instance = new Razorpay({
-            key_id: process.env.RAZORPAY_KEY_ID,
-            key_secret: process.env.RAZORPAY_KEY_SECRET,
-        });
-
-        const options = {
+    if (isMockEnv) {
+        const mockOrder = {
+            id: `order_mock_${crypto.randomBytes(8).toString('hex')}`,
             amount: amountInPaise,
             currency: "INR",
             receipt: receiptId,
-            notes: { newPlanId: planId.toString(), userId: userIdString },
+            status: "created",
+            is_mock: true,
+            notes: { newPlanId: planId.toString() }
         };
-
-        const order = await instance.orders.create(options);
-        res.status(201).json(order);
-    } catch (error) {
-        console.error('purchasePlanOrder ERROR:', error.message);
-        res.status(500).json({ message: 'Order creation failed', error: error.message || String(error) });
+        return res.status(201).json(mockOrder);
     }
-};
+
+    const instance = new Razorpay({
+        key_id: process.env.RAZORPAY_KEY_ID,
+        key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+
+    const options = {
+        amount: amountInPaise,
+        currency: "INR",
+        receipt: receiptId,
+        notes: { newPlanId: planId.toString(), userId: userIdString },
+    };
+
+    const order = await instance.orders.create(options);
+    res.status(201).json(order);
+});
 
 // @desc    Verify Plan Purchase
 // @route   POST /api/member-portal/purchase-plan/verify
 // @access  Private/Member
-const purchasePlanVerify = async (req, res) => {
+const purchasePlanVerify = catchAsync(async (req, res, next) => {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, planId } = req.body;
 
     // Mock verification is dev-only. In production a missing key is a hard error.
     const isMock = (razorpay_order_id && razorpay_order_id.startsWith('order_mock_')) ||
                    !process.env.RAZORPAY_KEY_SECRET ||
                    process.env.RAZORPAY_KEY_SECRET === 'your_razorpay_key_secret';
-    if (isMock && process.env.NODE_ENV === 'production') {
+    if (isMock && env.isProduction) {
         return res.status(503).json({ success: false, message: 'Payments are not configured.' });
     }
 
@@ -464,12 +452,12 @@ const purchasePlanVerify = async (req, res) => {
         plan,
         sessionsRemaining: member.sessionsRemaining || 0,
     });
-};
+});
 
 // @desc    Cancel Active Plan
 // @route   POST /api/member-portal/plan/cancel
 // @access  Private/Member
-const cancelMyPlan = async (req, res) => {
+const cancelMyPlan = catchAsync(async (req, res, next) => {
     if (!req.user?.memberId) {
         return res.status(403).json({ message: 'Not authorized as a member' });
     }
@@ -492,12 +480,12 @@ const cancelMyPlan = async (req, res) => {
     await member.save();
 
     res.status(200).json({ success: true, message: 'Plan cancelled successfully' });
-};
+});
 
 // @desc    Get consolidated dashboard data for member (plan, attendance, gyms, session status)
 // @route   GET /api/member-portal/dashboard
 // @access  Private/Member
-const getDashboardData = async (req, res) => {
+const getDashboardData = catchAsync(async (req, res, next) => {
     if (req.user.role !== 'member' || !req.user.memberId) {
         res.status(403);
         throw new Error('Not authorized as a member');
@@ -600,16 +588,13 @@ const getDashboardData = async (req, res) => {
             sessionStatus,
             lastVisitedGym
         });
-    } catch (error) {
-        console.error('CONSOLIDATED DASHBOARD DATA ERROR:', error.message);
-        res.status(500).json({ success: false, message: 'Could not load dashboard data.' });
-    }
-};
+    } catch (error) { next(error); }
+});
 
 // @desc    Update logged in member profile and credentials
 // @route   PUT /api/member-portal/profile
 // @access  Private/Member
-const updateMyProfile = async (req, res) => {
+const updateMyProfile = catchAsync(async (req, res, next) => {
     if (req.user.role !== 'member' || !req.user.memberId) {
         res.status(403);
         throw new Error('Not authorized as a member');
@@ -671,14 +656,8 @@ const updateMyProfile = async (req, res) => {
                 phone: user.phone
             }
         });
-    } catch (error) {
-        console.error('UPDATE PROFILE ERROR:', error);
-        res.status(500).json({
-            success: false,
-            message: error.message || 'Error updating profile'
-        });
-    }
-};
+    } catch (error) { next(error); }
+});
 
 module.exports = {
     getMyPlan,

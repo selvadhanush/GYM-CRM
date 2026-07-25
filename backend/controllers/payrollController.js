@@ -1,3 +1,5 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const TrainerSalary = require('../models/TrainerSalary');
 const PtCommission = require('../models/PtCommission');
 const Payroll = require('../models/Payroll');
@@ -7,7 +9,7 @@ const PtSession = require('../models/PtSession');
 // @desc    Upsert Trainer Salary Configuration
 // @route   POST /api/payroll/salary-structure
 // @access  Private (Admin)
-const upsertSalaryStructure = async (req, res) => {
+const upsertSalaryStructure = catchAsync(async (req, res, next) => {
     try {
         const { trainerId, fixedSalary, commissionPt } = req.body;
 
@@ -46,16 +48,13 @@ const upsertSalaryStructure = async (req, res) => {
             });
             return res.status(201).json(created);
         }
-    } catch (error) {
-        console.error("UPSERT SALARY STRUCTURE ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get Salary Configuration for a Trainer
 // @route   GET /api/payroll/salary-structure/:trainerId
 // @access  Private (Admin/Trainer)
-const getSalaryStructure = async (req, res) => {
+const getSalaryStructure = catchAsync(async (req, res, next) => {
     try {
         const { trainerId } = req.params;
 
@@ -79,16 +78,13 @@ const getSalaryStructure = async (req, res) => {
         }
 
         res.json(salary);
-    } catch (error) {
-        console.error("GET SALARY STRUCTURE ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Generate/Recalculate Monthly Payroll
 // @route   POST /api/payroll/generate
 // @access  Private (Admin)
-const generateMonthlyPayroll = async (req, res) => {
+const generateMonthlyPayroll = catchAsync(async (req, res, next) => {
     try {
         const { trainerId, month, year, incentives } = req.body;
 
@@ -194,26 +190,15 @@ const generateMonthlyPayroll = async (req, res) => {
             });
             return res.status(201).json(created);
         }
-    } catch (error) {
-        console.error("GENERATE PAYROLL ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get Payroll Records
 // @route   GET /api/payroll
 // @access  Private (Admin/Trainer)
-const getPayrolls = async (req, res) => {
+const getPayrolls = catchAsync(async (req, res, next) => {
     try {
-        let query = {};
-        if (req.query.gymId) {
-            query.gymId = req.query.gymId;
-        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
-            query.gymId = req.user.gymId;
-        }
-        if (req.user.branchId) {
-            query.branchId = req.user.branchId;
-        }
+        let query = { ...req.tenantFilter };
 
         if (req.user.role === 'trainer') {
             query.trainerId = req.user.id;
@@ -257,16 +242,13 @@ const getPayrolls = async (req, res) => {
             data: formatted,
             meta: { page, limit, total }
         });
-    } catch (error) {
-        console.error("GET PAYROLLS ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Update Payroll Status / Process Payment
 // @route   PUT /api/payroll/:id
 // @access  Private (Admin)
-const updatePayrollStatus = async (req, res) => {
+const updatePayrollStatus = catchAsync(async (req, res, next) => {
     try {
         const { status, incentives } = req.body;
         const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
@@ -295,16 +277,13 @@ const updatePayrollStatus = async (req, res) => {
 
         const updated = await payroll.save();
         res.json(updated);
-    } catch (error) {
-        console.error("UPDATE PAYROLL STATUS ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Record manual commission entry
 // @route   POST /api/payroll/commission
 // @access  Private (Admin)
-const addCommission = async (req, res) => {
+const addCommission = catchAsync(async (req, res, next) => {
     try {
         const { trainerId, amount, date, sessionId } = req.body;
 
@@ -332,10 +311,7 @@ const addCommission = async (req, res) => {
         });
 
         res.status(201).json(commission);
-    } catch (error) {
-        console.error("ADD COMMISSION ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 module.exports = {

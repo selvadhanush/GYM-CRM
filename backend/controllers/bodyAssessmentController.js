@@ -1,3 +1,5 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const BodyAssessment = require('../models/BodyAssessment');
 const Member = require('../models/Member');
 const User = require('../models/User');
@@ -5,7 +7,7 @@ const User = require('../models/User');
 // @desc    Create/Record a new Body Assessment
 // @route   POST /api/body-assessments
 // @access  Private/Admin/Trainer
-const createAssessment = async (req, res) => {
+const createAssessment = catchAsync(async (req, res, next) => {
     try {
         const {
             memberId,
@@ -50,26 +52,15 @@ const createAssessment = async (req, res) => {
         });
 
         res.status(201).json(assessment);
-    } catch (error) {
-        console.error("CREATE BODY ASSESSMENT ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get body assessments history
 // @route   GET /api/body-assessments
 // @access  Private/Admin/Trainer/Member
-const getAssessments = async (req, res) => {
+const getAssessments = catchAsync(async (req, res, next) => {
     try {
-        let query = {};
-        if (req.query.gymId) {
-            query.gymId = req.query.gymId;
-        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
-            query.gymId = req.user.gymId;
-        }
-        if (req.user.branchId) {
-            query.branchId = req.user.branchId;
-        }
+        let query = { ...req.tenantFilter };
 
         // If member is calling, force show only their assessments
         if (req.user.role === 'member') {
@@ -117,16 +108,13 @@ const getAssessments = async (req, res) => {
             data: formatted,
             meta: { page, limit, total }
         });
-    } catch (error) {
-        console.error("GET BODY ASSESSMENTS ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get single body assessment
 // @route   GET /api/body-assessments/:id
 // @access  Private/Admin/Trainer/Member
-const getAssessmentById = async (req, res) => {
+const getAssessmentById = catchAsync(async (req, res, next) => {
     try {
         const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
         if (req.user.branchId) {
@@ -154,16 +142,13 @@ const getAssessmentById = async (req, res) => {
         } else {
             res.status(404).json({ success: false, message: 'Assessment not found' });
         }
-    } catch (error) {
-        console.error("GET BODY ASSESSMENT BY ID ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Update a body assessment record
 // @route   PUT /api/body-assessments/:id
 // @access  Private/Admin/Trainer
-const updateAssessment = async (req, res) => {
+const updateAssessment = catchAsync(async (req, res, next) => {
     try {
         const {
             weight,
@@ -195,16 +180,13 @@ const updateAssessment = async (req, res) => {
         } else {
             res.status(404).json({ success: false, message: 'Assessment not found' });
         }
-    } catch (error) {
-        console.error("UPDATE BODY ASSESSMENT ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Delete a body assessment record
 // @route   DELETE /api/body-assessments/:id
 // @access  Private/Admin/Trainer
-const deleteAssessment = async (req, res) => {
+const deleteAssessment = catchAsync(async (req, res, next) => {
     try {
         const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
         if (req.user.branchId) {
@@ -218,10 +200,7 @@ const deleteAssessment = async (req, res) => {
         } else {
             res.status(404).json({ success: false, message: 'Assessment not found' });
         }
-    } catch (error) {
-        console.error("DELETE BODY ASSESSMENT ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 module.exports = {

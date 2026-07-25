@@ -1,3 +1,5 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 /**
  * FitPrime / FitPass session-based check-in controller.
  *
@@ -70,7 +72,7 @@ const logFitPassAttempt = async ({
 // @desc    Check in to a gym by scanning its QR (deducts 1 session instantly)
 // @route   POST /api/member-portal/sessions/check-in
 // @access  Private/Member
-const checkIn = async (req, res) => {
+const checkIn = catchAsync(async (req, res, next) => {
   const { gymId, branchId, deviceInfo } = req.body;
   const qrCodeUsed = JSON.stringify({ gymId, branchId });
 
@@ -338,7 +340,7 @@ const checkIn = async (req, res) => {
 // @desc    Get the member's current session state (for the mobile live timer)
 // @route   GET /api/member-portal/sessions/status
 // @access  Private/Member
-const getSessionStatus = async (req, res) => {
+const getSessionStatus = catchAsync(async (req, res, next) => {
   try {
     const member = await loadMemberForUser(req);
     if (!member) {
@@ -368,7 +370,7 @@ const getSessionStatus = async (req, res) => {
 // @desc    Get the member's check-in history with filters
 // @route   GET /api/member-portal/sessions/history
 // @access  Private/Member
-const getSessionHistory = async (req, res) => {
+const getSessionHistory = catchAsync(async (req, res, next) => {
   try {
     if (!req.user?.memberId) {
       return res.status(404).json({ success: false, message: 'Member profile not found.' });
@@ -417,7 +419,7 @@ const getSessionHistory = async (req, res) => {
 // @desc    Get member's FitPass summary for admins
 // @route   GET /api/sessions/member-summary/:memberId
 // @access  Private/Admin, Partner, SuperAdmin
-const getMemberFitPassSummary = async (req, res) => {
+const getMemberFitPassSummary = catchAsync(async (req, res, next) => {
   try {
     const { memberId } = req.params;
 
@@ -484,7 +486,7 @@ const getMemberFitPassSummary = async (req, res) => {
 // @desc    Get FitPass analytics for admins
 // @route   GET /api/sessions/analytics
 // @access  Private/Admin, Partner, SuperAdmin
-const getFitPassAnalytics = async (req, res) => {
+const getFitPassAnalytics = catchAsync(async (req, res, next) => {
   try {
     const logsFilter = { accessStatus: 'Success' };
     if (req.user.role === 'partner') {
@@ -626,7 +628,7 @@ const adminAdjustSchema = z.object({
 // @desc    Admin manually adjusts a member's session balance (emergency credit-back)
 // @route   POST /api/sessions/admin-adjust
 // @access  Private/Admin, Receptionist
-const adminAdjustSessions = async (req, res) => {
+const adminAdjustSessions = catchAsync(async (req, res, next) => {
   try {
     const { memberId, delta, reason } = adminAdjustSchema.parse(req.body);
 
@@ -663,7 +665,7 @@ const adminAdjustSessions = async (req, res) => {
  * @route   GET /api/sessions/partner-visits
  * @access  Private/Partner only — strictly scoped to req.user.gymId
  */
-const getPartnerVisitLog = async (req, res) => {
+const getPartnerVisitLog = catchAsync(async (req, res, next) => {
   try {
     const gymId = req.user.gymId;
     if (!gymId) {

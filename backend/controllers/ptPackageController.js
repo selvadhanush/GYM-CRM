@@ -1,9 +1,11 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const PtPackage = require('../models/PtPackage');
 
 // @desc    Create a Personal Training package
 // @route   POST /api/pt-packages
 // @access  Private/Admin
-const createPackage = async (req, res) => {
+const createPackage = catchAsync(async (req, res, next) => {
     try {
         const { name, description, price, sessionCount, duration } = req.body;
 
@@ -21,29 +23,23 @@ const createPackage = async (req, res) => {
         });
 
         res.status(201).json(packageObj);
-    } catch (error) {
-        console.error("CREATE PT PACKAGE ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get all Personal Training packages
 // @route   GET /api/pt-packages
 // @access  Private/Admin/Trainer/Member
-const getPackages = async (req, res) => {
+const getPackages = catchAsync(async (req, res, next) => {
     try {
         const packages = await PtPackage.find({ gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) }).lean();
         res.json(packages);
-    } catch (error) {
-        console.error("GET PT PACKAGES ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get single Personal Training package
 // @route   GET /api/pt-packages/:id
 // @access  Private/Admin/Trainer/Member
-const getPackageById = async (req, res) => {
+const getPackageById = catchAsync(async (req, res, next) => {
     try {
         const packageObj = await PtPackage.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
 
@@ -52,16 +48,13 @@ const getPackageById = async (req, res) => {
         } else {
             res.status(404).json({ success: false, message: 'Package not found' });
         }
-    } catch (error) {
-        console.error("GET PT PACKAGE BY ID ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Update Personal Training package
 // @route   PUT /api/pt-packages/:id
 // @access  Private/Admin
-const updatePackage = async (req, res) => {
+const updatePackage = catchAsync(async (req, res, next) => {
     try {
         const { name, description, price, sessionCount, duration } = req.body;
 
@@ -79,16 +72,13 @@ const updatePackage = async (req, res) => {
         } else {
             res.status(404).json({ success: false, message: 'Package not found' });
         }
-    } catch (error) {
-        console.error("UPDATE PT PACKAGE ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Delete Personal Training package
 // @route   DELETE /api/pt-packages/:id
 // @access  Private/Admin
-const deletePackage = async (req, res) => {
+const deletePackage = catchAsync(async (req, res, next) => {
     try {
         const packageObj = await PtPackage.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
 
@@ -98,10 +88,7 @@ const deletePackage = async (req, res) => {
         } else {
             res.status(404).json({ success: false, message: 'Package not found' });
         }
-    } catch (error) {
-        console.error("DELETE PT PACKAGE ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 module.exports = {

@@ -1,10 +1,12 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const TrainerAttendance = require('../models/TrainerAttendance');
 const User = require('../models/User');
 
 // @desc    Check In Trainer
 // @route   POST /api/trainer-attendance/checkin
 // @access  Private (Trainer/Admin)
-const checkInTrainer = async (req, res) => {
+const checkInTrainer = catchAsync(async (req, res, next) => {
     try {
         const trainerId = req.user.role === 'trainer' ? req.user.id : req.body.trainerId;
         
@@ -55,16 +57,13 @@ const checkInTrainer = async (req, res) => {
         });
 
         res.status(201).json(attendance);
-    } catch (error) {
-        console.error("TRAINER CHECKIN ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Check Out Trainer
 // @route   POST /api/trainer-attendance/checkout
 // @access  Private (Trainer/Admin)
-const checkOutTrainer = async (req, res) => {
+const checkOutTrainer = catchAsync(async (req, res, next) => {
     try {
         const trainerId = req.user.role === 'trainer' ? req.user.id : req.body.trainerId;
 
@@ -98,26 +97,15 @@ const checkOutTrainer = async (req, res) => {
 
         const updated = await attendance.save();
         res.json(updated);
-    } catch (error) {
-        console.error("TRAINER CHECKOUT ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get Trainer Attendance Logs
 // @route   GET /api/trainer-attendance
 // @access  Private (Admin/Trainer)
-const getTrainerAttendance = async (req, res) => {
+const getTrainerAttendance = catchAsync(async (req, res, next) => {
     try {
-        let query = {};
-        if (req.query.gymId) {
-            query.gymId = req.query.gymId;
-        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
-            query.gymId = req.user.gymId;
-        }
-        if (req.user.branchId) {
-            query.branchId = req.user.branchId;
-        }
+        let query = { ...req.tenantFilter };
 
         if (req.user.role === 'trainer') {
             query.trainerId = req.user.id;
@@ -158,10 +146,7 @@ const getTrainerAttendance = async (req, res) => {
             data: formatted,
             meta: { page, limit, total }
         });
-    } catch (error) {
-        console.error("GET TRAINER ATTENDANCE ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 module.exports = {

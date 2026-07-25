@@ -1,3 +1,5 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 const { logAudit } = require('../utils/auditLogger');
@@ -62,7 +64,7 @@ const auditReq = (req, partialUser) => ({
 // @desc    Register a new user (public self-signup -> MEMBER role)
 // @route   POST /api/auth/register
 // @access  Public
-const registerUser = async (req, res) => {
+const registerUser = catchAsync(async (req, res, next) => {
     const { name, password, phone, gymName } = req.body;
     const email = normalizeEmail(req.body.email);
 
@@ -158,7 +160,7 @@ const registerUser = async (req, res) => {
 // @desc    Verify OTP (registration confirmation OR login)
 // @route   POST /api/auth/verify-otp
 // @access  Public (rate-limited + 5-fail lockout)
-const verifyOTP = async (req, res) => {
+const verifyOTP = catchAsync(async (req, res, next) => {
     const email = normalizeEmail(req.body.email);
     const otp = req.body.otp ? String(req.body.otp).trim() : '';
 
@@ -265,7 +267,7 @@ const verifyOTP = async (req, res) => {
 // @desc    Auth user & get token (web admin/superadmin email+password login)
 // @route   POST /api/auth/login
 // @access  Public (rate-limited + account lockout)
-const authUser = async (req, res) => {
+const authUser = catchAsync(async (req, res, next) => {
     const { password, portalType } = req.body;
     const email = normalizeEmail(req.body.email);
 
@@ -401,7 +403,7 @@ const authUser = async (req, res) => {
 // @desc    Check if user exists and send OTP if they do (mobile login flow)
 // @route   POST /api/auth/check-user
 // @access  Public (rate-limited)
-const checkUserAndSendOTP = async (req, res) => {
+const checkUserAndSendOTP = catchAsync(async (req, res, next) => {
     const email = normalizeEmail(req.body.email);
 
     if (!email) {

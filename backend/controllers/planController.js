@@ -1,10 +1,12 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const Plan = require('../models/Plan');
 const { logAudit } = require('../utils/auditLogger');
 
 // @desc    Create a new plan (traditional gym membership plan)
 // @route   POST /api/plans
 // @access  Private/Admin
-const createPlan = async (req, res) => {
+const createPlan = catchAsync(async (req, res, next) => {
     try {
         const { name, duration, price } = req.body;
 
@@ -27,38 +29,29 @@ const createPlan = async (req, res) => {
         } else {
             res.status(400).json({ success: false, message: 'Invalid plan data' });
         }
-    } catch (error) {
-        console.error("PLAN CREATE ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get all plans (own gym + FitPrime SYSTEM plans)
 // @route   GET /api/plans
 // @access  Private/Admin
-const getPlans = async (req, res) => {
+const getPlans = catchAsync(async (req, res, next) => {
     try {
-        const query = {};
-        if (req.query.gymId) {
-            query.gymId = req.query.gymId;
-        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
-            query.$or = [
+        const query = req.tenantFilter?.gymId ? {
+            $or: [
                 { gymId: 'SYSTEM' },
-                { gymId: req.user.gymId, branchId: req.user.branchId || null }
-            ];
-        }
+                { ...req.tenantFilter }
+            ]
+        } : {};
         const plans = await Plan.find(query).lean();
         res.json(plans);
-    } catch (error) {
-        console.error("GET PLANS ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get single plan
 // @route   GET /api/plans/:id
 // @access  Private/Admin
-const getPlanById = async (req, res) => {
+const getPlanById = catchAsync(async (req, res, next) => {
     try {
         const query = { _id: req.params.id, gymId: req.user.gymId };
         if (req.user.branchId) query.branchId = req.user.branchId;
@@ -69,16 +62,13 @@ const getPlanById = async (req, res) => {
         } else {
             res.status(404).json({ success: false, message: 'Plan not found' });
         }
-    } catch (error) {
-        console.error("GET PLAN BY ID ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Update plan
 // @route   PUT /api/plans/:id
 // @access  Private/Admin
-const updatePlan = async (req, res) => {
+const updatePlan = catchAsync(async (req, res, next) => {
     try {
         const { name, duration, price } = req.body;
 
@@ -101,16 +91,13 @@ const updatePlan = async (req, res) => {
         } else {
             res.status(404).json({ success: false, message: 'Plan not found' });
         }
-    } catch (error) {
-        console.error("PLAN UPDATE ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Delete plan
 // @route   DELETE /api/plans/:id
 // @access  Private/Admin
-const deletePlan = async (req, res) => {
+const deletePlan = catchAsync(async (req, res, next) => {
     try {
         const query = { _id: req.params.id, gymId: req.user.gymId };
         if (req.user.branchId) query.branchId = req.user.branchId;
@@ -123,10 +110,7 @@ const deletePlan = async (req, res) => {
         } else {
             res.status(404).json({ success: false, message: 'Plan not found' });
         }
-    } catch (error) {
-        console.error("DELETE PLAN ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 module.exports = {
