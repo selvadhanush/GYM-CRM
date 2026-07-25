@@ -22,10 +22,6 @@ function AdminManagement() {
     const [editPassword, setEditPassword] = useState('');
     const [editStatus, setEditStatus] = useState('Active');
 
-    useEffect(() => {
-        fetchAdmins();
-    }, []);
-
     const fetchAdmins = async () => {
         try {
             setLoading(true);
@@ -37,6 +33,12 @@ function AdminManagement() {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        fetchAdmins();
+    }, []);
+
+
 
     const handleCreateAdmin = async (e) => {
         e.preventDefault();

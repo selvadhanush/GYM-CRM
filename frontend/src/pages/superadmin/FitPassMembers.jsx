@@ -150,7 +150,7 @@ function FitPassMembers() {
                 </div>
 
                 <div className="fitprime-stat-card">
-                    <div className="fitprime-stat-icon" style={{ background: 'rgba(46, 125, 50, 0.15)', color: '#4ADE80' }}>
+                    <div className="fitprime-stat-icon" style={{ background: 'rgba(46, 125, 50, 0.15)', color: '#2E7D32' }}>
                         <CheckCircle2 size={22} />
                     </div>
                     <div>
@@ -382,7 +382,7 @@ function FitPassMembers() {
                                         </div>
                                         <div>
                                             <span style={{ color: 'var(--text-secondary)' }}>Remaining Sessions:</span>
-                                            <div style={{ fontWeight: 700, color: '#4ADE80' }}>{selectedMember.sessionsRemaining || 0} sessions left</div>
+                                            <div style={{ fontWeight: 700, color: '#2E7D32' }}>{selectedMember.sessionsRemaining || 0} sessions left</div>
                                         </div>
                                         <div>
                                             <span style={{ color: 'var(--text-secondary)' }}>Pass Expiry Date:</span>
@@ -469,7 +469,7 @@ function FitPassMembers() {
                                                                     {log.accessStatus}
                                                                 </span>
                                                                 {log.failureReason && (
-                                                                    <div style={{ fontSize: '0.72rem', color: '#EF4444', marginTop: '2px' }}>
+                                                                    <div style={{ fontSize: '0.72rem', color: '#C62828', marginTop: '2px' }}>
                                                                         {log.failureReason}
                                                                     </div>
                                                                 )}

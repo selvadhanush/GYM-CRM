@@ -257,7 +257,7 @@ function App() {
         } />
 
         <Route path="/audit" element={
-          <ProtectedRoute roles={['superadmin', 'fitpass_admin']}>
+          <ProtectedRoute roles={['superadmin', 'fitpass_admin', 'h4_admin']}>
             <Layout>
               <AuditLogs />
             </Layout>
