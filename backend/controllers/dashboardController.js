@@ -10,8 +10,7 @@ const prisma = require('../config/prisma');
 // @route   GET /api/dashboard/stats
 // @access  Private/Admin
 const getDashboardStats = catchAsync(async (req, res, next) => {
-    try {
-        const today = new Date();
+    const today = new Date();
         today.setHours(0, 0, 0, 0);
         const nextWeek = new Date();
         nextWeek.setDate(today.getDate() + 7);
@@ -287,12 +286,10 @@ const getDashboardStats = catchAsync(async (req, res, next) => {
             monthlyProfit, revenueTrend, planBreakdown, methodBreakdown, inactiveMembersCount,
             recentCheckins
         });
-    } catch (error) { next(error); }
-};
+});
 
 const getHistory = catchAsync(async (req, res, next) => {
-    try {
-        const { period, date } = req.query;
+    const { period, date } = req.query;
         let start = new Date();
         let end = new Date();
 
@@ -388,8 +385,7 @@ const getHistory = catchAsync(async (req, res, next) => {
         }
 
         res.json({ success: true, data: history });
-    } catch (error) { next(error); }
-};
+});
 
 module.exports = {
     getDashboardStats,

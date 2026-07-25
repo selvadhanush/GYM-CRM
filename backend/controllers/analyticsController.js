@@ -8,7 +8,6 @@ const Expense = require('../models/Expense');
 // @desc    Get churn & retention analytics
 // @route   GET /api/analytics
 const getAnalytics = catchAsync(async (req, res, next) => {
-    try {
         const now = new Date();
 
         const queryFilter = { ...req.tenantFilter };
@@ -225,9 +224,7 @@ const getAnalytics = catchAsync(async (req, res, next) => {
                 pendingLeads,
                 lostLeads,
                 conversionRate
-            }
         });
-    } catch (err) { next(err); }
-};
+});
 
 module.exports = { getAnalytics };

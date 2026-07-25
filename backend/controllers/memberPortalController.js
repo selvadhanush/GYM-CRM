@@ -30,7 +30,7 @@ const getMyPlan = catchAsync(async (req, res, next) => {
     await expireIfDue(member);
 
     res.json(member);
-};
+});
 
 // @desc    Get Fit-Prime (Global) Plans
 // @route   GET /api/member-portal/fitprime-plans
@@ -43,7 +43,7 @@ const getFitPrimePlans = catchAsync(async (req, res, next) => {
 
     const plans = await Plan.find({ gymId: 'SYSTEM' }).lean();
     res.json(plans);
-};
+});
 
 // @desc    Get all active partner gyms
 // @route   GET /api/member-portal/gyms
@@ -102,7 +102,7 @@ const getPartnerGyms = catchAsync(async (req, res, next) => {
         console.error('Error fetching partner gyms occupancy:', err);
         res.json(gyms);
     }
-};
+});
 
 // @desc    Get logged in member attendance
 // @route   GET /api/member-portal/attendance
@@ -139,7 +139,7 @@ const getMyAttendance = catchAsync(async (req, res, next) => {
     combined.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     res.json(combined);
-};
+});
 
 // @desc    Get logged in member payments
 // @route   GET /api/member-portal/payments
@@ -152,7 +152,7 @@ const getMyPayments = catchAsync(async (req, res, next) => {
 
     const payments = await Payment.find({ memberId: req.user.memberId }).sort({ date: -1 });
     res.json(payments);
-};
+});
 
 // @desc    Create Razorpay Order
 // @route   POST /api/member-portal/payment/create-order
@@ -231,7 +231,7 @@ const createRazorpayOrder = catchAsync(async (req, res, next) => {
             details: error.error?.description || error.description || 'Check server logs for details'
         });
     }
-};
+});
 
 // @desc    Verify Razorpay Payment
 // @route   POST /api/member-portal/payment/verify
@@ -301,66 +301,60 @@ const verifyRazorpayPayment = catchAsync(async (req, res, next) => {
             });
         }
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Create Razorpay Order for Plan Purchase
 // @route   POST /api/member-portal/purchase-plan/create-order
 // @access  Private/Member
 const purchasePlanOrder = catchAsync(async (req, res, next) => {
-    try {
-        const { planId } = req.body;
-        // Allow users without memberId to buy a plan (it's their first plan)
+    const { planId } = req.body;
 
-        const plan = await Plan.findById(planId);
-        if (!plan) {
-            return res.status(404).json({ message: 'Plan not found' });
-        }
+    const plan = await Plan.findById(planId);
+    if (!plan) {
+        return res.status(404).json({ message: 'Plan not found' });
+    }
 
-        const amountInPaise = Math.round(plan.price * 100);
+    const amountInPaise = Math.round(plan.price * 100);
 
-        const userIdString = req.user && req.user._id ? req.user._id.toString() : 'mockuser';
-        const receiptId = `rcpt_plan_${userIdString.slice(-6)}_${Date.now()}`;
+    const userIdString = req.user && req.user._id ? req.user._id.toString() : 'mockuser';
+    const receiptId = `rcpt_plan_${userIdString.slice(-6)}_${Date.now()}`;
 
-        // Mock mode is only available in non-production. In production a missing
-        // real key is a hard error (would otherwise let members "buy" plans for free).
-        const isMockEnv = !process.env.RAZORPAY_KEY_ID ||
-                          !process.env.RAZORPAY_KEY_SECRET ||
-                          process.env.RAZORPAY_KEY_ID === 'your_razorpay_key_id';
-        if (isMockEnv && env.isProduction) {
-            console.error('Razorpay keys missing in production; refusing to create a mock order.');
-            return res.status(503).json({ message: 'Payments are not configured.' });
-        }
+    const isMockEnv = !process.env.RAZORPAY_KEY_ID ||
+                      !process.env.RAZORPAY_KEY_SECRET ||
+                      process.env.RAZORPAY_KEY_ID === 'your_razorpay_key_id';
+    if (isMockEnv && env.isProduction) {
+        console.error('Razorpay keys missing in production; refusing to create a mock order.');
+        return res.status(503).json({ message: 'Payments are not configured.' });
+    }
 
-        if (isMockEnv) {
-            const mockOrder = {
-                id: `order_mock_${crypto.randomBytes(8).toString('hex')}`,
-                amount: amountInPaise,
-                currency: "INR",
-                receipt: receiptId,
-                status: "created",
-                is_mock: true,
-                notes: { newPlanId: planId.toString() }
-            };
-            return res.status(201).json(mockOrder);
-        }
-
-        const instance = new Razorpay({
-            key_id: process.env.RAZORPAY_KEY_ID,
-            key_secret: process.env.RAZORPAY_KEY_SECRET,
-        });
-
-        const options = {
+    if (isMockEnv) {
+        const mockOrder = {
+            id: `order_mock_${crypto.randomBytes(8).toString('hex')}`,
             amount: amountInPaise,
             currency: "INR",
             receipt: receiptId,
-            notes: { newPlanId: planId.toString(), userId: userIdString },
+            status: "created",
+            is_mock: true,
+            notes: { newPlanId: planId.toString() }
         };
-
-        const order = await instance.orders.create(options);
-        res.status(201).json(order);
-    } catch (error) { next(error); });
+        return res.status(201).json(mockOrder);
     }
-};
+
+    const instance = new Razorpay({
+        key_id: process.env.RAZORPAY_KEY_ID,
+        key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+
+    const options = {
+        amount: amountInPaise,
+        currency: "INR",
+        receipt: receiptId,
+        notes: { newPlanId: planId.toString(), userId: userIdString },
+    };
+
+    const order = await instance.orders.create(options);
+    res.status(201).json(order);
+});
 
 // @desc    Verify Plan Purchase
 // @route   POST /api/member-portal/purchase-plan/verify
@@ -458,7 +452,7 @@ const purchasePlanVerify = catchAsync(async (req, res, next) => {
         plan,
         sessionsRemaining: member.sessionsRemaining || 0,
     });
-};
+});
 
 // @desc    Cancel Active Plan
 // @route   POST /api/member-portal/plan/cancel
@@ -486,7 +480,7 @@ const cancelMyPlan = catchAsync(async (req, res, next) => {
     await member.save();
 
     res.status(200).json({ success: true, message: 'Plan cancelled successfully' });
-};
+});
 
 // @desc    Get consolidated dashboard data for member (plan, attendance, gyms, session status)
 // @route   GET /api/member-portal/dashboard
@@ -595,7 +589,7 @@ const getDashboardData = catchAsync(async (req, res, next) => {
             lastVisitedGym
         });
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Update logged in member profile and credentials
 // @route   PUT /api/member-portal/profile
@@ -663,7 +657,7 @@ const updateMyProfile = catchAsync(async (req, res, next) => {
             }
         });
     } catch (error) { next(error); }
-};
+});
 
 module.exports = {
     getMyPlan,
