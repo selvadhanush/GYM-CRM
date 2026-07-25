@@ -17,6 +17,8 @@ const {
     getFitPassAuditLog,
     getFitPassMemberRoster,
     getFitPassOverview,
+    adjustUserSessions,
+    updateFitpassUserStatus,
 } = require('../controllers/superAdminController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -50,7 +52,7 @@ router.route('/admins/:id')
     .put(protect, authorize('superadmin'), updateDedicatedAdmin)
     .delete(protect, authorize('superadmin'), deleteDedicatedAdmin);
 
-// ── FitPass SuperAdmin Analytics ───────────────────────────────────────────
+// ── FitPass SuperAdmin Analytics & Control ──────────────────────────────────
 router.get('/fitpass/overview',
     protect, authorize('superadmin', 'fitpass_admin'), getFitPassOverview);
 
@@ -59,5 +61,11 @@ router.get('/fitpass/audit-log',
 
 router.get('/fitpass/members',
     protect, authorize('superadmin', 'fitpass_admin'), getFitPassMemberRoster);
+
+router.post('/fitpass/users/:memberId/adjust-sessions',
+    protect, authorize('superadmin', 'fitpass_admin'), adjustUserSessions);
+
+router.put('/fitpass/users/:memberId/status',
+    protect, authorize('superadmin', 'fitpass_admin'), updateFitpassUserStatus);
 
 module.exports = router;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, ScrollView, ActivityIndicator, TextInput, BackHandler, TouchableOpacity, Alert, Share } from 'react-native';
 import { useLocalSearchParams, Tabs, useRouter } from 'expo-router';
-import { Search, ArrowLeft, Pencil, Trash2, Download } from 'lucide-react-native';
+import { Search, ArrowLeft, Pencil, Trash2, Download, Phone, Mail, Calendar, User, Target } from 'lucide-react-native';
 import { useQuery } from '@tanstack/react-query';
 import { theme } from '@/design-system/theme';
 import { Typography, Card, Input, Badge, EmptyState, Button, Modal, Select } from '@/components/ui';
@@ -77,7 +77,8 @@ export default function OpsDetailScreen() {
   // Maintenance logs query
   const { data: maintenanceLogs, isLoading: isLogsLoading } = useGenericList<any>(
     'h4-maintenance-logs',
-    '/equipments/maintenance/logs'
+    '/equipments/maintenance/logs',
+    { enabled: moduleKey === 'equipments' && equipmentTab === 'maintenance' }
   );
 
   // Lead pipeline summary stats
@@ -482,13 +483,48 @@ export default function OpsDetailScreen() {
 
       case 'leads':
         return (
-          <>
+          <View style={{ gap: 6 }}>
             <View style={styles.infoRow}>
-              <Typography variant="caption" color="secondary">Phone: {item.phone || 'N/A'}</Typography>
-              <Typography variant="caption" color="secondary">Source: {item.source || 'N/A'}</Typography>
+              <View style={styles.iconMetaRow}>
+                <Phone size={13} color={theme.colors.primary} />
+                <Typography variant="caption" color="secondary">{item.phone || 'N/A'}</Typography>
+              </View>
+              <Badge label={item.source || 'Walk-in'} variant="info" />
             </View>
-            <Typography variant="caption" color="muted">Follow-up: {formatDate(item.followUpDate)}</Typography>
-          </>
+
+            {item.email ? (
+              <View style={styles.iconMetaRow}>
+                <Mail size={13} color={theme.colors.textSecondary} />
+                <Typography variant="caption" color="secondary">{item.email}</Typography>
+              </View>
+            ) : null}
+
+            <View style={styles.infoFooter}>
+              <View style={styles.iconMetaRow}>
+                <Calendar size={13} color={theme.colors.primary} />
+                <Typography variant="caption" color="secondary">
+                  Follow-up: {formatDate(item.followUpDate || item.createdAt)}
+                </Typography>
+              </View>
+
+              {item.status ? (
+                <Badge
+                  label={item.status}
+                  variant={
+                    item.status === 'Converted' ? 'active' :
+                    item.status === 'Contacted' || item.status === 'Interested' ? 'info' :
+                    item.status === 'Lost' ? 'expired' : 'frozen'
+                  }
+                />
+              ) : null}
+            </View>
+
+            {item.notes ? (
+              <Typography variant="caption" color="muted" style={{ marginTop: 2 }} numberOfLines={2}>
+                Notes: {item.notes}
+              </Typography>
+            ) : null}
+          </View>
         );
 
       case 'plans':
@@ -754,7 +790,7 @@ export default function OpsDetailScreen() {
               <Typography variant="caption" color="secondary">Total Leads</Typography>
               <Typography variant="h2">{leadsSummary.total || 0}</Typography>
             </Card>
-            <Card style={StyleSheet.flatten([styles.summaryCard, { borderLeftWidth: 3, borderLeftColor: '#ef4444' }])}>
+            <Card style={styles.summaryCard}>
               <Typography variant="caption" color="secondary">Follow-ups Due</Typography>
               <Typography variant="h2" color="error">{leadsSummary.followUpDue || 0}</Typography>
             </Card>
@@ -1150,5 +1186,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: theme.spacing.xs,
+  },
+  iconMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
 });

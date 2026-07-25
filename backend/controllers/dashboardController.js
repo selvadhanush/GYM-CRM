@@ -125,9 +125,11 @@ const getDashboardStats = async (req, res) => {
             });
         }
 
-        // Super Admin Stats (Global or SYSTEM)
+        // Super Admin / Gym Stats
         const queryFilter = {};
-        if (req.user.gymId) {
+        if (req.query.gymId) {
+            queryFilter.gymId = req.query.gymId;
+        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
             queryFilter.gymId = req.user.gymId;
         }
         if (req.user.branchId) {
@@ -143,7 +145,9 @@ const getDashboardStats = async (req, res) => {
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
         const prismaWhere = {};
-        if (req.user.gymId) {
+        if (req.query.gymId) {
+            prismaWhere.gymId = req.query.gymId;
+        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
             prismaWhere.gymId = req.user.gymId;
         }
         if (req.user.branchId) {

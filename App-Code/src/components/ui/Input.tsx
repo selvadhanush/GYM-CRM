@@ -4,7 +4,7 @@ import { Eye, EyeOff } from 'lucide-react-native';
 import { theme } from '@/design-system/theme';
 
 interface InputProps extends TextInputProps {
-  label: string;
+  label?: string;
   error?: string;
   secureTextEntry?: boolean;
 }
@@ -42,7 +42,7 @@ export const Input: React.FC<InputProps> = ({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+      {label && <Text style={styles.label}>{label}</Text>}
       <View style={[styles.inputWrapper, { borderColor: inputBorderColor }]}>
         <TextInput
           style={[styles.textInput, style]}

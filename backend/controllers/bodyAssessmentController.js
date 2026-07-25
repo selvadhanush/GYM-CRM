@@ -61,7 +61,12 @@ const createAssessment = async (req, res) => {
 // @access  Private/Admin/Trainer/Member
 const getAssessments = async (req, res) => {
     try {
-        let query = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        let query = {};
+        if (req.query.gymId) {
+            query.gymId = req.query.gymId;
+        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
+            query.gymId = req.user.gymId;
+        }
         if (req.user.branchId) {
             query.branchId = req.user.branchId;
         }
@@ -73,29 +78,45 @@ const getAssessments = async (req, res) => {
             query.memberId = req.query.memberId;
         }
 
-        // Get assessments sorted by assessmentDate descending (newest first)
+        // Strict pagination parameters with hard cap at 100
+        const page = Math.max(parseInt(req.query.page) || 1, 1);
+        const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), 100);
+        const skip = (page - 1) * limit;
+
+        const total = await BodyAssessment.countDocuments(query);
         const assessments = await BodyAssessment.find(query)
             .sort({ assessmentDate: -1 })
+            .skip(skip)
+            .limit(limit)
             .lean();
 
-        // Populate member details if requested
-        const formatted = [];
-        for (const a of assessments) {
-            const memberQuery = { _id: a.memberId, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
-            if (req.user.branchId) {
-                memberQuery.branchId = req.user.branchId;
-            }
-            const memberObj = await Member.findOne(memberQuery);
-            const trainerObj = a.trainerId ? await User.findOne({ _id: a.trainerId }).select('-password') : null;
+        // Batched multi-entity lookup (Trainer + Member)
+        const memberIds = [...new Set(assessments.map(a => a.memberId).filter(Boolean))];
+        const trainerIds = [...new Set(assessments.map(a => a.trainerId).filter(Boolean))];
 
-            formatted.push({
+        const [members, trainers] = await Promise.all([
+            memberIds.length > 0 ? Member.find({ _id: { $in: memberIds } }).select('id name phone email').lean() : [],
+            trainerIds.length > 0 ? User.find({ _id: { $in: trainerIds } }).select('id name email role phone').lean() : []
+        ]);
+
+        const memberMap = new Map((members || []).map(m => [m._id ? m._id.toString() : m.id, m]));
+        const trainerMap = new Map((trainers || []).map(t => [t._id ? t._id.toString() : t.id, t]));
+
+        const formatted = assessments.map(a => {
+            const m = a.memberId ? memberMap.get(a.memberId.toString()) : null;
+            const t = a.trainerId ? trainerMap.get(a.trainerId.toString()) : null;
+            return {
                 ...a,
-                member: memberObj ? { id: memberObj.id, name: memberObj.name, phone: memberObj.phone } : null,
-                trainer: trainerObj ? { id: trainerObj.id, name: trainerObj.name } : null
-            });
-        }
+                member: m ? { id: m.id || m._id, name: m.name, phone: m.phone, email: m.email } : null,
+                trainer: t ? { id: t.id || t._id, name: t.name, email: t.email } : null
+            };
+        });
 
-        res.json(formatted);
+        res.json({
+            success: true,
+            data: formatted,
+            meta: { page, limit, total }
+        });
     } catch (error) {
         console.error("GET BODY ASSESSMENTS ERROR:", error);
         res.status(500).json({ success: false, message: error.message });

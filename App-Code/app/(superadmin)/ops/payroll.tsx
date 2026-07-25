@@ -46,7 +46,8 @@ export default function PayrollScreen() {
     queryKey: ['h4-trainers-payroll'],
     queryFn: async () => {
       const { data } = await API_CLIENT.get('/staff');
-      return (data || []).filter((s: any) => s.role === 'trainer');
+      const list = Array.isArray(data) ? data : (data?.data || []);
+      return list.filter((s: any) => s.role === 'trainer');
     },
     enabled: isAdmin,
   });
@@ -58,7 +59,8 @@ export default function PayrollScreen() {
       let url = `/payroll?month=${filterMonth}&year=${filterYear}`;
       if (filterTrainerId) url += `&trainerId=${filterTrainerId}`;
       const { data } = await API_CLIENT.get(url);
-      return data || [];
+      const slipsArray = Array.isArray(data) ? data : (data?.data || []);
+      return slipsArray;
     },
   });
 

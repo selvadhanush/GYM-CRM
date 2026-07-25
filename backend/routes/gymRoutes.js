@@ -2,7 +2,10 @@ const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
-const { uploadGymImages, getPartneredGyms, updateGymImages, getGymSettings, updateGymSettings } = require('../controllers/gymController');
+const { getGyms, uploadGymImages, getPartneredGyms, updateGymImages, getGymSettings, updateGymSettings } = require('../controllers/gymController');
+
+// Protected route to get all gyms (or gym profile for current gym)
+router.get('/', protect, getGyms);
 
 // Public route to get all partnered gyms
 router.get('/partnered', getPartneredGyms);

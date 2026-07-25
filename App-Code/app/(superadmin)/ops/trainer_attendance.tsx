@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, View, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Tabs, useRouter } from 'expo-router';
-import { ArrowLeft, Clock, Activity, CheckCircle2 } from 'lucide-react-native';
+import { ArrowLeft, Clock, Activity, CheckCircle } from 'lucide-react-native';
 import { theme } from '@/design-system/theme';
 import { Typography, Card, Select, Button, EmptyState, Badge } from '@/components/ui';
 import { SafeAreaWrapper } from '@/components/layout';
@@ -35,7 +35,10 @@ export default function TrainerAttendanceScreen() {
     queryFn: async () => {
       const url = targetTrainer ? `/trainer-attendance?trainerId=${targetTrainer}` : '/trainer-attendance';
       const { data } = await API_CLIENT.get(url);
-      return data || [];
+      if (Array.isArray(data)) return data;
+      if (data && Array.isArray(data.data)) return data.data;
+      if (data && Array.isArray(data.logs)) return data.logs;
+      return [];
     },
   });
 
@@ -70,11 +73,12 @@ export default function TrainerAttendanceScreen() {
 
   // Trainer Stats memo calculations
   const stats = React.useMemo(() => {
-    if (!trainerLogs) return null;
+    const logsList = Array.isArray(trainerLogs) ? trainerLogs : [];
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
 
-    const monthlyLogs = trainerLogs.filter((l: any) => {
+    const monthlyLogs = logsList.filter((l: any) => {
+      if (!l || !l.date) return false;
       const d = new Date(l.date);
       return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
     });
@@ -83,7 +87,7 @@ export default function TrainerAttendanceScreen() {
     const activeDays = monthlyLogs.length;
 
     // Is checked in? (Any entry where checkOutTime is empty)
-    const activeLog = trainerLogs.find((l: any) => l.trainerId === targetTrainer && !l.checkOutTime);
+    const activeLog = logsList.find((l: any) => (l.trainerId === targetTrainer || l.trainer?._id === targetTrainer) && !l.checkOutTime);
 
     return {
       totalHours,
@@ -146,7 +150,7 @@ export default function TrainerAttendanceScreen() {
 
                 <Card style={styles.statBox}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm, marginBottom: 4 }}>
-                    <CheckCircle2 size={20} color="#10b981" />
+                    <CheckCircle size={20} color="#10b981" />
                     <Typography variant="caption" color="secondary" style={{ textTransform: 'uppercase', fontWeight: '700' }}>
                       Attendance Rate
                     </Typography>
@@ -159,7 +163,7 @@ export default function TrainerAttendanceScreen() {
 
             {/* Check-In/Out Quick Payout Actions */}
             {stats && (user?.role === 'trainer' || (isAdmin && selectedTrainerId)) && (
-              <Card style={StyleSheet.flatten([styles.actionCard, { borderLeftWidth: 4, borderLeftColor: stats.isCheckedIn ? '#10b981' : '#ef4444' }])}>
+              <Card style={styles.actionCard}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm, marginBottom: theme.spacing.xs }}>
                   <Clock size={24} color={stats.isCheckedIn ? '#10b981' : theme.colors.textSecondary} />
                   <Typography variant="body" style={{ fontWeight: '800' }}>

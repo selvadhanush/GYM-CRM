@@ -3,7 +3,7 @@ import { Tabs } from 'expo-router';
 import { TouchableOpacity, StyleSheet, View } from 'react-native';
 import { LayoutDashboard, Building2, Package, History, LogOut, Shuffle, LayoutGrid, ShieldCheck } from 'lucide-react-native';
 import { theme } from '@/design-system/theme';
-import { useAuth } from '@/features/auth';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 export default function SuperAdminLayout() {
   const logout = useAuth((state) => state.logout);
@@ -20,8 +20,9 @@ export default function SuperAdminLayout() {
         headerTitleStyle: styles.headerTitle,
         headerTintColor: theme.colors.text,
         tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.textSecondary,
+        tabBarActiveTintColor: '#FF5F1F', // Vibrant Electric Orange
+        tabBarInactiveTintColor: theme.colors.textMuted,
+        tabBarLabelStyle: styles.tabBarLabel,
         headerRight: () => (
           <View style={styles.headerActions}>
             {activeDivision !== null && (
@@ -31,7 +32,7 @@ export default function SuperAdminLayout() {
                 activeOpacity={0.7}
                 accessibilityLabel="Switch Portal"
               >
-                <Shuffle color={theme.colors.primary} size={18} />
+                <Shuffle color="#FF5F1F" size={18} />
               </TouchableOpacity>
             )}
             <TouchableOpacity 
@@ -59,7 +60,7 @@ export default function SuperAdminLayout() {
         options={{
           title: isH4 ? 'H4 Dashboard' : 'FitPass Dashboard',
           tabBarLabel: 'Dashboard',
-          tabBarIcon: ({ color, size }) => <LayoutDashboard color={color} size={size} />,
+          tabBarIcon: ({ color }) => <LayoutDashboard color={color} size={22} />,
         }}
       />
       <Tabs.Screen
@@ -67,7 +68,7 @@ export default function SuperAdminLayout() {
         options={{
           title: isH4 ? 'H4 Branches' : 'Partner Gyms',
           tabBarLabel: isH4 ? 'Branches' : 'Gyms',
-          tabBarIcon: ({ color, size }) => <Building2 color={color} size={size} />,
+          tabBarIcon: ({ color }) => <Building2 color={color} size={22} />,
         }}
       />
       <Tabs.Screen
@@ -75,7 +76,7 @@ export default function SuperAdminLayout() {
         options={{
           title: 'FitPrime Plans',
           tabBarLabel: 'Plans',
-          tabBarIcon: ({ color, size }) => <Package color={color} size={size} />,
+          tabBarIcon: ({ color }) => <Package color={color} size={22} />,
         }}
       />
       <Tabs.Screen
@@ -83,8 +84,8 @@ export default function SuperAdminLayout() {
         options={{
           title: 'Admins Directory',
           tabBarLabel: 'Admins',
-          href: (user?.role === 'superadmin' && !isH4) ? undefined : null,
-          tabBarIcon: ({ color, size }) => <ShieldCheck color={color} size={size} />,
+          href: (!isH4 && user?.role === 'superadmin') ? '/(superadmin)/admins' : null,
+          tabBarIcon: ({ color }) => <ShieldCheck color={color} size={22} />,
         }}
       />
       <Tabs.Screen
@@ -92,8 +93,8 @@ export default function SuperAdminLayout() {
         options={{
           title: 'Operations',
           tabBarLabel: 'Operations',
-          href: isH4 ? undefined : null,
-          tabBarIcon: ({ color, size }) => <LayoutGrid color={color} size={size} />,
+          href: isH4 ? '/(superadmin)/ops-hub' : null,
+          tabBarIcon: ({ color }) => <LayoutGrid color={color} size={22} />,
         }}
       />
       <Tabs.Screen
@@ -137,7 +138,7 @@ export default function SuperAdminLayout() {
         options={{
           title: 'Audit Logs',
           tabBarLabel: 'Audit',
-          tabBarIcon: ({ color, size }) => <History color={color} size={size} />,
+          tabBarIcon: ({ color }) => <History color={color} size={22} />,
         }}
       />
     </Tabs>
@@ -162,9 +163,19 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
-    height: 60,
-    paddingBottom: 8,
-    paddingTop: 8,
+    height: 64,
+    paddingBottom: 6,
+    paddingTop: 6,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+  },
+  tabBarLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    paddingBottom: 2,
   },
   headerActions: {
     flexDirection: 'row',

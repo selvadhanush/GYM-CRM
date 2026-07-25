@@ -6,7 +6,12 @@ const Member = require('../models/Member');
 const getLeads = async (req, res) => {
     try {
         const { status, source } = req.query;
-        const filter = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        const filter = {};
+        if (req.query.gymId) {
+            filter.gymId = req.query.gymId;
+        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
+            filter.gymId = req.user.gymId;
+        }
         if (req.user.branchId) filter.branchId = req.user.branchId;
         if (status) filter.status = status;
         if (source) filter.source = source;
@@ -82,7 +87,12 @@ const deleteLead = async (req, res) => {
 // @route   GET /api/leads/summary
 const getLeadSummary = async (req, res) => {
     try {
-        const matchStage = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        const matchStage = {};
+        if (req.query.gymId) {
+            matchStage.gymId = req.query.gymId;
+        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
+            matchStage.gymId = req.user.gymId;
+        }
         if (req.user.branchId) matchStage.branchId = req.user.branchId;
 
         const statusCounts = await Lead.aggregate([

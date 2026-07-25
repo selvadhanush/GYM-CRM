@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, ScrollView, TouchableOpacity, Alert, Modal as RNModal } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import { MapPin, User, Settings, Edit3, Trash2, QrCode, Phone, Mail, Users, DollarSign } from 'lucide-react-native';
+import { MapPin, User, Settings, Edit3, Trash2, QrCode, Phone, Mail, Users, DollarSign, Plus, Sparkles, Building2 } from 'lucide-react-native';
 import { theme } from '@/design-system/theme';
 import { useToast } from '@/hooks/useToast';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -17,7 +17,7 @@ import {
   useUpdateBranch,
   useDeleteBranch
 } from '../api/superadmin.api';
-import { Card, Button, Input, Select, Modal, Skeleton, EmptyState, Typography } from '@/components/ui';
+import { Button, Input, Select, Modal, Skeleton, EmptyState, Badge, Typography } from '@/components/ui';
 
 export const PartnerGymsList: React.FC = () => {
   const toast = useToast();
@@ -36,7 +36,7 @@ export const PartnerGymsList: React.FC = () => {
   const updateBranchMutation = useUpdateBranch();
   const deleteBranchMutation = useDeleteBranch();
 
-  // Create Form States (Shared/Mapped)
+  // Form States
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
@@ -167,7 +167,7 @@ export const PartnerGymsList: React.FC = () => {
     const title = isH4 ? 'Delete H4 Branch' : 'Delete Partner Gym';
     const msg = isH4 
       ? 'Are you sure you want to delete this branch? This action is permanent.'
-      : 'Are you sure you want to delete this gym and its associated admins? This action is permanent and cannot be undone.';
+      : 'Are you sure you want to delete this gym and its associated admins? This action is permanent.';
     
     Alert.alert(
       title,
@@ -216,10 +216,10 @@ export const PartnerGymsList: React.FC = () => {
 
   if (isLoading) {
     return (
-      <View>
-        <Skeleton height={48} style={{ marginBottom: theme.spacing.lg }} />
+      <View style={styles.loadingWrapper}>
+        <Skeleton height={50} style={{ borderRadius: 16, marginBottom: theme.spacing.md }} />
         {Array.from({ length: 3 }).map((_, idx) => (
-          <Skeleton key={idx} height={140} style={{ marginBottom: theme.spacing.md }} />
+          <Skeleton key={idx} height={140} style={{ borderRadius: 16, marginBottom: theme.spacing.md }} />
         ))}
       </View>
     );
@@ -235,15 +235,42 @@ export const PartnerGymsList: React.FC = () => {
   ];
 
   return (
-    <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-      <Button
-        title={isH4 ? '+ Create H4 Branch' : '+ Create New Partner Gym'}
-        onPress={() => {
-          resetForm();
-          setShowCreateModal(true);
-        }}
-        style={{ marginBottom: theme.spacing.lg }}
-      />
+    <ScrollView 
+      style={styles.scroll} 
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header Banner */}
+      <View style={styles.bannerCard}>
+        <View style={styles.bannerLeft}>
+          <View style={styles.badgePill}>
+            <Sparkles size={12} color={theme.colors.primary} />
+            <Typography variant="caption" style={styles.badgePillText}>
+              {isH4 ? 'PHYSICAL BRANCH NETWORK' : 'PARTNER GYMS DIRECTORY'}
+            </Typography>
+          </View>
+          <Typography variant="h1" style={styles.bannerTitle}>
+            {isH4 ? 'H4 Branches' : 'Partner Gyms'}
+          </Typography>
+          <Typography variant="caption" color="secondary">
+            {isH4 ? 'Manage H4 branch locations, staffing, and check-in QR codes.' : 'Manage network partner gyms, session limits, and admin credentials.'}
+          </Typography>
+        </View>
+
+        <TouchableOpacity 
+          style={styles.createBtn} 
+          onPress={() => {
+            resetForm();
+            setShowCreateModal(true);
+          }}
+          activeOpacity={0.8}
+        >
+          <Plus size={16} color="#FFFFFF" />
+          <Typography variant="bodySm" style={styles.createBtnText}>
+            {isH4 ? 'New Branch' : 'New Gym'}
+          </Typography>
+        </TouchableOpacity>
+      </View>
 
       {isH4 ? (
         // H4 BRANCHES LIST
@@ -255,12 +282,15 @@ export const PartnerGymsList: React.FC = () => {
           />
         ) : (
           branches?.map((branch) => (
-            <Card key={branch._id} style={styles.gymCard}>
+            <View key={branch._id} style={styles.gymCard}>
               <View style={styles.cardHeader}>
+                <View style={styles.gymIconWrapper}>
+                  <Building2 size={22} color={theme.colors.primary} />
+                </View>
                 <View style={{ flex: 1 }}>
                   <Typography variant="h3" style={styles.gymName}>{branch.name}</Typography>
                   <View style={styles.metaRow}>
-                    <MapPin size={14} color={theme.colors.textSecondary} />
+                    <MapPin size={13} color={theme.colors.textSecondary} />
                     <Typography variant="caption" color="secondary" style={styles.metaText} numberOfLines={1}>
                       {branch.address || 'No Address Specified'}
                     </Typography>
@@ -271,7 +301,7 @@ export const PartnerGymsList: React.FC = () => {
                   style={styles.qrIconWrapper}
                   activeOpacity={0.7}
                 >
-                  <QrCode color={theme.colors.primary} size={20} />
+                  <QrCode color={theme.colors.primary} size={18} />
                 </TouchableOpacity>
               </View>
 
@@ -306,36 +336,39 @@ export const PartnerGymsList: React.FC = () => {
                 <View style={styles.statsMetricsRow}>
                   <View style={styles.statMetric}>
                     <Users size={14} color={theme.colors.primary} />
-                    <Typography variant="caption" color="brand">
-                      {branch.memberCount || 0} Members
+                    <Typography variant="caption" color="primary">
+                      {branch.memberCount || 0} Active Members
                     </Typography>
                   </View>
                   <View style={styles.statMetric}>
                     <DollarSign size={14} color={theme.colors.success} />
                     <Typography variant="caption" color="success">
-                      ₹{branch.totalRevenue || 0}
+                      ₹{branch.totalRevenue || 0} Revenue
                     </Typography>
                   </View>
                 </View>
               </View>
 
               <View style={styles.actionRow}>
-                <Button
-                  title="Edit"
-                  variant="secondary"
-                  icon={<Edit3 size={14} color={theme.colors.text} />}
+                <TouchableOpacity
+                  style={styles.editBtn}
                   onPress={() => setEditingBranch(branch)}
-                  style={styles.actionBtn}
-                />
-                <Button
-                  title="Delete"
-                  variant="danger"
-                  icon={<Trash2 size={14} color={theme.colors.error} />}
+                  activeOpacity={0.7}
+                >
+                  <Edit3 size={14} color={theme.colors.primary} />
+                  <Typography variant="caption" style={styles.editBtnText}>Edit</Typography>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.deleteBtn}
                   onPress={() => handleDelete(branch._id)}
-                  style={styles.actionBtn}
-                />
+                  activeOpacity={0.7}
+                >
+                  <Trash2 size={14} color={theme.colors.error} />
+                  <Typography variant="caption" style={styles.deleteBtnText}>Delete</Typography>
+                </TouchableOpacity>
               </View>
-            </Card>
+            </View>
           ))
         )
       ) : (
@@ -350,12 +383,15 @@ export const PartnerGymsList: React.FC = () => {
           gyms?.map((gym) => {
             const currentHours = (gym.defaultSessionDurationMinutes || 120) / 60;
             return (
-              <Card key={gym._id} style={styles.gymCard}>
+              <View key={gym._id} style={styles.gymCard}>
                 <View style={styles.cardHeader}>
+                  <View style={styles.gymIconWrapper}>
+                    <Building2 size={22} color={theme.colors.primary} />
+                  </View>
                   <View style={{ flex: 1 }}>
                     <Typography variant="h3" style={styles.gymName}>{gym.name}</Typography>
                     <View style={styles.metaRow}>
-                      <MapPin size={14} color={theme.colors.textSecondary} />
+                      <MapPin size={13} color={theme.colors.textSecondary} />
                       <Typography variant="caption" color="secondary" style={styles.metaText} numberOfLines={1}>
                         {gym.address}
                       </Typography>
@@ -366,7 +402,7 @@ export const PartnerGymsList: React.FC = () => {
                     style={styles.qrIconWrapper}
                     activeOpacity={0.7}
                   >
-                    <QrCode color={theme.colors.primary} size={20} />
+                    <QrCode color={theme.colors.primary} size={18} />
                   </TouchableOpacity>
                 </View>
 
@@ -396,22 +432,25 @@ export const PartnerGymsList: React.FC = () => {
                 </View>
 
                 <View style={styles.actionRow}>
-                  <Button
-                    title="Edit"
-                    variant="secondary"
-                    icon={<Edit3 size={14} color={theme.colors.text} />}
+                  <TouchableOpacity
+                    style={styles.editBtn}
                     onPress={() => setEditingGym(gym)}
-                    style={styles.actionBtn}
-                  />
-                  <Button
-                    title="Delete"
-                    variant="danger"
-                    icon={<Trash2 size={14} color={theme.colors.error} />}
+                    activeOpacity={0.7}
+                  >
+                    <Edit3 size={14} color={theme.colors.primary} />
+                    <Typography variant="caption" style={styles.editBtnText}>Edit</Typography>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.deleteBtn}
                     onPress={() => handleDelete(gym._id)}
-                    style={styles.actionBtn}
-                  />
+                    activeOpacity={0.7}
+                  >
+                    <Trash2 size={14} color={theme.colors.error} />
+                    <Typography variant="caption" style={styles.deleteBtnText}>Delete</Typography>
+                  </TouchableOpacity>
                 </View>
-              </Card>
+              </View>
             );
           })
         )
@@ -659,50 +698,123 @@ export const PartnerGymsList: React.FC = () => {
 const styles = StyleSheet.create({
   scroll: {
     flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing['2xl'],
+    gap: theme.spacing.lg,
+  },
+  loadingWrapper: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: theme.spacing.md,
+  },
+  bannerCard: {
+    backgroundColor: theme.colors.card,
+    borderRadius: 16,
+    padding: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: theme.spacing.md,
+  },
+  bannerLeft: {
+    flex: 1,
+    gap: 4,
+  },
+  badgePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(240, 160, 32, 0.12)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  badgePillText: {
+    color: theme.colors.primary,
+    fontWeight: '700',
+    fontSize: 10,
+    letterSpacing: 0.8,
+  },
+  bannerTitle: {
+    color: theme.colors.text,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  createBtn: {
+    backgroundColor: theme.colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  createBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   gymCard: {
-    marginBottom: theme.spacing.md,
+    backgroundColor: theme.colors.card,
+    borderRadius: 16,
+    padding: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: theme.spacing.xs,
   },
   cardHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  gymIconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: 'rgba(240, 160, 32, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   gymName: {
-    ...theme.typography.h3,
+    fontSize: 16,
+    fontWeight: '700',
     color: theme.colors.text,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: theme.spacing.xs,
-    gap: theme.spacing.xs,
+    gap: 6,
+    marginTop: 2,
   },
   metaText: {
-    ...theme.typography.caption,
     color: theme.colors.textSecondary,
-    flex: 1,
+    fontSize: 12,
   },
   qrIconWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: theme.radii.md,
-    backgroundColor: theme.colors.brandMuted,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(240, 160, 32, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   divider: {
     height: 1,
     backgroundColor: theme.colors.border,
-    marginVertical: theme.spacing.md,
+    marginVertical: theme.spacing.xs,
   },
   detailSection: {
     gap: theme.spacing.xs,
   },
   adminLabel: {
-    ...theme.typography.bodySm,
     color: theme.colors.textSecondary,
-    fontSize: 13,
+    fontSize: 12,
   },
   durationSelector: {
     flexDirection: 'row',
@@ -711,34 +823,57 @@ const styles = StyleSheet.create({
     gap: theme.spacing.xs,
   },
   durationText: {
-    ...theme.typography.bodySm,
     color: theme.colors.textSecondary,
-    fontSize: 13,
+    fontSize: 12,
   },
   selectWrapper: {
-    width: 140,
-    height: 40,
-    marginLeft: theme.spacing.sm,
-    justifyContent: 'center',
+    width: 130,
+    height: 38,
+    marginLeft: theme.spacing.xs,
   },
   actionRow: {
     flexDirection: 'row',
     gap: theme.spacing.sm,
-    marginTop: theme.spacing.lg,
+    marginTop: theme.spacing.sm,
   },
-  actionBtn: {
+  editBtn: {
     flex: 1,
-    minHeight: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(240, 160, 32, 0.12)',
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  editBtnText: {
+    color: theme.colors.primary,
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  deleteBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(198, 40, 40, 0.12)',
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  deleteBtnText: {
+    color: theme.colors.error,
+    fontWeight: '700',
+    fontSize: 12,
   },
   modalSectionHeader: {
-    marginTop: theme.spacing.lg,
+    marginTop: theme.spacing.md,
     borderBottomWidth: 1,
     borderColor: theme.colors.border,
     paddingBottom: theme.spacing.xs,
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
   },
   modalSectionTitle: {
-    ...theme.typography.body,
     fontWeight: '700',
     color: theme.colors.primary,
   },
@@ -750,8 +885,8 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
   },
   qrCard: {
-    backgroundColor: theme.colors.bgTertiary,
-    borderRadius: theme.radii.lg,
+    backgroundColor: theme.colors.card,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: theme.colors.border,
     padding: theme.spacing.xl,
@@ -760,37 +895,36 @@ const styles = StyleSheet.create({
     maxWidth: 380,
   },
   qrTitle: {
-    ...theme.typography.h3,
     color: theme.colors.text,
     textAlign: 'center',
-    marginBottom: theme.spacing.sm,
+    marginBottom: theme.spacing.xs,
+    fontSize: 18,
+    fontWeight: '700',
   },
   qrSubtitle: {
-    ...theme.typography.caption,
     color: theme.colors.textSecondary,
     textAlign: 'center',
     lineHeight: 18,
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
   },
   qrWrapper: {
     backgroundColor: '#fff',
     padding: theme.spacing.md,
-    borderRadius: theme.radii.md,
+    borderRadius: 12,
   },
   statsMetricsRow: {
     flexDirection: 'row',
-    gap: theme.spacing.md,
-    marginTop: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs,
+    gap: theme.spacing.sm,
+    marginTop: theme.spacing.xs,
   },
   statMetric: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.xs,
+    gap: 6,
     backgroundColor: theme.colors.bgTertiary,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: theme.radii.sm,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },

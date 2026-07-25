@@ -1,89 +1,23 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, Dimensions, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
+import React from 'react';
+import { StyleSheet, View, Dimensions, ScrollView } from 'react-native';
 import { LineChart, BarChart } from 'react-native-chart-kit';
-import Svg, { Line, Polyline, Circle, Text as SvgText, G } from 'react-native-svg';
 import { 
-  Users, CheckCircle, AlertTriangle, Clock, Sparkles, DollarSign, 
-  ArrowDown, ArrowUp, Zap, Ticket, Activity, TrendingUp, Search, MapPin, Calendar 
+  Users, DollarSign, 
+  ArrowUpRight, ArrowDownRight, Zap, Ticket, Activity, TrendingUp, MapPin, 
+  BarChart3, PieChart as PieIcon, ShieldCheck
 } from 'lucide-react-native';
 import { theme } from '@/design-system/theme';
 import { useGlobalStats } from '../api/superadmin.api';
-import { Card, Skeleton, Typography, Button, Input, Badge } from '@/components/ui';
+import { Skeleton, Typography, Badge } from '@/components/ui';
 import { BranchSelector } from './BranchSelector';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { API_CLIENT } from '@/lib/api-client';
 import { useQuery } from '@tanstack/react-query';
 
 const { width } = Dimensions.get('window');
+const chartWidth = width - 40; // 20px padding on left and right
 
-interface KpiData {
-  title: string;
-  value: string | number;
-  icon: React.ReactNode;
-  color: string;
-  bgColor: string;
-  subText?: string;
-  extraInfo?: string;
-}
-
-const renderWebLineChart = (labels: string[], data: number[]) => {
-  const maxVal = Math.max(...data, 10);
-  const height = 180;
-  const width = 300;
-  const points = data.map((val, idx) => {
-    const x = (idx / (data.length - 1 || 1)) * (width - 40) + 20;
-    const y = height - (val / maxVal) * (height - 40) - 20;
-    return `${x},${y}`;
-  }).join(' ');
-
-  return (
-    <View style={{ width: '100%', alignItems: 'center', padding: 16 }}>
-      <Svg height={height} width="100%" viewBox={`0 0 ${width} ${height}`}>
-        <Line x1="20" y1="20" x2="20" y2={height - 20} stroke={theme.colors.border} strokeWidth="1" />
-        <Line x1="20" y1={height - 20} x2={width - 20} y2={height - 20} stroke={theme.colors.border} strokeWidth="1" />
-        <Polyline
-          fill="none"
-          stroke={theme.colors.text}
-          strokeWidth="2"
-          points={points}
-        />
-        {data.map((val, idx) => {
-          const x = (idx / (data.length - 1 || 1)) * (width - 40) + 20;
-          const y = height - (val / maxVal) * (height - 40) - 20;
-          return (
-            <G key={idx}>
-              <Circle cx={x} cy={y} r="4" fill={theme.colors.card} stroke={theme.colors.text} strokeWidth="2" />
-              <SvgText x={x} y={y - 8} fill={theme.colors.text} fontSize="8" textAnchor="middle">{`₹${val.toLocaleString()}`}</SvgText>
-              <SvgText x={x} y={height - 5} fill={theme.colors.textSecondary} fontSize="8" textAnchor="middle">{labels[idx]}</SvgText>
-            </G>
-          );
-        })}
-      </Svg>
-    </View>
-  );
-};
-
-const renderWebBarChart = (labels: string[], data: number[]) => {
-  const maxVal = Math.max(...data, 10);
-  return (
-    <View style={{ width: '100%', padding: 16, gap: 12 }}>
-      {data.map((val, idx) => {
-        const percentage = (val / maxVal) * 100;
-        return (
-          <View key={idx} style={{ width: '100%' }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-              <Typography variant="caption" style={{ fontWeight: '700' }}>{labels[idx]}</Typography>
-              <Typography variant="caption" style={{ color: theme.colors.text, fontWeight: '700' }}>{`₹${val.toLocaleString()}`}</Typography>
-            </View>
-            <View style={{ height: 8, backgroundColor: theme.colors.border, borderRadius: 4, overflow: 'hidden' }}>
-              <View style={{ width: `${percentage}%`, height: '100%', backgroundColor: theme.colors.primary, borderRadius: 4 }} />
-            </View>
-          </View>
-        );
-      })}
-    </View>
-  );
-};
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export const SuperAdminDashboard: React.FC = () => {
   const activeDivision = useAuth((state) => state.activeDivision);
@@ -91,16 +25,10 @@ export const SuperAdminDashboard: React.FC = () => {
   const selectedGymId = useAuth((state) => state.selectedGymId);
   const isFitPass = activeDivision === 'fitpass';
 
-  // State for FitPass drill-down
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchTrigger, setSearchTrigger] = useState('');
-  const [selectedMemberSummary, setSelectedMemberSummary] = useState<any | null>(null);
-  const [loadingSummary, setLoadingSummary] = useState(false);
+  // 1. Query H4 Global Stats (Real API Data)
+  const { data: h4Stats, isLoading: isH4Loading } = useGlobalStats(selectedBranchId, selectedGymId);
 
-  // 1. Query H4 Global Stats
-  const { data: stats, isLoading: isH4Loading } = useGlobalStats(selectedBranchId, selectedGymId);
-
-  // 2. Query FitPass Analytics
+  // 2. Query FitPass Analytics (Real API Data)
   const { data: fitpassData, isLoading: isFitpassLoading } = useQuery<any>({
     queryKey: ['fitpass-analytics-stats'],
     queryFn: async () => {
@@ -110,634 +38,599 @@ export const SuperAdminDashboard: React.FC = () => {
     enabled: isFitPass,
   });
 
-  // 3. Query Members List for Search
-  const { data: searchResults, isLoading: isSearching } = useQuery<any[]>({
-    queryKey: ['fitpass-search-members', searchTrigger],
-    queryFn: async () => {
-      if (!searchTrigger) return [];
-      const { data } = await API_CLIENT.get(`/members?search=${searchTrigger}`);
-      return data || [];
-    },
-    enabled: isFitPass && !!searchTrigger,
-  });
-
-  const selectMember = async (memberId: string) => {
-    setLoadingSummary(true);
-    try {
-      const { data } = await API_CLIENT.get(`/sessions/member-summary/${memberId}`);
-      setSelectedMemberSummary(data.summary);
-    } catch (err: any) {
-      Alert.alert('Details Error', err.response?.data?.message || 'Could not load member summary. Ensure this member has a FitPass plan.');
-    } finally {
-      setLoadingSummary(false);
-    }
-  };
-
-  const handleSearchSubmit = () => {
-    if (!searchQuery.trim()) return;
-    setSearchTrigger(searchQuery);
-  };
-
-  const formatTrendData = (trend: any) => {
-    if (!trend || trend.length === 0) return { labels: ['None'], data: [0] };
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const labels = trend.map((item: any) => monthNames[item._id.month - 1]);
-    const data = trend.map((item: any) => item.total);
-    return { labels, data };
-  };
-
-  const formatPlanData = (plans: any) => {
-    if (!plans || plans.length === 0) return { labels: ['None'], data: [0] };
-    const labels = plans.map((item: any) => item._id || 'Global');
-    const data = plans.map((item: any) => item.value);
-    return { labels, data };
-  };
+  const isLoading = isFitPass ? isFitpassLoading : isH4Loading;
 
   const chartConfig = {
     backgroundColor: theme.colors.card,
     backgroundGradientFrom: theme.colors.card,
     backgroundGradientTo: theme.colors.card,
     decimalPlaces: 0,
-    color: (opacity = 1) => `rgba(17, 24, 39, ${opacity})`,
-    labelColor: () => theme.colors.textSecondary,
+    color: (opacity = 1) => `rgba(240, 160, 32, ${opacity})`,
+    labelColor: (opacity = 1) => theme.colors.textSecondary,
     style: {
-      borderRadius: theme.radii.lg,
+      borderRadius: 16,
     },
     propsForDots: {
-      r: '4',
+      r: '5',
       strokeWidth: '2',
-      stroke: theme.colors.text,
+      stroke: theme.colors.primary,
     },
   };
 
-  // ----------------------------------------------------
-  // FITPASS PORTAL VIEW RENDER
-  // ----------------------------------------------------
-  if (isFitPass) {
-    if (isFitpassLoading) {
-      return (
-        <View style={styles.loadingContainer}>
-          <Skeleton height={60} style={{ marginBottom: theme.spacing.md }} />
-          <View style={styles.grid}>
-            {Array.from({ length: 4 }).map((_, idx) => (
-              <View key={idx} style={styles.gridItemSkeleton}>
-                <Skeleton height={110} />
-              </View>
-            ))}
-          </View>
-          <Skeleton height={200} style={{ marginTop: theme.spacing.lg }} />
-        </View>
-      );
-    }
-
-    const fitpassKpis: KpiData[] = [
-      {
-        title: 'FitPass Subscribers',
-        value: fitpassData?.totalFitPassMembers || 0,
-        icon: <Users size={20} color={theme.colors.primary} />,
-        color: theme.colors.primary,
-        bgColor: theme.colors.brandLight,
-        subText: `${fitpassData?.activeFitPassMembers || 0} Active · ${fitpassData?.expiredFitPassMembers || 0} Expired`,
-      },
-      {
-        title: 'Total Sessions Sold',
-        value: fitpassData?.totalSessionsSold || 0,
-        icon: <Ticket size={20} color="#3b82f6" />,
-        color: '#3b82f6',
-        bgColor: 'rgba(59, 130, 246, 0.1)',
-        subText: `🎟️ ${fitpassData?.remainingSessions || 0} remaining in network`,
-      },
-      {
-        title: 'Sessions Consumed',
-        value: fitpassData?.totalSessionsUsed || 0,
-        icon: <Activity size={20} color={theme.colors.success} />,
-        color: theme.colors.success,
-        bgColor: 'rgba(0, 255, 102, 0.1)',
-        subText: `🔥 ${fitpassData?.totalSessionsSold ? ((fitpassData.totalSessionsUsed / fitpassData.totalSessionsSold) * 100).toFixed(1) : 0}% utilization`,
-      },
-      {
-        title: 'Avg Visits / User',
-        value: fitpassData?.avgVisitsPerMember || 0,
-        icon: <TrendingUp size={20} color={theme.colors.info} />,
-        color: theme.colors.info,
-        bgColor: 'rgba(0, 255, 255, 0.1)',
-        subText: '📈 Average check-ins per user',
-      },
-    ];
-
-    return (
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Header Widget */}
-        <Card style={styles.fitpassHeaderCard}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}>
-            <Zap size={24} color={theme.colors.primary} />
-            <Typography variant="h2" style={{ fontWeight: '800' }}>FitPass Universal Reports</Typography>
-          </View>
-          <Typography variant="caption" color="secondary" style={{ marginTop: 4 }}>
-            Monitor subscriber counts, check-ins, remaining session credits, and partner check-in histories.
-          </Typography>
-        </Card>
-
-        {/* KPIs Grid */}
-        <View style={styles.grid}>
-          {fitpassKpis.map((kpi, idx) => (
-            <View key={idx} style={styles.gridItem}>
-              <Card accentColor={kpi.color} style={styles.kpiCard}>
-                <View style={styles.kpiHeader}>
-                  <Typography variant="caption" color="secondary" style={styles.kpiTitle} numberOfLines={1}>
-                    {kpi.title}
-                  </Typography>
-                  <View style={[styles.kpiIconWrapper, { backgroundColor: kpi.bgColor }]}>
-                    {kpi.icon}
-                  </View>
-                </View>
-                <View>
-                  <Typography variant="h2" style={styles.kpiValue} numberOfLines={1}>
-                    {kpi.value}
-                  </Typography>
-                  {kpi.subText && (
-                    <Typography variant="caption" color="muted" style={{ fontSize: 9, marginTop: 2 }} numberOfLines={1}>
-                      {kpi.subText}
-                    </Typography>
-                  )}
-                </View>
-              </Card>
-            </View>
-          ))}
-        </View>
-
-        {/* Member Drill-down search */}
-        <Card style={styles.sectionCard}>
-          <Typography variant="body" style={styles.sectionTitle}>
-            <Search size={16} /> Member FitPass Drill-down
-          </Typography>
-          <Typography variant="caption" color="secondary" style={{ marginBottom: theme.spacing.md }}>
-            Search member profile to inspect their active sessions and checkout logs.
-          </Typography>
-
-          <View style={styles.searchRow}>
-            <Input 
-              label=""
-              placeholder="Search by name or phone..."
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              style={{ flex: 1 }}
-            />
-            <Button 
-              title="Search"
-              loading={isSearching}
-              onPress={handleSearchSubmit}
-              style={styles.searchBtn}
-            />
-          </View>
-
-          {/* Search results list */}
-          {searchResults && searchResults.length > 0 && (
-            <View style={styles.resultsList}>
-              {searchResults.map((member: any) => (
-                <TouchableOpacity 
-                  key={member._id} 
-                  onPress={() => selectMember(member._id)}
-                  style={styles.memberResultRow}
-                >
-                  <View>
-                    <Typography variant="bodySm" style={{ fontWeight: '700' }}>{member.name}</Typography>
-                    <Typography variant="caption" color="secondary">📞 {member.phone}</Typography>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-
-          {/* Individual account details summary card */}
-          {loadingSummary ? (
-            <ActivityIndicator size="small" color={theme.colors.primary} style={{ marginTop: theme.spacing.md }} />
-          ) : selectedMemberSummary ? (
-            <Card style={styles.summaryCard}>
-              <View style={styles.summaryHeader}>
-                <Typography variant="bodySm" style={{ fontWeight: '800' }}>💳 FitPass Account Detail</Typography>
-                <TouchableOpacity onPress={() => setSelectedMemberSummary(null)}>
-                  <Typography variant="caption" color="error">Clear</Typography>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.summaryDetailGrid}>
-                <View style={styles.summaryItem}>
-                  <Typography variant="caption" color="secondary">Total Purchased</Typography>
-                  <Typography variant="body" style={{ fontWeight: '700', color: theme.colors.primary }}>
-                    {selectedMemberSummary.totalPurchasedSessions}
-                  </Typography>
-                </View>
-                <View style={styles.summaryItem}>
-                  <Typography variant="caption" color="secondary">Sessions Used</Typography>
-                  <Typography variant="body" style={{ fontWeight: '700', color: theme.colors.success }}>
-                    {selectedMemberSummary.sessionsUsed}
-                  </Typography>
-                </View>
-                <View style={styles.summaryItem}>
-                  <Typography variant="caption" color="secondary">Remaining Credits</Typography>
-                  <Typography variant="body" style={{ fontWeight: '700', color: theme.colors.info }}>
-                    {selectedMemberSummary.remainingSessions}
-                  </Typography>
-                </View>
-                <View style={styles.summaryItem}>
-                  <Typography variant="caption" color="secondary">Expiry Date</Typography>
-                  <Typography variant="bodySm" style={{ fontWeight: '700' }}>
-                    {new Date(selectedMemberSummary.expiryDate).toLocaleDateString()}
-                  </Typography>
-                </View>
-              </View>
-
-              {selectedMemberSummary.lastGymVisited && (
-                <View style={{ marginTop: theme.spacing.md }}>
-                  <Typography variant="caption" color="secondary">Last Gym Visited</Typography>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                    <MapPin size={12} color={theme.colors.primary} />
-                    <Typography variant="bodySm" style={{ fontWeight: '700' }}>
-                      {selectedMemberSummary.lastGymVisited}
-                    </Typography>
-                  </View>
-                </View>
-              )}
-            </Card>
-          ) : (
-            <View style={styles.emptySearchWrapper}>
-              <Typography variant="caption" color="muted">No member selected. Search above to view info.</Typography>
-            </View>
-          )}
-        </Card>
-
-        {/* Partner Popularity ranking table */}
-        <Card style={styles.sectionCard}>
-          <Typography variant="body" style={styles.sectionTitle}>
-            <MapPin size={16} /> Most Visited Partner Gyms
-          </Typography>
-          {(fitpassData?.mostVisitedPartnerGyms || []).length === 0 ? (
-            <Typography variant="caption" color="muted" style={{ marginVertical: theme.spacing.sm }}>
-              No check-in logs found.
-            </Typography>
-          ) : (
-            (fitpassData.mostVisitedPartnerGyms || []).map((g: any, index: number) => (
-              <View key={g.gymId || index} style={styles.gymRow}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}>
-                  <View style={[styles.rankCircle, index === 0 && { backgroundColor: theme.colors.primary }]}>
-                    <Typography variant="caption" style={{ fontWeight: '800', color: index === 0 ? 'black' : theme.colors.text }}>
-                      {index + 1}
-                    </Typography>
-                  </View>
-                  <Typography variant="bodySm" style={{ fontWeight: '700' }}>{g.gymName}</Typography>
-                </View>
-                <Typography variant="bodySm" style={{ fontWeight: '800', color: theme.colors.success }}>
-                  {g.count} visits
-                </Typography>
-              </View>
-            ))
-          )}
-        </Card>
-
-        {/* Daily network traffic */}
-        <Card style={styles.sectionCard}>
-          <Typography variant="body" style={styles.sectionTitle}>
-            <Calendar size={16} /> Daily Network Traffic
-          </Typography>
-          {(fitpassData?.dailyCheckIns || []).length === 0 ? (
-            <Typography variant="caption" color="muted">No daily check-ins recorded.</Typography>
-          ) : (
-            (fitpassData.dailyCheckIns || []).slice(-10).reverse().map((d: any, idx: number) => (
-              <View key={d.date || idx} style={styles.trafficRow}>
-                <Typography variant="bodySm" style={{ fontWeight: '600' }}>
-                  {new Date(d.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-                </Typography>
-                <Badge label={`${d.count} check-ins`} variant="active" />
-              </View>
-            ))
-          )}
-        </Card>
-      </ScrollView>
-    );
-  }
-
-  // ----------------------------------------------------
-  // H4 PORTAL VIEW RENDER (STANDARD OVERVIEW)
-  // ----------------------------------------------------
-  if (isH4Loading) {
+  if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <Skeleton height={50} style={{ marginBottom: theme.spacing.md }} />
+        <Skeleton height={60} style={{ borderRadius: 16, marginBottom: theme.spacing.md }} />
         <View style={styles.grid}>
-          {Array.from({ length: 6 }).map((_, idx) => (
-            <View key={idx} style={styles.gridItemSkeleton}>
-              <Skeleton height={100} />
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <View key={idx} style={styles.gridItem}>
+              <Skeleton height={110} style={{ borderRadius: 16 }} />
             </View>
           ))}
         </View>
-        <Skeleton height={220} style={{ marginTop: theme.spacing.lg }} />
+        <Skeleton height={220} style={{ borderRadius: 16, marginTop: theme.spacing.md }} />
       </View>
     );
   }
 
-  const kpis: KpiData[] = [
-    {
-      title: 'Total Members',
-      value: stats?.totalMembers || 0,
-      icon: <Users size={20} color={theme.colors.primary} />,
-      color: theme.colors.primary,
-      bgColor: theme.colors.brandLight,
-    },
-    {
-      title: 'Active Members',
-      value: stats?.activeMembers || 0,
-      icon: <CheckCircle size={20} color={theme.colors.success} />,
-      color: theme.colors.success,
-      bgColor: 'rgba(0, 255, 102, 0.1)',
-    },
-    {
-      title: 'Expired Members',
-      value: stats?.expiredMembers || 0,
-      icon: <AlertTriangle size={20} color={theme.colors.error} />,
-      color: theme.colors.error,
-      bgColor: 'rgba(255, 0, 68, 0.1)',
-    },
-    {
-      title: 'Expiring Soon',
-      value: stats?.expiringSoonCount || 0,
-      icon: <Clock size={20} color={theme.colors.warning} />,
-      color: theme.colors.warning,
-      bgColor: 'rgba(255, 214, 0, 0.1)',
-    },
-    {
-      title: 'New This Month',
-      value: stats?.newMembersThisMonth || 0,
-      icon: <Sparkles size={20} color={theme.colors.info} />,
-      color: theme.colors.info,
-      bgColor: 'rgba(0, 255, 255, 0.1)',
-    },
-    {
-      title: 'Global Revenue',
-      value: `₹${(stats?.monthlyRevenue || 0).toLocaleString()}`,
-      icon: <DollarSign size={20} color={theme.colors.success} />,
-      color: theme.colors.success,
-      bgColor: 'rgba(0, 255, 102, 0.1)',
-    },
-    {
-      title: 'Global Expenses',
-      value: `₹${(stats?.monthlyExpenses || 0).toLocaleString()}`,
-      icon: <ArrowDown size={20} color={theme.colors.error} />,
-      color: theme.colors.error,
-      bgColor: 'rgba(255, 0, 68, 0.1)',
-    },
-    {
-      title: 'Global Profit',
-      value: `₹${(stats?.monthlyProfit || 0).toLocaleString()}`,
-      icon: <ArrowUp size={20} color={theme.colors.success} />,
-      color: theme.colors.success,
-      bgColor: 'rgba(0, 255, 102, 0.1)',
-    },
-  ];
+  // Real H4 Stats Numbers
+  const totalMembers = h4Stats?.totalMembers || 0;
+  const activeMembers = h4Stats?.activeMembers || 0;
+  const expiredMembers = h4Stats?.expiredMembers || 0;
+  const expiringSoon = h4Stats?.expiringSoonCount || 0;
+  const monthlyRevenue = h4Stats?.monthlyRevenue || 0;
+  const monthlyExpenses = h4Stats?.monthlyExpenses || 0;
+  const netProfit = monthlyRevenue - monthlyExpenses;
 
-  const trend = formatTrendData(stats?.revenueTrend);
-  const planBreakdown = formatPlanData(stats?.planBreakdown);
+  // Real FitPass Stats Numbers
+  const fpSubscribers = fitpassData?.totalFitPassMembers || 0;
+  const fpActive = fitpassData?.activeFitPassMembers || 0;
+  const fpExpired = fitpassData?.expiredFitPassMembers || 0;
+  const fpSold = fitpassData?.totalSessionsSold || 0;
+  const fpUsed = fitpassData?.totalSessionsUsed || 0;
+  const fpUtilization = fpSold > 0 ? ((fpUsed / fpSold) * 100).toFixed(1) : '0';
+
+  // Construct REAL data object for monthly revenue chart
+  const revenueTrendData = (h4Stats?.revenueTrend && h4Stats.revenueTrend.length > 0)
+    ? {
+        labels: h4Stats.revenueTrend.map((item: any) => MONTH_NAMES[(item._id?.month || 1) - 1] || 'M'),
+        datasets: [{ data: h4Stats.revenueTrend.map((item: any) => item.total || 0) }],
+      }
+    : null;
+
+  // Construct REAL data object for partner gym visits chart
+  const gymVisitsData = (fitpassData?.mostVisitedPartnerGyms && fitpassData.mostVisitedPartnerGyms.length > 0)
+    ? {
+        labels: fitpassData.mostVisitedPartnerGyms.slice(0, 6).map((g: any) => g.gymName?.slice(0, 8) || 'Gym'),
+        datasets: [{ data: fitpassData.mostVisitedPartnerGyms.slice(0, 6).map((g: any) => g.count || 0) }],
+      }
+    : null;
 
   return (
-    <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-      <BranchSelector />
-      <Typography variant="h3" style={styles.sectionHeader}>Global Overview</Typography>
+    <ScrollView 
+      style={styles.mainWrapper} 
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Branch selector for H4 context */}
+      {!isFitPass && <BranchSelector />}
 
-      <View style={styles.grid}>
-        {kpis.map((kpi, idx) => (
-          <View key={idx} style={styles.gridItem}>
-            <Card accentColor={kpi.color} style={styles.kpiCard}>
-              <View style={styles.kpiHeader}>
-                <Typography variant="caption" color="secondary" style={styles.kpiTitle} numberOfLines={1}>
-                  {kpi.title}
-                </Typography>
-                <View style={[styles.kpiIconWrapper, { backgroundColor: kpi.bgColor }]}>
-                  {kpi.icon}
-                </View>
-              </View>
-              <Typography variant="h2" style={styles.kpiValue} numberOfLines={1}>
-                {kpi.value}
-              </Typography>
-            </Card>
+      {/* Header Banner */}
+      <View style={styles.bannerContainer}>
+        <View style={styles.bannerLeft}>
+          <View style={styles.badgePill}>
+            {isFitPass ? <Zap size={12} color={theme.colors.primary} /> : <ShieldCheck size={12} color={theme.colors.primary} />}
+            <Typography variant="caption" style={styles.badgePillText}>
+              {isFitPass ? 'FITPASS NETWORK ANALYTICS' : 'H4 EXECUTIVE ANALYTICS'}
+            </Typography>
           </View>
-        ))}
+          <Typography variant="h1" style={styles.bannerTitle}>
+            {isFitPass ? 'Network Overview' : 'Performance Command'}
+          </Typography>
+          <Typography variant="caption" color="secondary">
+            Real-time operational metrics, financial health, and live check-in stats.
+          </Typography>
+        </View>
       </View>
 
-      <Typography variant="h3" style={styles.sectionHeader}>Financial Performance</Typography>
-      
-      <Card style={styles.chartCard}>
-        <Typography variant="body" style={styles.chartTitle}>Revenue Trends</Typography>
-        {Platform.OS === 'web' ? (
-          renderWebLineChart(trend.labels, trend.data)
-        ) : (
-          <LineChart
-            data={{
-              labels: trend.labels,
-              datasets: [{ data: trend.data }],
-            }}
-            width={width - 48} // Padding adjustments
-            height={220}
-            chartConfig={chartConfig}
-            bezier
-            style={styles.chart}
-          />
-        )}
-      </Card>
+      {/* ── Executive Metric KPI Cards (100% Real API Data) ────────────────── */}
+      <View style={styles.grid}>
+        {isFitPass ? (
+          <>
+            <View style={styles.gridItem}>
+              <View style={styles.kpiCard}>
+                <View style={styles.kpiHeader}>
+                  <Typography variant="caption" color="secondary" style={styles.kpiTitle}>SUBSCRIBERS</Typography>
+                  <View style={[styles.iconBox, { backgroundColor: 'rgba(240, 160, 32, 0.12)' }]}>
+                    <Users size={16} color={theme.colors.primary} />
+                  </View>
+                </View>
+                <Typography variant="h2" style={styles.kpiValue}>{fpSubscribers}</Typography>
+                <Typography variant="caption" color="secondary" style={styles.kpiSub}>
+                  {fpActive} Active · {fpExpired} Expired
+                </Typography>
+              </View>
+            </View>
 
-      <Card style={styles.chartCard}>
-        <Typography variant="body" style={styles.chartTitle}>Popular Subscription Plans</Typography>
-        {Platform.OS === 'web' ? (
-          renderWebBarChart(planBreakdown.labels, planBreakdown.data)
+            <View style={styles.gridItem}>
+              <View style={styles.kpiCard}>
+                <View style={styles.kpiHeader}>
+                  <Typography variant="caption" color="secondary" style={styles.kpiTitle}>SESSIONS SOLD</Typography>
+                  <View style={[styles.iconBox, { backgroundColor: 'rgba(25, 118, 210, 0.12)' }]}>
+                    <Ticket size={16} color={theme.colors.info} />
+                  </View>
+                </View>
+                <Typography variant="h2" style={styles.kpiValue}>{fpSold}</Typography>
+                <Typography variant="caption" color="secondary" style={styles.kpiSub}>
+                  🎟️ {fitpassData?.remainingSessions || 0} Credits Left
+                </Typography>
+              </View>
+            </View>
+
+            <View style={styles.gridItem}>
+              <View style={styles.kpiCard}>
+                <View style={styles.kpiHeader}>
+                  <Typography variant="caption" color="secondary" style={styles.kpiTitle}>UTILIZATION</Typography>
+                  <View style={[styles.iconBox, { backgroundColor: 'rgba(46, 125, 50, 0.12)' }]}>
+                    <Activity size={16} color={theme.colors.success} />
+                  </View>
+                </View>
+                <Typography variant="h2" style={styles.kpiValue}>{fpUtilization}%</Typography>
+                <Typography variant="caption" color="secondary" style={styles.kpiSub}>
+                  🔥 {fpUsed} Sessions Used
+                </Typography>
+              </View>
+            </View>
+
+            <View style={styles.gridItem}>
+              <View style={styles.kpiCard}>
+                <View style={styles.kpiHeader}>
+                  <Typography variant="caption" color="secondary" style={styles.kpiTitle}>AVG CHECK-INS</Typography>
+                  <View style={[styles.iconBox, { backgroundColor: 'rgba(156, 39, 176, 0.12)' }]}>
+                    <TrendingUp size={16} color="#ab47bc" />
+                  </View>
+                </View>
+                <Typography variant="h2" style={styles.kpiValue}>{fitpassData?.avgVisitsPerMember || 0}</Typography>
+                <Typography variant="caption" color="secondary" style={styles.kpiSub}>
+                  📈 Visits per Subscriber
+                </Typography>
+              </View>
+            </View>
+          </>
         ) : (
-          <BarChart
-            data={{
-              labels: planBreakdown.labels,
-              datasets: [{ data: planBreakdown.data }],
-            }}
-            width={width - 48}
-            height={220}
-            yAxisLabel="₹"
-            yAxisSuffix=""
-            chartConfig={chartConfig}
-            style={styles.chart}
-          />
+          <>
+            <View style={styles.gridItem}>
+              <View style={styles.kpiCard}>
+                <View style={styles.kpiHeader}>
+                  <Typography variant="caption" color="secondary" style={styles.kpiTitle}>MEMBERSHIP</Typography>
+                  <View style={[styles.iconBox, { backgroundColor: 'rgba(240, 160, 32, 0.12)' }]}>
+                    <Users size={16} color={theme.colors.primary} />
+                  </View>
+                </View>
+                <Typography variant="h2" style={styles.kpiValue}>{totalMembers}</Typography>
+                <Typography variant="caption" color="secondary" style={styles.kpiSub}>
+                  {activeMembers} Active · {expiredMembers} Expired
+                </Typography>
+              </View>
+            </View>
+
+            <View style={styles.gridItem}>
+              <View style={styles.kpiCard}>
+                <View style={styles.kpiHeader}>
+                  <Typography variant="caption" color="secondary" style={styles.kpiTitle}>MONTH REVENUE</Typography>
+                  <View style={[styles.iconBox, { backgroundColor: 'rgba(46, 125, 50, 0.12)' }]}>
+                    <DollarSign size={16} color={theme.colors.success} />
+                  </View>
+                </View>
+                <Typography variant="h2" style={styles.kpiValue}>₹{monthlyRevenue.toLocaleString()}</Typography>
+                <Typography variant="caption" color="secondary" style={styles.kpiSub}>
+                  {h4Stats?.newMembersThisMonth || 0} New Registrations
+                </Typography>
+              </View>
+            </View>
+
+            <View style={styles.gridItem}>
+              <View style={styles.kpiCard}>
+                <View style={styles.kpiHeader}>
+                  <Typography variant="caption" color="secondary" style={styles.kpiTitle}>MONTH EXPENSES</Typography>
+                  <View style={[styles.iconBox, { backgroundColor: 'rgba(198, 40, 40, 0.12)' }]}>
+                    <ArrowDownRight size={16} color={theme.colors.error} />
+                  </View>
+                </View>
+                <Typography variant="h2" style={styles.kpiValue}>₹{monthlyExpenses.toLocaleString()}</Typography>
+                <Typography variant="caption" color="secondary" style={styles.kpiSub}>
+                  Operational Costs
+                </Typography>
+              </View>
+            </View>
+
+            <View style={styles.gridItem}>
+              <View style={styles.kpiCard}>
+                <View style={styles.kpiHeader}>
+                  <Typography variant="caption" color="secondary" style={styles.kpiTitle}>NET PROFIT</Typography>
+                  <View style={[styles.iconBox, { backgroundColor: netProfit >= 0 ? 'rgba(46, 125, 50, 0.12)' : 'rgba(198, 40, 40, 0.12)' }]}>
+                    <ArrowUpRight size={16} color={netProfit >= 0 ? theme.colors.success : theme.colors.error} />
+                  </View>
+                </View>
+                <Typography variant="h2" style={[styles.kpiValue, { color: netProfit >= 0 ? theme.colors.success : theme.colors.error }]}>
+                  ₹{netProfit.toLocaleString()}
+                </Typography>
+                <Typography variant="caption" color="secondary" style={styles.kpiSub}>
+                  Net Surplus Margin
+                </Typography>
+              </View>
+            </View>
+          </>
         )}
-      </Card>
+      </View>
+
+      {/* ── Analytical Chart 1: Real API Financial & Usage Chart ───────────────────── */}
+      <View style={styles.analyticsSection}>
+        <View style={styles.sectionTitleRow}>
+          <BarChart3 size={18} color={theme.colors.primary} />
+          <Typography variant="h3" style={styles.sectionHeaderTitle}>
+            {isFitPass ? 'Partner Gym Check-in Distribution (Real)' : 'Monthly Revenue Trend (Real Data)'}
+          </Typography>
+        </View>
+
+        <View style={styles.chartCard}>
+          {isFitPass ? (
+            gymVisitsData ? (
+              <BarChart
+                data={gymVisitsData}
+                width={chartWidth}
+                height={200}
+                yAxisLabel=""
+                yAxisSuffix=""
+                chartConfig={chartConfig}
+                style={styles.chartCanvas}
+              />
+            ) : (
+              <View style={styles.emptyChartBox}>
+                <Typography variant="bodySm" color="secondary">
+                  No partner gym check-ins recorded yet.
+                </Typography>
+              </View>
+            )
+          ) : (
+            revenueTrendData ? (
+              <LineChart
+                data={revenueTrendData}
+                width={chartWidth}
+                height={200}
+                chartConfig={chartConfig}
+                bezier
+                style={styles.chartCanvas}
+              />
+            ) : (
+              <View style={styles.emptyChartBox}>
+                <Typography variant="bodySm" color="secondary">
+                  No historical revenue transactions logged yet.
+                </Typography>
+              </View>
+            )
+          )}
+        </View>
+      </View>
+
+      {/* ── Analytical Chart 2: Real Membership Distribution Breakdown ─────────────────── */}
+      <View style={styles.analyticsSection}>
+        <View style={styles.sectionTitleRow}>
+          <PieIcon size={18} color={theme.colors.primary} />
+          <Typography variant="h3" style={styles.sectionHeaderTitle}>
+            {isFitPass ? 'FitPass Subscriber Breakdown' : 'Member Status Distribution'}
+          </Typography>
+        </View>
+
+        <View style={styles.breakdownCard}>
+          {/* Active Members Bar */}
+          <View style={styles.breakdownRow}>
+            <View style={styles.breakdownHeader}>
+              <Typography variant="bodySm" style={styles.breakdownLabel}>Active Passports</Typography>
+              <Typography variant="bodySm" style={{ color: theme.colors.success, fontWeight: '700' }}>
+                {isFitPass ? fpActive : activeMembers} ({isFitPass ? (fpSubscribers ? ((fpActive / fpSubscribers) * 100).toFixed(0) : 0) : (totalMembers ? ((activeMembers / totalMembers) * 100).toFixed(0) : 0)}%)
+              </Typography>
+            </View>
+            <View style={styles.progressTrack}>
+              <View 
+                style={[
+                  styles.progressFill, 
+                  { 
+                    backgroundColor: theme.colors.success, 
+                    width: `${isFitPass ? (fpSubscribers ? (fpActive / fpSubscribers) * 100 : 0) : (totalMembers ? (activeMembers / totalMembers) * 100 : 0)}%` 
+                  }
+                ]} 
+              />
+            </View>
+          </View>
+
+          {/* Expiring Soon Bar */}
+          {!isFitPass && (
+            <View style={styles.breakdownRow}>
+              <View style={styles.breakdownHeader}>
+                <Typography variant="bodySm" style={styles.breakdownLabel}>Expiring in 7 Days</Typography>
+                <Typography variant="bodySm" style={{ color: theme.colors.primary, fontWeight: '700' }}>
+                  {expiringSoon} ({totalMembers ? ((expiringSoon / totalMembers) * 100).toFixed(0) : 0}%)
+                </Typography>
+              </View>
+              <View style={styles.progressTrack}>
+                <View 
+                  style={[
+                    styles.progressFill, 
+                    { 
+                      backgroundColor: theme.colors.primary, 
+                      width: `${totalMembers ? (expiringSoon / totalMembers) * 100 : 0}%` 
+                    }
+                  ]} 
+                />
+              </View>
+            </View>
+          )}
+
+          {/* Expired Members Bar */}
+          <View style={styles.breakdownRow}>
+            <View style={styles.breakdownHeader}>
+              <Typography variant="bodySm" style={styles.breakdownLabel}>Expired / Needs Renewal</Typography>
+              <Typography variant="bodySm" style={{ color: theme.colors.error, fontWeight: '700' }}>
+                {isFitPass ? fpExpired : expiredMembers} ({isFitPass ? (fpSubscribers ? ((fpExpired / fpSubscribers) * 100).toFixed(0) : 0) : (totalMembers ? ((expiredMembers / totalMembers) * 100).toFixed(0) : 0)}%)
+              </Typography>
+            </View>
+            <View style={styles.progressTrack}>
+              <View 
+                style={[
+                  styles.progressFill, 
+                  { 
+                    backgroundColor: theme.colors.error, 
+                    width: `${isFitPass ? (fpSubscribers ? (fpExpired / fpSubscribers) * 100 : 0) : (totalMembers ? (expiredMembers / totalMembers) * 100 : 0)}%` 
+                  }
+                ]} 
+              />
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* ── Top Partner Gym Performance Leaderboard (Real Data) ───────────────────── */}
+      {isFitPass && (
+        <View style={styles.analyticsSection}>
+          <View style={styles.sectionTitleRow}>
+            <MapPin size={18} color={theme.colors.primary} />
+            <Typography variant="h3" style={styles.sectionHeaderTitle}>
+              Top Performing Partner Gyms
+            </Typography>
+          </View>
+
+          <View style={styles.leaderboardCard}>
+            {(fitpassData?.mostVisitedPartnerGyms || []).length === 0 ? (
+              <Typography variant="caption" color="secondary" style={{ textAlign: 'center', paddingVertical: 12 }}>
+                No partner check-in history logged yet.
+              </Typography>
+            ) : (
+              (fitpassData.mostVisitedPartnerGyms || []).map((g: any, index: number) => (
+                <View key={g.gymId || index} style={styles.leaderboardRow}>
+                  <View style={styles.rankBadge}>
+                    <Typography variant="caption" style={styles.rankText}>
+                      #{index + 1}
+                    </Typography>
+                  </View>
+                  <View style={styles.gymNameGroup}>
+                    <Typography variant="bodySm" style={styles.gymNameText}>
+                      {g.gymName}
+                    </Typography>
+                    <Typography variant="caption" color="secondary">
+                      Partner Gym Network
+                    </Typography>
+                  </View>
+                  <Badge label={`${g.count} Visits`} variant="active" />
+                </View>
+              ))
+            )}
+          </View>
+        </View>
+      )}
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  scroll: {
+  mainWrapper: {
     flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing['2xl'],
+    gap: theme.spacing.lg,
   },
   loadingContainer: {
     flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: theme.spacing.md,
+  },
+
+  // Banner
+  bannerContainer: {
+    backgroundColor: theme.colors.card,
+    borderRadius: 16,
     padding: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: theme.spacing.xs,
   },
-  sectionHeader: {
-    ...theme.typography.h3,
+  bannerLeft: {
+    gap: 4,
+  },
+  badgePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(240, 160, 32, 0.12)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  badgePillText: {
+    color: theme.colors.primary,
+    fontWeight: '700',
+    fontSize: 10,
+    letterSpacing: 0.8,
+  },
+  bannerTitle: {
     color: theme.colors.text,
-    marginTop: theme.spacing.lg,
-    marginBottom: theme.spacing.md,
+    fontSize: 20,
+    fontWeight: '800',
   },
+
+  // KPI Grid
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginHorizontal: -theme.spacing.xs,
+    marginHorizontal: -6,
   },
   gridItem: {
     width: '50%',
-    paddingHorizontal: theme.spacing.xs,
-    marginBottom: theme.spacing.sm,
-  },
-  gridItemSkeleton: {
-    width: '50%',
-    padding: theme.spacing.xs,
+    paddingHorizontal: 6,
+    marginBottom: 12,
   },
   kpiCard: {
+    backgroundColor: theme.colors.card,
+    borderRadius: 16,
     padding: theme.spacing.md,
-    height: 104,
+    height: 110,
     justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   kpiHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
   kpiTitle: {
-    ...theme.typography.caption,
-    color: theme.colors.textSecondary,
+    fontSize: 10,
     fontWeight: '700',
-    textTransform: 'uppercase',
-    flex: 1,
-    marginRight: theme.spacing.xs,
+    letterSpacing: 0.5,
   },
-  kpiIconWrapper: {
+  iconBox: {
     width: 32,
     height: 32,
-    borderRadius: theme.radii.sm,
-    justifyContent: 'center',
+    borderRadius: 10,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   kpiValue: {
-    ...theme.typography.h2,
     color: theme.colors.text,
-    marginTop: theme.spacing.xs,
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  kpiSub: {
+    fontSize: 10,
+  },
+
+  // Analytics Sections & Charts
+  analyticsSection: {
+    gap: theme.spacing.xs,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    marginBottom: 2,
+  },
+  sectionHeaderTitle: {
+    color: theme.colors.text,
+    fontSize: 16,
+    fontWeight: '700',
   },
   chartCard: {
+    backgroundColor: theme.colors.card,
+    borderRadius: 16,
     padding: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     alignItems: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  chartTitle: {
-    ...theme.typography.body,
-    fontWeight: '700',
-    color: theme.colors.text,
-    alignSelf: 'flex-start',
-    marginBottom: theme.spacing.md,
-  },
-  chart: {
-    borderRadius: theme.radii.lg,
-    marginVertical: theme.spacing.sm,
-  },
-  // FitPass specific styling
-  fitpassHeaderCard: {
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.md,
-    borderLeftWidth: 4,
-    borderLeftColor: theme.colors.primary,
-  },
-  sectionCard: {
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.md,
-  },
-  sectionTitle: {
-    fontWeight: '800',
-    marginBottom: 4,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  searchRow: {
-    flexDirection: 'row',
     gap: theme.spacing.sm,
+  },
+  chartCanvas: {
+    borderRadius: 16,
+    marginVertical: 4,
+  },
+  emptyChartBox: {
+    paddingVertical: theme.spacing.xl,
     alignItems: 'center',
-    marginBottom: theme.spacing.sm,
+    justifyContent: 'center',
   },
-  searchBtn: {
-    height: 48,
-    minHeight: 48,
-    paddingHorizontal: theme.spacing.md,
-  },
-  resultsList: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radii.md,
-    padding: theme.spacing.xs,
-    marginBottom: theme.spacing.md,
-    maxHeight: 180,
-    backgroundColor: theme.colors.bgTertiary,
-  },
-  memberResultRow: {
-    padding: theme.spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  summaryCard: {
+
+  // Breakdown Card
+  breakdownCard: {
+    backgroundColor: theme.colors.card,
+    borderRadius: 16,
     padding: theme.spacing.md,
-    backgroundColor: theme.colors.bgTertiary,
     borderWidth: 1,
     borderColor: theme.colors.border,
-  },
-  summaryHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    paddingBottom: theme.spacing.xs,
-    marginBottom: theme.spacing.md,
-  },
-  summaryDetailGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: theme.spacing.md,
   },
-  summaryItem: {
-    width: '45%',
+  breakdownRow: {
+    gap: 6,
   },
-  emptySearchWrapper: {
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: theme.colors.border,
-    borderRadius: theme.radii.md,
-    padding: theme.spacing.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gymRow: {
+  breakdownHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: theme.spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
   },
-  rankCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+  breakdownLabel: {
+    color: theme.colors.text,
+    fontWeight: '600',
+  },
+  progressTrack: {
+    height: 8,
+    borderRadius: 4,
     backgroundColor: theme.colors.bgTertiary,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+
+  // Leaderboard
+  leaderboardCard: {
+    backgroundColor: theme.colors.card,
+    borderRadius: 16,
+    padding: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: theme.spacing.sm,
+  },
+  leaderboardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: theme.spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  rankBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(240, 160, 32, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  trafficRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: theme.spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+  rankText: {
+    color: theme.colors.primary,
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  gymNameGroup: {
+    flex: 1,
+    marginLeft: theme.spacing.sm,
+  },
+  gymNameText: {
+    color: theme.colors.text,
+    fontWeight: '600',
   },
 });

@@ -85,6 +85,7 @@ model User {
 
   @@index([gymId])
   @@index([role])
+  @@index([gymId, role])
 }
 
 model Plan {
@@ -137,6 +138,7 @@ model Member {
 
   @@index([gymId])
   @@index([status])
+  @@index([gymId, status])
   @@index([expiryDate])
   @@index([phone])
   @@index([planId])
@@ -347,6 +349,10 @@ model MemberTrainerAssignment {
   gymId        String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@index([gymId])
+  @@index([memberId])
+  @@index([trainerId])
 }
 
 model WorkoutTemplate {
@@ -358,6 +364,9 @@ model WorkoutTemplate {
   branchId     String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@index([gymId, branchId])
+  @@index([gymId, name])
 }
 
 model WorkoutPlan {
@@ -372,6 +381,10 @@ model WorkoutPlan {
   branchId     String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@index([gymId, createdAt(sort: Desc)])
+  @@index([memberId])
+  @@index([trainerId])
 }
 
 model DietPlan {
@@ -386,6 +399,10 @@ model DietPlan {
   branchId     String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@index([gymId, createdAt(sort: Desc)])
+  @@index([memberId])
+  @@index([trainerId])
 }
 
 model PtPackage {
@@ -399,6 +416,8 @@ model PtPackage {
   branchId     String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@index([gymId])
 }
 
 model PtSession {
@@ -413,6 +432,10 @@ model PtSession {
   branchId     String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@index([gymId, sessionDate(sort: Desc)])
+  @@index([memberId])
+  @@index([trainerId])
 }
 
 model BodyAssessment {
@@ -430,6 +453,10 @@ model BodyAssessment {
   branchId       String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  @@index([gymId, assessmentDate(sort: Desc)])
+  @@index([memberId])
+  @@index([trainerId])
 }
 
 model TrainerAttendance {
@@ -443,6 +470,9 @@ model TrainerAttendance {
   branchId     String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+
+  @@index([gymId, date(sort: Desc)])
+  @@index([trainerId])
 }
 
 model TrainerSalary {
@@ -454,6 +484,8 @@ model TrainerSalary {
   branchId     String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+
+  @@index([gymId, trainerId])
 }
 
 model PtCommission {
@@ -466,6 +498,9 @@ model PtCommission {
   branchId     String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+
+  @@index([gymId, date(sort: Desc)])
+  @@index([trainerId])
 }
 
 model Payroll {
@@ -483,6 +518,9 @@ model Payroll {
   branchId     String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+
+  @@index([gymId, year, month])
+  @@index([trainerId])
 }
 
 model Ticket {
@@ -515,3 +553,34 @@ model TicketMessage {
 
   @@index([ticketId])
 }
+
+model Equipment {
+  id           String    @id @default(uuid())
+  name         String
+  brand        String    @default("")
+  status       String    @default("Functional")
+  purchaseDate DateTime  @default(now())
+  gymId        String
+  branchId     String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([gymId, status])
+}
+
+model MaintenanceLog {
+  id               String    @id @default(uuid())
+  equipmentId      String?
+  equipmentName    String    @default("")
+  issueDescription String    @default("")
+  status           String    @default("In Progress")
+  cost             Float     @default(0)
+  loggedDate       DateTime  @default(now())
+  gymId            String
+  branchId         String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([gymId, loggedDate])
+}
+

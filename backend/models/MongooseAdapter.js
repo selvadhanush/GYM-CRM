@@ -323,6 +323,7 @@ class QueryBuilder {
       result = await prisma[this.modelName].findUnique({ where: { id: this.args.id } });
       result = wrapRecord(result, this.modelName);
     } else if (this.operation === 'count') {
+      if (!prisma[this.modelName]) return 0;
       return await prisma[this.modelName].count(queryArgs);
     }
     
@@ -595,7 +596,9 @@ class ModelWrapper {
       trainerattendances: 'trainerAttendance',
       trainersalaries: 'trainerSalary',
       ptcommissions: 'ptCommission',
-      payrolls: 'payroll'
+      payrolls: 'payroll',
+      equipments: 'equipment',
+      maintenancelogs: 'maintenanceLog'
     };
 
     function getNestedVal(obj, path) {

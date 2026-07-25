@@ -13,15 +13,15 @@ export const spacing = {
 
 export const colors = {
   brand: {
-    primary: '#F0A020', // Amber / Brand Gold
-    primaryHover: '#D9860F', // Dark Amber / Gold
-    primaryLight: '#FCE6B8', // Soft Amber Tint
-    primaryMuted: '#FBF6EC', // Cream/Soft Amber Card Accent
+    primary: '#FF5F1F', // Vibrant Electric Orange
+    primaryHover: '#E04E10', // Dark Amber / Gold
+    primaryLight: '#FFECE5', // Soft Amber Tint
+    primaryMuted: '#FFF3EE', // Cream/Soft Amber Card Accent
   },
   accent: '#D9860F', // Dark Amber / Gold
   status: {
     success: '#2E7D32', // Active Pass - Green
-    warning: '#F0A020', // Warning - Amber
+    warning: '#FF5F1F', // Warning - Orange
     error: '#C62828', // Expired Session - Red
     info: '#1976D2', // Cooldown - Blue
   },
@@ -38,52 +38,50 @@ export const colors = {
   },
   border: {
     default: '#3A3025', // Warm brown border
-    focus: '#F0A020',
+    focus: '#FF5F1F',
   },
 };
 
 export const typography = {
   display: {
-    fontSize: 32,
-    fontWeight: '700' as const,
-    lineHeight: 38,
-    fontFamily: 'System', // Cleaner enterprise fonts
+    fontSize: 34,
+    fontWeight: '900' as const,
+    lineHeight: 40,
+    letterSpacing: -0.8,
   },
   h1: {
-    fontSize: 24,
-    fontWeight: '700' as const,
-    lineHeight: 31,
-    fontFamily: 'System',
+    fontSize: 26,
+    fontWeight: '900' as const,
+    lineHeight: 32,
+    letterSpacing: -0.5,
   },
   h2: {
     fontSize: 20,
-    fontWeight: '600' as const,
+    fontWeight: '800' as const,
     lineHeight: 26,
-    fontFamily: 'System',
+    letterSpacing: -0.3,
   },
   h3: {
-    fontSize: 18,
-    fontWeight: '600' as const,
-    lineHeight: 25,
-    fontFamily: 'System',
+    fontSize: 17,
+    fontWeight: '700' as const,
+    lineHeight: 23,
+    letterSpacing: -0.2,
   },
   body: {
-    fontSize: 16,
-    fontWeight: '400' as const,
-    lineHeight: 24,
-    fontFamily: 'System',
+    fontSize: 15,
+    fontWeight: '500' as const,
+    lineHeight: 22,
   },
   bodySm: {
-    fontSize: 14,
-    fontWeight: '400' as const,
-    lineHeight: 21,
-    fontFamily: 'System',
+    fontSize: 13,
+    fontWeight: '500' as const,
+    lineHeight: 19,
   },
   caption: {
-    fontSize: 12,
-    fontWeight: '400' as const,
-    lineHeight: 17,
-    fontFamily: 'System',
+    fontSize: 11,
+    fontWeight: '600' as const,
+    lineHeight: 15,
+    letterSpacing: 0.3,
   },
 };
 

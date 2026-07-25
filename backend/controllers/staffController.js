@@ -6,9 +6,13 @@ const User = require('../models/User');
 const getStaff = async (req, res) => {
     try {
         const query = {
-            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
             role: { $in: ['admin', 'trainer', 'receptionist'] }
         };
+        if (req.query.gymId) {
+            query.gymId = req.query.gymId;
+        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
+            query.gymId = req.user.gymId;
+        }
         if (req.user.branchId) {
             query.branchId = req.user.branchId;
         }

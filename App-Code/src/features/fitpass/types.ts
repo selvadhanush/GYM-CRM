@@ -26,9 +26,11 @@ export interface CheckInHistoryItem {
 
 export interface PartnerGym {
   id: string;
+  _id?: string;
   name: string;
   address?: string;
   city?: string;
+  phone?: string;
   branches?: PartnerGymBranch[];
 }
 

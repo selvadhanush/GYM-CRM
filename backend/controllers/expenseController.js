@@ -30,7 +30,12 @@ const createExpense = async (req, res) => {
 // @route   GET /api/expenses
 // @access  Private/Admin
 const getExpenses = async (req, res) => {
-    const query = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+    const query = {};
+    if (req.query.gymId) {
+        query.gymId = req.query.gymId;
+    } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
+        query.gymId = req.user.gymId;
+    }
     if (req.user.branchId) {
         query.branchId = req.user.branchId;
     }

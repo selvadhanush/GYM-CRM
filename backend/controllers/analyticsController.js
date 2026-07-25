@@ -1,15 +1,20 @@
 const Member = require('../models/Member');
 const Payment = require('../models/Payment');
 const Lead = require('../models/Lead');
+const Expense = require('../models/Expense');
 
 // @desc    Get churn & retention analytics
 // @route   GET /api/analytics
 const getAnalytics = async (req, res) => {
     try {
-        const gymId = req.user.gymId;
         const now = new Date();
 
-        const queryFilter = { gymId };
+        const queryFilter = {};
+        if (req.query.gymId) {
+            queryFilter.gymId = req.query.gymId;
+        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
+            queryFilter.gymId = req.user.gymId;
+        }
         if (req.user.branchId) {
             queryFilter.branchId = req.user.branchId;
         }
@@ -19,7 +24,7 @@ const getAnalytics = async (req, res) => {
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
         const Attendance = require('../models/Attendance');
-        const attendanceQuery = { gymId, date: { $gte: sevenDaysAgo } };
+        const attendanceQuery = { ...queryFilter, date: { $gte: sevenDaysAgo } };
         if (req.user.branchId) {
             attendanceQuery.branchId = req.user.branchId;
         }
@@ -125,6 +130,81 @@ const getAnalytics = async (req, res) => {
             { $group: { _id: '$status', count: { $sum: 1 } } }
         ]);
 
+        // --- Financial & Revenue Performance Metrics ---
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        
+        const [revenueMonthAgg, expenseMonthAgg, revenueTotalAgg] = await Promise.all([
+            Payment.aggregate([
+                { $match: { ...queryFilter, date: { $gte: startOfMonth } } },
+                { $group: { _id: null, total: { $sum: '$amount' } } }
+            ]),
+            Expense.aggregate([
+                { $match: { ...queryFilter, date: { $gte: startOfMonth } } },
+                { $group: { _id: null, total: { $sum: '$amount' } } }
+            ]),
+            Payment.aggregate([
+                { $match: queryFilter },
+                { $group: { _id: null, total: { $sum: '$amount' } } }
+            ])
+        ]);
+
+        const monthlyRevenue = revenueMonthAgg[0]?.total || 0;
+        const monthlyExpenses = expenseMonthAgg[0]?.total || 0;
+        const monthlyProfit = monthlyRevenue - monthlyExpenses;
+        const totalLifetimeRevenue = revenueTotalAgg[0]?.total || 0;
+
+        // --- Monthly Revenue Trend (Last 6 Months) ---
+        const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+        const revenueTrendAgg = await Payment.aggregate([
+            { $match: { ...queryFilter, date: { $gte: sixMonthsAgo } } },
+            {
+                $group: {
+                    _id: { month: { $month: '$date' }, year: { $year: '$date' } },
+                    total: { $sum: '$amount' }
+                }
+            },
+            { $sort: { '_id.year': 1, '_id.month': 1 } }
+        ]);
+
+        const revenueTrend = [];
+        for (let i = 5; i >= 0; i--) {
+            const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const m = date.getMonth() + 1;
+            const y = date.getFullYear();
+            const found = revenueTrendAgg.find(r => r._id.month === m && r._id.year === y);
+            revenueTrend.push({
+                month: date.toLocaleString('default', { month: 'short' }),
+                revenue: found ? found.total : 0
+            });
+        }
+
+        // --- Payment Method Breakdown ---
+        const paymentMethods = await Payment.aggregate([
+            { $match: queryFilter },
+            { $group: { _id: '$method', totalAmount: { $sum: '$amount' }, count: { $sum: 1 } } }
+        ]);
+
+        // --- Plan Revenue & Popularity Breakdown ---
+        const planDistribution = await Payment.aggregate([
+            { $match: queryFilter },
+            { $lookup: { from: 'members', localField: 'memberId', foreignField: '_id', as: 'member' } },
+            { $unwind: '$member' },
+            { $lookup: { from: 'plans', localField: 'member.planId', foreignField: '_id', as: 'plan' } },
+            { $unwind: '$plan' },
+            { $group: { _id: '$plan.name', totalRevenue: { $sum: '$amount' }, memberCount: { $sum: 1 } } },
+            { $sort: { totalRevenue: -1 } }
+        ]);
+
+        // --- Lead Funnel & Conversion Analytics ---
+        const [totalLeads, convertedLeads, pendingLeads, lostLeads] = await Promise.all([
+            Lead.countDocuments(queryFilter),
+            Lead.countDocuments({ ...queryFilter, status: 'Converted' }),
+            Lead.countDocuments({ ...queryFilter, status: { $in: ['New', 'Contacted', 'Trial Booked', 'Follow Up'] } }),
+            Lead.countDocuments({ ...queryFilter, status: 'Lost' })
+        ]);
+
+        const conversionRate = totalLeads > 0 ? parseFloat(((convertedLeads / totalLeads) * 100).toFixed(1)) : 0;
+
         res.json({
             inactiveCount,
             inactiveMembers,
@@ -135,7 +215,23 @@ const getAnalytics = async (req, res) => {
             churnTrend,
             statusBreakdown,
             expiredLast30,
-            renewedCount
+            renewedCount,
+
+            // Comprehensive Business Metrics
+            monthlyRevenue,
+            monthlyExpenses,
+            monthlyProfit,
+            totalLifetimeRevenue,
+            revenueTrend,
+            paymentMethods: paymentMethods.map(p => ({ method: p._id || 'Other', totalAmount: p.totalAmount, count: p.count })),
+            planDistribution: planDistribution.map(p => ({ name: p._id, totalRevenue: p.totalRevenue, memberCount: p.memberCount })),
+            leadFunnel: {
+                totalLeads,
+                convertedLeads,
+                pendingLeads,
+                lostLeads,
+                conversionRate
+            }
         });
     } catch (err) {
         console.error('Analytics error:', err);
