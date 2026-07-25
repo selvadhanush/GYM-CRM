@@ -1,9 +1,11 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const AuditLog = require('../models/AuditLog');
 
 // @desc    Get audit logs for a gym
 // @route   GET /api/audit
 // @access  Private/Admin
-const getAuditLogs = async (req, res) => {
+const getAuditLogs = catchAsync(async (req, res, next) => {
     try {
         const { action, userId, entity, entityId, entityName, limit = 100, page = 1 } = req.query;
         const filter = {};
@@ -35,15 +37,13 @@ const getAuditLogs = async (req, res) => {
         ]);
 
         res.json({ logs, total, page: parseInt(page), pages: Math.ceil(total / parseInt(limit)) });
-    } catch (err) {
-        res.status(500).json({ message: 'Error fetching audit logs', error: err.message });
-    }
+    } catch (err) { next(err); }
 };
 
 // @desc    Get activity summary (counts by action type)
 // @route   GET /api/audit/summary
 // @access  Private/Admin
-const getAuditSummary = async (req, res) => {
+const getAuditSummary = catchAsync(async (req, res, next) => {
     try {
         let filter = {};
         if (req.user.role !== 'superadmin') {
@@ -68,9 +68,7 @@ const getAuditSummary = async (req, res) => {
             .sort({ createdAt: -1 }).limit(10).lean();
 
         res.json({ summary, recentLogins });
-    } catch (err) {
-        res.status(500).json({ message: 'Error fetching audit summary', error: err.message });
-    }
+    } catch (err) { next(err); }
 };
 
 module.exports = { getAuditLogs, getAuditSummary };

@@ -1,31 +1,25 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const Lead = require('../models/Lead');
 const Member = require('../models/Member');
 
 // @desc    Get all leads for gym
 // @route   GET /api/leads
-const getLeads = async (req, res) => {
+const getLeads = catchAsync(async (req, res, next) => {
     try {
         const { status, source } = req.query;
-        const filter = {};
-        if (req.query.gymId) {
-            filter.gymId = req.query.gymId;
-        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
-            filter.gymId = req.user.gymId;
-        }
-        if (req.user.branchId) filter.branchId = req.user.branchId;
+        const filter = { ...req.tenantFilter };
         if (status) filter.status = status;
         if (source) filter.source = source;
 
         const leads = await Lead.find(filter).sort({ createdAt: -1 });
         res.json(leads);
-    } catch (err) {
-        res.status(500).json({ message: 'Error fetching leads', error: err.message });
-    }
+    } catch (err) { next(err); }
 };
 
 // @desc    Create a lead
 // @route   POST /api/leads
-const createLead = async (req, res) => {
+const createLead = catchAsync(async (req, res, next) => {
     try {
         const { name, phone, email, source, interestedPlan, notes, followUpDate, assignedTo } = req.body;
         if (!name || !phone) return res.status(400).json({ message: 'Name and phone are required' });
@@ -37,14 +31,12 @@ const createLead = async (req, res) => {
             status: 'New'
         });
         res.status(201).json(lead);
-    } catch (err) {
-        res.status(500).json({ message: 'Error creating lead', error: err.message });
-    }
+    } catch (err) { next(err); }
 };
 
 // @desc    Update lead status / details
 // @route   PUT /api/leads/:id
-const updateLead = async (req, res) => {
+const updateLead = catchAsync(async (req, res, next) => {
     try {
         const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
         if (req.user.branchId) query.branchId = req.user.branchId;
@@ -64,36 +56,26 @@ const updateLead = async (req, res) => {
 
         await lead.save();
         res.json(lead);
-    } catch (err) {
-        res.status(500).json({ message: 'Error updating lead', error: err.message });
-    }
+    } catch (err) { next(err); }
 };
 
 // @desc    Delete a lead
 // @route   DELETE /api/leads/:id
-const deleteLead = async (req, res) => {
+const deleteLead = catchAsync(async (req, res, next) => {
     try {
         const query = { _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
         if (req.user.branchId) query.branchId = req.user.branchId;
         const lead = await Lead.findOneAndDelete(query);
         if (!lead) return res.status(404).json({ message: 'Lead not found' });
         res.json({ message: 'Lead deleted' });
-    } catch (err) {
-        res.status(500).json({ message: 'Error deleting lead', error: err.message });
-    }
+    } catch (err) { next(err); }
 };
 
 // @desc    Get lead pipeline summary (counts by status)
 // @route   GET /api/leads/summary
-const getLeadSummary = async (req, res) => {
+const getLeadSummary = catchAsync(async (req, res, next) => {
     try {
-        const matchStage = {};
-        if (req.query.gymId) {
-            matchStage.gymId = req.query.gymId;
-        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
-            matchStage.gymId = req.user.gymId;
-        }
-        if (req.user.branchId) matchStage.branchId = req.user.branchId;
+        const matchStage = { ...req.tenantFilter };
 
         const statusCounts = await Lead.aggregate([
             { $match: matchStage },
@@ -120,9 +102,7 @@ const getLeadSummary = async (req, res) => {
         const conversionRate = total > 0 ? ((converted / total) * 100).toFixed(1) : 0;
 
         res.json({ statusCounts, sourceCounts, followUpDue, total, converted, conversionRate });
-    } catch (err) {
-        res.status(500).json({ message: 'Error fetching summary', error: err.message });
-    }
+    } catch (err) { next(err); }
 };
 
 module.exports = { getLeads, createLead, updateLead, deleteLead, getLeadSummary };

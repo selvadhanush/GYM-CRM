@@ -1,3 +1,5 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const Gym = require('../models/Gym');
 const { logAudit } = require('../utils/auditLogger');
 const prisma = require('../config/prisma');
@@ -5,7 +7,7 @@ const prisma = require('../config/prisma');
 // @desc    Upload images for a gym
 // @route   POST /api/gyms/images
 // @access  Private (Admin)
-const uploadGymImages = async (req, res) => {
+const uploadGymImages = catchAsync(async (req, res, next) => {
     // Ensure files were uploaded
     if (!req.files || req.files.length === 0) {
         return res.status(400).json({ message: 'No images uploaded' });
@@ -47,30 +49,24 @@ const uploadGymImages = async (req, res) => {
             message: 'Images uploaded successfully',
             images: gym.images
         });
-    } catch (error) {
-        console.error('Error uploading gym images:', error);
-        res.status(500).json({ message: 'Server error during image upload' });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get all partnered gyms with their images
 // @route   GET /api/gyms/partnered
 // @access  Public
-const getPartneredGyms = async (req, res) => {
+const getPartneredGyms = catchAsync(async (req, res, next) => {
     try {
         // Find all gyms. In this system, all non-system gyms can be considered partnered.
         const gyms = await Gym.find({ id: { $ne: 'SYSTEM' } }).select('id name address phone email status images');
         res.status(200).json(gyms);
-    } catch (error) {
-        console.error('Error fetching partnered gyms:', error);
-        res.status(500).json({ message: 'Server error fetching partnered gyms' });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Update/reorder gym images
 // @route   PUT /api/gyms/images
 // @access  Private (Admin)
-const updateGymImages = async (req, res) => {
+const updateGymImages = catchAsync(async (req, res, next) => {
     const { images } = req.body; // Expecting an array of strings
     
     if (!Array.isArray(images)) {
@@ -98,16 +94,13 @@ const updateGymImages = async (req, res) => {
             message: 'Images updated successfully',
             images: updatedGym.images
         });
-    } catch (error) {
-        console.error('Error updating gym images:', error);
-        res.status(500).json({ message: 'Server error updating images' });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get gym settings
 // @route   GET /api/gyms/settings
 // @access  Private (Admin)
-const getGymSettings = async (req, res) => {
+const getGymSettings = catchAsync(async (req, res, next) => {
     const gymId = req.user.gymId ? req.user.gymId.toString() : null;
     if (!gymId || gymId === 'undefined' || gymId === 'null') return res.status(403).json({ message: 'User does not belong to a gym' });
 
@@ -121,16 +114,13 @@ const getGymSettings = async (req, res) => {
             settings = await prisma.gymSettings.create({ data: { gymId } });
         }
         res.status(200).json(settings);
-    } catch (error) {
-        console.error('Error fetching gym settings:', error);
-        res.status(500).json({ message: 'Server error fetching gym settings', error: error.message, stack: error.stack });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Update gym settings
 // @route   PUT /api/gyms/settings
 // @access  Private (Admin)
-const updateGymSettings = async (req, res) => {
+const updateGymSettings = catchAsync(async (req, res, next) => {
     const gymId = req.user.gymId ? req.user.gymId.toString() : null;
     if (!gymId || gymId === 'undefined' || gymId === 'null') return res.status(403).json({ message: 'User does not belong to a gym' });
 
@@ -156,16 +146,13 @@ const updateGymSettings = async (req, res) => {
         await logAudit(req, 'GYM_SETTINGS_UPDATED', 'GymSettings', settings.id, 'Updated gym configuration settings');
         
         res.status(200).json({ message: 'Settings updated successfully', settings });
-    } catch (error) {
-        console.error('Error updating gym settings:', error);
-        res.status(500).json({ message: 'Server error updating gym settings' });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get all gyms (for gym profile / operations hub)
 // @route   GET /api/gyms
 // @access  Private
-const getGyms = async (req, res) => {
+const getGyms = catchAsync(async (req, res, next) => {
     try {
         const query = {};
         if (req.user && req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
@@ -173,10 +160,7 @@ const getGyms = async (req, res) => {
         }
         const gyms = await Gym.find(query);
         res.status(200).json(gyms);
-    } catch (error) {
-        console.error('Error fetching gyms:', error);
-        res.status(500).json({ message: 'Server error fetching gyms' });
-    }
+    } catch (error) { next(error); }
 };
 
 module.exports = {

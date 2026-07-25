@@ -8,9 +8,10 @@ const {
     deleteAssessment
 } = require('../controllers/bodyAssessmentController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+const tenantFilter = require('../middleware/tenantFilter');
 
 router.route('/')
-    .get(protect, authorize('admin', 'receptionist', 'trainer', 'member'), getAssessments)
+    .get(protect, authorize('admin', 'receptionist', 'trainer', 'member'), tenantFilter, getAssessments)
     .post(protect, authorize('admin', 'trainer'), createAssessment);
 
 router.route('/:id')

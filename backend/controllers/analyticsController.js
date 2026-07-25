@@ -1,3 +1,5 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const Member = require('../models/Member');
 const Payment = require('../models/Payment');
 const Lead = require('../models/Lead');
@@ -5,19 +7,11 @@ const Expense = require('../models/Expense');
 
 // @desc    Get churn & retention analytics
 // @route   GET /api/analytics
-const getAnalytics = async (req, res) => {
+const getAnalytics = catchAsync(async (req, res, next) => {
     try {
         const now = new Date();
 
-        const queryFilter = {};
-        if (req.query.gymId) {
-            queryFilter.gymId = req.query.gymId;
-        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
-            queryFilter.gymId = req.user.gymId;
-        }
-        if (req.user.branchId) {
-            queryFilter.branchId = req.user.branchId;
-        }
+        const queryFilter = { ...req.tenantFilter };
 
         // --- Inactive Members (no attendance in 7+ days) ---
         const sevenDaysAgo = new Date(now);
@@ -233,10 +227,7 @@ const getAnalytics = async (req, res) => {
                 conversionRate
             }
         });
-    } catch (err) {
-        console.error('Analytics error:', err);
-        res.status(500).json({ message: 'Error fetching analytics', error: err.message });
-    }
+    } catch (err) { next(err); }
 };
 
 module.exports = { getAnalytics };

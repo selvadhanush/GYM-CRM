@@ -22,10 +22,10 @@ const getMetroHostIp = () => {
 const hostIp = getMetroHostIp() || 'localhost';
 
 const DEV_API_URL = process.env.EXPO_PUBLIC_API_URL || Platform.select({
-  android: `http://${hostIp}:5000/api`,
-  ios: `http://${hostIp}:5000/api`,
-  web: 'http://localhost:5000/api',
-  default: `http://${hostIp}:5000/api`,
+  android: `http://${hostIp}:5000/api/v1`,
+  ios: `http://${hostIp}:5000/api/v1`,
+  web: 'http://localhost:5000/api/v1',
+  default: `http://${hostIp}:5000/api/v1`,
 });
 
 console.log('[API_CLIENT] Configured Base URL:', DEV_API_URL);

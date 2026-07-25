@@ -1,3 +1,5 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const Member = require('../models/Member');
 const Plan = require('../models/Plan');
 const User = require('../models/User');
@@ -6,13 +8,13 @@ const { logAudit } = require('../utils/auditLogger');
 
 // Helper to dynamically build member query based on role restrictions
 const buildMemberQuery = async (req, memberId) => {
-    const query = {};
+    const query = { ...req.tenantFilter };
     if (memberId) {
         query._id = memberId;
     }
 
     if (req.user.role === 'superadmin') {
-        return query;
+        return memberId ? { _id: memberId } : {};
     }
 
     if (req.user.role === 'fitpass_admin') {
@@ -24,13 +26,6 @@ const buildMemberQuery = async (req, memberId) => {
         } else {
             query.gymId = { $ne: h4GymId };
         }
-    } else {
-        if (req.user.gymId) {
-            query.gymId = req.user.gymId;
-        }
-        if (req.user.branchId) {
-            query.branchId = req.user.branchId;
-        }
     }
     return query;
 };
@@ -38,7 +33,7 @@ const buildMemberQuery = async (req, memberId) => {
 // @desc    Create a new member
 // @route   POST /api/members
 // @access  Private/Admin
-const createMember = async (req, res) => {
+const createMember = catchAsync(async (req, res, next) => {
     try {
         const { name, phone, email, planId, joinDate, branchId, gymId } = req.body;
 
@@ -108,20 +103,13 @@ const createMember = async (req, res) => {
         } else {
             res.status(400).json({ success: false, message: 'Invalid member data' });
         }
-    } catch (error) {
-        console.error("CREATE MEMBER ERROR:", error);
-        res.status(500).json({
-            success: false,
-            message: error.message,
-            stack: error.stack
-        });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get all members with pagination and filters
 // @route   GET /api/members
 // @access  Private/Admin
-const getMembers = async (req, res) => {
+const getMembers = catchAsync(async (req, res, next) => {
     try {
         const { status, page = 1, limit = 10, search = '' } = req.query;
 
@@ -168,16 +156,13 @@ const getMembers = async (req, res) => {
             pages: Math.ceil(total / limit),
             total
         });
-    } catch (error) {
-        console.error('Get Members Error:', error);
-        res.status(500).json({ message: 'Error fetching members', error: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get members expiring soon (within 7 days)
 // @route   GET /api/members/expiring-soon
 // @access  Private/Admin
-const getExpiringSoonMembers = async (req, res) => {
+const getExpiringSoonMembers = catchAsync(async (req, res, next) => {
     try {
         const today = new Date();
         const nextWeek = new Date();
@@ -190,19 +175,16 @@ const getExpiringSoonMembers = async (req, res) => {
         const members = await Member.find(query).populate('planId', 'name price').lean();
 
         res.json(members);
-    } catch (error) {
-        console.error("GET EXPIRING SOON MEMBERS ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get single member
 // @route   GET /api/members/:id
 // @access  Private/Admin
-const getPlanById = async (req, res) => {
+const getPlanById = catchAsync(async (req, res, next) => {
     // Legacy placeholder
 };
-const getMemberById = async (req, res) => {
+const getMemberById = catchAsync(async (req, res, next) => {
     try {
         const query = await buildMemberQuery(req, req.params.id);
         const member = await Member.findOne(query)
@@ -214,16 +196,13 @@ const getMemberById = async (req, res) => {
         } else {
             res.status(404).json({ success: false, message: 'Member not found' });
         }
-    } catch (error) {
-        console.error("GET MEMBER BY ID ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Update member
 // @route   PUT /api/members/:id
 // @access  Private/Admin
-const updateMember = async (req, res) => {
+const updateMember = catchAsync(async (req, res, next) => {
     try {
         const { name, phone, email, planId, status, joinDate, branchId, gymId, password } = req.body;
 
@@ -316,16 +295,13 @@ const updateMember = async (req, res) => {
         } else {
             res.status(404).json({ success: false, message: 'Member not found' });
         }
-    } catch (error) {
-        console.error("UPDATE MEMBER ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Delete member
 // @route   DELETE /api/members/:id
 // @access  Private/Admin
-const deleteMember = async (req, res) => {
+const deleteMember = catchAsync(async (req, res, next) => {
     try {
         const query = await buildMemberQuery(req, req.params.id);
         const member = await Member.findOne(query);
@@ -341,16 +317,13 @@ const deleteMember = async (req, res) => {
         } else {
             res.status(404).json({ success: false, message: 'Member not found' });
         }
-    } catch (error) {
-        console.error("DELETE MEMBER ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Export members as CSV
 // @route   GET /api/members/export/csv
 // @access  Private/Admin
-const exportMembersCSV = async (req, res) => {
+const exportMembersCSV = catchAsync(async (req, res, next) => {
     try {
         const query = await buildMemberQuery(req);
         const members = await Member.find(query).populate('planId', 'name').lean();
@@ -369,16 +342,13 @@ const exportMembersCSV = async (req, res) => {
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', 'attachment; filename=members.csv');
         res.status(200).send(csv);
-    } catch (error) {
-        console.error("EXPORT MEMBERS CSV ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get complete audit trail for a member (financial status, plans, division switches)
 // @route   GET /api/members/:id/audit
 // @access  Private (Super Admin only)
-const getMemberAuditTrail = async (req, res) => {
+const getMemberAuditTrail = catchAsync(async (req, res, next) => {
     try {
         const member = await Member.findById(req.params.id).populate('planId', 'name price');
         if (!member) {
@@ -445,16 +415,13 @@ const getMemberAuditTrail = async (req, res) => {
             divisionSwitches,
             auditLogs
         });
-    } catch (error) {
-        console.error("GET MEMBER AUDIT TRAIL ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Renew a member's plan
 // @route   POST /api/members/:id/renew
 // @access  Private/Admin
-const renewMember = async (req, res) => {
+const renewMember = catchAsync(async (req, res, next) => {
     try {
         const { planId, paidAmount = 0, method = 'Cash' } = req.body;
         const member = await Member.findById(req.params.id);
@@ -504,16 +471,13 @@ const renewMember = async (req, res) => {
         await logAudit(req, 'MEMBER_RENEWED', 'Member', member._id, `Renewed plan '${plan.name}' for ${member.name}`, member.name);
 
         res.json({ success: true, member });
-    } catch (error) {
-        console.error("RENEW MEMBER ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Transfer member to a different branch
 // @route   PUT /api/members/:id/transfer
 // @access  Private/Admin
-const transferMember = async (req, res) => {
+const transferMember = catchAsync(async (req, res, next) => {
     try {
         const { targetBranchId } = req.body;
         const member = await Member.findById(req.params.id);
@@ -530,10 +494,7 @@ const transferMember = async (req, res) => {
         await logAudit(req, 'MEMBER_TRANSFERRED', 'Member', member._id, `Transferred ${member.name} to branch ID ${targetBranchId}`, member.name);
 
         res.json({ success: true, member });
-    } catch (error) {
-        console.error("TRANSFER MEMBER ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 module.exports = {

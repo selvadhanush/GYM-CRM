@@ -1,3 +1,5 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
 const User = require('../models/User');
@@ -39,7 +41,7 @@ const fitPrimePlanSchema = z.object({
 // @desc    Create a partner gym and admin user
 // @route   POST /api/superadmin/gyms
 // @access  Private (Super Admin)
-const createPartnerGym = async (req, res) => {
+const createPartnerGym = catchAsync(async (req, res, next) => {
     const parsed = createGymSchema.safeParse(req.body);
     if (!parsed.success) {
         res.status(400);
@@ -98,7 +100,7 @@ const createPartnerGym = async (req, res) => {
 // @desc    Update a partner gym (incl. default session duration setting)
 // @route   PUT /api/superadmin/gyms/:id
 // @access  Private (Super Admin)
-const updatePartnerGym = async (req, res) => {
+const updatePartnerGym = catchAsync(async (req, res, next) => {
     const parsed = updateGymSchema.safeParse(req.body);
     if (!parsed.success) {
         res.status(400);
@@ -146,7 +148,7 @@ const updatePartnerGym = async (req, res) => {
 // @desc    Get all partner gyms
 // @route   GET /api/superadmin/gyms
 // @access  Private (Super Admin)
-const getPartnerGyms = async (req, res) => {
+const getPartnerGyms = catchAsync(async (req, res, next) => {
     const allGyms = await Gym.find({}).lean();
     // Exclude H4 gyms from partner list
     const gyms = allGyms.filter(g => !g.name || !g.name.toLowerCase().includes('h4'));
@@ -193,7 +195,7 @@ const getPartnerGyms = async (req, res) => {
 // @desc    Get or create H4 gym
 // @route   GET /api/superadmin/h4-gym
 // @access  Private (Super Admin)
-const getOrCreateH4Gym = async (req, res) => {
+const getOrCreateH4Gym = catchAsync(async (req, res, next) => {
     let gym = await Gym.findOne({ name: 'H4' });
     if (!gym) {
         gym = await Gym.create({
@@ -210,7 +212,7 @@ const getOrCreateH4Gym = async (req, res) => {
 // @desc    Delete a partner gym
 // @route   DELETE /api/superadmin/gyms/:id
 // @access  Private (Super Admin)
-const deletePartnerGym = async (req, res) => {
+const deletePartnerGym = catchAsync(async (req, res, next) => {
     const gym = await Gym.findById(req.params.id);
     if (!gym) {
         res.status(404);
@@ -225,7 +227,7 @@ const deletePartnerGym = async (req, res) => {
 // @desc    Create a FitPrime Plan (session-based global plan)
 // @route   POST /api/superadmin/plans
 // @access  Private (Super Admin)
-const createFitPrimePlan = async (req, res) => {
+const createFitPrimePlan = catchAsync(async (req, res, next) => {
     const parsed = fitPrimePlanSchema.safeParse(req.body);
     if (!parsed.success) {
         res.status(400);
@@ -252,7 +254,7 @@ const createFitPrimePlan = async (req, res) => {
 // @desc    Update a FitPrime Plan
 // @route   PUT /api/superadmin/plans/:id
 // @access  Private (Super Admin)
-const updateFitPrimePlan = async (req, res) => {
+const updateFitPrimePlan = catchAsync(async (req, res, next) => {
     const plan = await Plan.findOne({ _id: req.params.id, gymId: 'SYSTEM' });
     if (!plan) {
         res.status(404);
@@ -278,7 +280,7 @@ const updateFitPrimePlan = async (req, res) => {
 // @desc    Delete a FitPrime Plan
 // @route   DELETE /api/superadmin/plans/:id
 // @access  Private (Super Admin)
-const deleteFitPrimePlan = async (req, res) => {
+const deleteFitPrimePlan = catchAsync(async (req, res, next) => {
     const plan = await Plan.findOne({ _id: req.params.id, gymId: 'SYSTEM' });
     if (!plan) {
         res.status(404);
@@ -292,7 +294,7 @@ const deleteFitPrimePlan = async (req, res) => {
 // @desc    Get all FitPrime Plans
 // @route   GET /api/superadmin/plans
 // @access  Private (Super Admin)
-const getFitPrimePlans = async (req, res) => {
+const getFitPrimePlans = catchAsync(async (req, res, next) => {
     const plans = await Plan.find({ gymId: 'SYSTEM' });
     res.json(plans);
 };
@@ -314,7 +316,7 @@ const updateAdminSchema = z.object({
 // @desc    Get all dedicated admins (fitpass_admin, h4_admin)
 // @route   GET /api/superadmin/admins
 // @access  Private (Super Admin)
-const getDedicatedAdmins = async (req, res) => {
+const getDedicatedAdmins = catchAsync(async (req, res, next) => {
     const admins = await User.find({ role: { $in: ['fitpass_admin', 'h4_admin'] } }).select('-password').lean();
     res.json(admins);
 };
@@ -322,7 +324,7 @@ const getDedicatedAdmins = async (req, res) => {
 // @desc    Create a dedicated admin account
 // @route   POST /api/superadmin/admins
 // @access  Private (Super Admin)
-const createDedicatedAdmin = async (req, res) => {
+const createDedicatedAdmin = catchAsync(async (req, res, next) => {
     const parsed = createAdminSchema.safeParse(req.body);
     if (!parsed.success) {
         res.status(400);
@@ -370,7 +372,7 @@ const createDedicatedAdmin = async (req, res) => {
 // @desc    Update a dedicated admin account
 // @route   PUT /api/superadmin/admins/:id
 // @access  Private (Super Admin)
-const updateDedicatedAdmin = async (req, res) => {
+const updateDedicatedAdmin = catchAsync(async (req, res, next) => {
     const parsed = updateAdminSchema.safeParse(req.body);
     if (!parsed.success) {
         res.status(400);
@@ -406,7 +408,7 @@ const updateDedicatedAdmin = async (req, res) => {
 // @desc    Delete a dedicated admin account
 // @route   DELETE /api/superadmin/admins/:id
 // @access  Private (Super Admin)
-const deleteDedicatedAdmin = async (req, res) => {
+const deleteDedicatedAdmin = catchAsync(async (req, res, next) => {
     const admin = await User.findOne({ _id: req.params.id, role: { $in: ['fitpass_admin', 'h4_admin'] } });
     if (!admin) {
         res.status(404);
@@ -422,7 +424,7 @@ const deleteDedicatedAdmin = async (req, res) => {
 // @desc    Get paginated FitPass audit log with rich filters
 // @route   GET /api/superadmin/fitpass/audit-log
 // @access  Private (superadmin, fitpass_admin)
-const getFitPassAuditLog = async (req, res) => {
+const getFitPassAuditLog = catchAsync(async (req, res, next) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const pageSize = Math.min(100, parseInt(req.query.pageSize) || 50);
     const skip = (page - 1) * pageSize;
@@ -467,7 +469,7 @@ const getFitPassAuditLog = async (req, res) => {
 // @desc    Get all FitPass member roster with stats
 // @route   GET /api/superadmin/fitpass/members
 // @access  Private (superadmin, fitpass_admin)
-const getFitPassMemberRoster = async (req, res) => {
+const getFitPassMemberRoster = catchAsync(async (req, res, next) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const pageSize = Math.min(100, parseInt(req.query.pageSize) || 50);
     const skip = (page - 1) * pageSize;
@@ -541,7 +543,7 @@ const getFitPassMemberRoster = async (req, res) => {
 // @desc    Get FitPass revenue & plan breakdown analytics
 // @route   GET /api/superadmin/fitpass/overview
 // @access  Private (superadmin, fitpass_admin)
-const getFitPassOverview = async (req, res) => {
+const getFitPassOverview = catchAsync(async (req, res, next) => {
     const now = new Date();
 
     // All SYSTEM plans
@@ -688,7 +690,7 @@ const getFitPassOverview = async (req, res) => {
 // @desc    Adjust FitPass subscriber session credits
 // @route   POST /api/superadmin/fitpass/users/:memberId/adjust-sessions
 // @access  Private (superadmin, fitpass_admin)
-const adjustUserSessions = async (req, res) => {
+const adjustUserSessions = catchAsync(async (req, res, next) => {
     const { memberId } = req.params;
     const { delta, reason } = req.body;
 
@@ -726,7 +728,7 @@ const adjustUserSessions = async (req, res) => {
 // @desc    Update FitPass subscriber status or extend membership expiry
 // @route   PUT /api/superadmin/fitpass/users/:memberId/status
 // @access  Private (superadmin, fitpass_admin)
-const updateFitpassUserStatus = async (req, res) => {
+const updateFitpassUserStatus = catchAsync(async (req, res, next) => {
     const { memberId } = req.params;
     const { status, extendDays, expiryDate } = req.body;
 

@@ -1,7 +1,7 @@
 const express = require('express');
 const helmet = require('helmet');
 // Nodemon schema reload trigger comment.
-
+const env = require('./config/env');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const morgan = require('morgan');
@@ -27,6 +27,10 @@ connectDB();
 startCronJobs();
 
 const app = express();
+const requestId = require('./middleware/requestId');
+
+// --- Request ID Context (Phase 6.2) ---
+app.use(requestId);
 
 // --- Security headers (B4) ---
 app.use(helmet());
@@ -85,46 +89,57 @@ app.get('/api/health', (req, res) => {
     res.status(200).json({ success: true, status: 'Server running' });
 });
 
+// API Versioning redirection for backward compatibility
+app.use('/api/:path(*)', (req, res, next) => {
+    if (req.params.path.startsWith('v1/') || req.params.path === 'health') {
+        return next();
+    }
+    // Redirect /api/X to /api/v1/X
+    res.redirect(301, `/api/v1/${req.params.path}${req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : ''}`);
+});
+
 // Routes
-app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/plans', require('./routes/planRoutes'));
-app.use('/api/members', require('./routes/memberRoutes'));
-app.use('/api/members/:id', require('./routes/freezeRoutes'));
-app.use('/api/payments', require('./routes/paymentRoutes'));
-app.use('/api/attendance', require('./routes/attendanceRoutes'));
-app.use('/api/dashboard', require('./routes/dashboardRoutes'));
-app.use('/api/expenses', require('./routes/expenseRoutes'));
-app.use('/api/member-portal', require('./routes/memberPortalRoutes'));
-app.use('/api/reports', require('./routes/reportRoutes'));
-app.use('/api/notifications', require('./routes/notificationRoutes'));
-app.use('/api/classes', require('./routes/classRoutes'));
-app.use('/api/leads', require('./routes/leadRoutes'));
-app.use('/api/analytics', require('./routes/analyticsRoutes'));
-app.use('/api/audit', require('./routes/auditRoutes'));
-app.use('/api/branches', require('./routes/branchRoutes'));
-app.use('/api/staff', require('./routes/staffRoutes'));
-app.use('/api/superadmin', require('./routes/superAdminRoutes'));
-app.use('/api/gyms', require('./routes/gymRoutes'));
-app.use('/api/equipments', require('./routes/equipmentRoutes'));
+app.use('/api/v1/auth', require('./routes/authRoutes'));
+app.use('/api/v1/plans', require('./routes/planRoutes'));
+app.use('/api/v1/members', require('./routes/memberRoutes'));
+app.use('/api/v1/members/:id', require('./routes/freezeRoutes'));
+app.use('/api/v1/payments', require('./routes/paymentRoutes'));
+app.use('/api/v1/attendance', require('./routes/attendanceRoutes'));
+app.use('/api/v1/dashboard', require('./routes/dashboardRoutes'));
+app.use('/api/v1/expenses', require('./routes/expenseRoutes'));
+app.use('/api/v1/member-portal', require('./routes/memberPortalRoutes'));
+app.use('/api/v1/reports', require('./routes/reportRoutes'));
+app.use('/api/v1/notifications', require('./routes/notificationRoutes'));
+app.use('/api/v1/classes', require('./routes/classRoutes'));
+app.use('/api/v1/leads', require('./routes/leadRoutes'));
+app.use('/api/v1/analytics', require('./routes/analyticsRoutes'));
+app.use('/api/v1/audit', require('./routes/auditRoutes'));
+app.use('/api/v1/branches', require('./routes/branchRoutes'));
+app.use('/api/v1/staff', require('./routes/staffRoutes'));
+app.use('/api/v1/superadmin', require('./routes/superAdminRoutes'));
+app.use('/api/v1/gyms', require('./routes/gymRoutes'));
+app.use('/api/v1/equipments', require('./routes/equipmentRoutes'));
 
 // FitPrime session admin-adjust (member-facing session routes live under
 // member-portal above). Mounted standalone with its own protect/authorize.
-app.use('/api/sessions', require('./routes/sessionRoutes'));
+app.use('/api/v1/sessions', require('./routes/sessionRoutes'));
 
-app.use('/api/trainer-assignments', require('./routes/memberTrainerAssignmentRoutes'));
-app.use('/api/workout-templates', require('./routes/workoutTemplateRoutes'));
-app.use('/api/workout-plans', require('./routes/workoutPlanRoutes'));
-app.use('/api/diet-plans', require('./routes/dietPlanRoutes'));
-app.use('/api/pt-packages', require('./routes/ptPackageRoutes'));
-app.use('/api/pt-sessions', require('./routes/ptSessionRoutes'));
-app.use('/api/body-assessments', require('./routes/bodyAssessmentRoutes'));
-app.use('/api/trainer-attendance', require('./routes/trainerAttendanceRoutes'));
-app.use('/api/payroll', require('./routes/payrollRoutes'));
-app.use('/api/tickets', require('./routes/ticketRoutes'));
+app.use('/api/v1/trainer-assignments', require('./routes/memberTrainerAssignmentRoutes'));
+app.use('/api/v1/workout-templates', require('./routes/workoutTemplateRoutes'));
+app.use('/api/v1/workout-plans', require('./routes/workoutPlanRoutes'));
+app.use('/api/v1/diet-plans', require('./routes/dietPlanRoutes'));
+app.use('/api/v1/pt-packages', require('./routes/ptPackageRoutes'));
+app.use('/api/v1/pt-sessions', require('./routes/ptSessionRoutes'));
+app.use('/api/v1/body-assessments', require('./routes/bodyAssessmentRoutes'));
+app.use('/api/v1/trainer-attendance', require('./routes/trainerAttendanceRoutes'));
+app.use('/api/v1/payroll', require('./routes/payrollRoutes'));
+app.use('/api/v1/tickets', require('./routes/ticketRoutes'));
 
 
 // Test routes (Dev only)
-app.use('/api/test', require('./routes/testRoutes'));
+if (process.env.NODE_ENV !== 'production') {
+    app.use('/api/test', require('./routes/testRoutes'));
+}
 
 // Error handling
 app.use(notFound);

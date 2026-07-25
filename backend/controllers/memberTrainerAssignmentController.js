@@ -1,3 +1,5 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const MemberTrainerAssignment = require('../models/MemberTrainerAssignment');
 const User = require('../models/User');
 const Member = require('../models/Member');
@@ -5,7 +7,7 @@ const Member = require('../models/Member');
 // @desc    Assign a trainer to a member
 // @route   POST /api/trainer-assignments
 // @access  Private/Admin
-const assignTrainer = async (req, res) => {
+const assignTrainer = catchAsync(async (req, res, next) => {
     try {
         const { memberId, trainerId } = req.body;
 
@@ -44,16 +46,13 @@ const assignTrainer = async (req, res) => {
         });
 
         res.status(201).json(assignment);
-    } catch (error) {
-        console.error("ASSIGN TRAINER ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get all trainer assignments
 // @route   GET /api/trainer-assignments
 // @access  Private/Admin/Trainer
-const getAssignments = async (req, res) => {
+const getAssignments = catchAsync(async (req, res, next) => {
     try {
         const query = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
 
@@ -96,16 +95,13 @@ const getAssignments = async (req, res) => {
             data: populated,
             meta: { page, limit, total }
         });
-    } catch (error) {
-        console.error("GET ASSIGNMENTS ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Remove a trainer assignment
 // @route   DELETE /api/trainer-assignments/:id
 // @access  Private/Admin
-const removeAssignment = async (req, res) => {
+const removeAssignment = catchAsync(async (req, res, next) => {
     try {
         const assignment = await MemberTrainerAssignment.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
 
@@ -115,10 +111,7 @@ const removeAssignment = async (req, res) => {
         } else {
             res.status(404).json({ success: false, message: 'Assignment not found' });
         }
-    } catch (error) {
-        console.error("REMOVE ASSIGNMENT ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 module.exports = {

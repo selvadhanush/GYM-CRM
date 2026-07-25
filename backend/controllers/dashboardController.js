@@ -1,3 +1,5 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const Member = require('../models/Member');
 const Attendance = require('../models/Attendance');
 const Payment = require('../models/Payment');
@@ -7,7 +9,7 @@ const prisma = require('../config/prisma');
 // @desc    Get dashboard statistics
 // @route   GET /api/dashboard/stats
 // @access  Private/Admin
-const getDashboardStats = async (req, res) => {
+const getDashboardStats = catchAsync(async (req, res, next) => {
     try {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -126,15 +128,7 @@ const getDashboardStats = async (req, res) => {
         }
 
         // Super Admin / Gym Stats
-        const queryFilter = {};
-        if (req.query.gymId) {
-            queryFilter.gymId = req.query.gymId;
-        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
-            queryFilter.gymId = req.user.gymId;
-        }
-        if (req.user.branchId) {
-            queryFilter.branchId = req.user.branchId;
-        }
+        const queryFilter = { ...req.tenantFilter };
         
         const sixMonthsAgo = new Date();
         sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
@@ -144,15 +138,7 @@ const getDashboardStats = async (req, res) => {
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-        const prismaWhere = {};
-        if (req.query.gymId) {
-            prismaWhere.gymId = req.query.gymId;
-        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
-            prismaWhere.gymId = req.user.gymId;
-        }
-        if (req.user.branchId) {
-            prismaWhere.branchId = req.user.branchId;
-        }
+        const prismaWhere = { ...req.tenantFilter };
 
         const [
             totalMembers,
@@ -301,13 +287,10 @@ const getDashboardStats = async (req, res) => {
             monthlyProfit, revenueTrend, planBreakdown, methodBreakdown, inactiveMembersCount,
             recentCheckins
         });
-    } catch (error) {
-        console.error('Dashboard Stats Error:', error);
-        res.status(500).json({ message: 'Error fetching dashboard stats', error: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
-const getHistory = async (req, res) => {
+const getHistory = catchAsync(async (req, res, next) => {
     try {
         const { period, date } = req.query;
         let start = new Date();
@@ -405,10 +388,7 @@ const getHistory = async (req, res) => {
         }
 
         res.json({ success: true, data: history });
-    } catch (error) {
-        console.error('getHistory Error:', error);
-        res.status(500).json({ success: false, message: 'Server error' });
-    }
+    } catch (error) { next(error); }
 };
 
 module.exports = {

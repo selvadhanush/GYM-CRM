@@ -1,9 +1,11 @@
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const WorkoutTemplate = require('../models/WorkoutTemplate');
 
 // @desc    Create a workout template
 // @route   POST /api/workout-templates
 // @access  Private/Admin/Trainer
-const createTemplate = async (req, res) => {
+const createTemplate = catchAsync(async (req, res, next) => {
     try {
         const { name, description, exercises } = req.body;
 
@@ -19,16 +21,13 @@ const createTemplate = async (req, res) => {
         });
 
         res.status(201).json(template);
-    } catch (error) {
-        console.error("CREATE WORKOUT TEMPLATE ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get all workout templates
 // @route   GET /api/workout-templates
 // @access  Private/Admin/Trainer/Member
-const getTemplates = async (req, res) => {
+const getTemplates = catchAsync(async (req, res, next) => {
     try {
         const templates = await WorkoutTemplate.find({ gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) }).lean();
         
@@ -43,16 +42,13 @@ const getTemplates = async (req, res) => {
         });
 
         res.json(formatted);
-    } catch (error) {
-        console.error("GET WORKOUT TEMPLATES ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Get single workout template
 // @route   GET /api/workout-templates/:id
 // @access  Private/Admin/Trainer/Member
-const getTemplateById = async (req, res) => {
+const getTemplateById = catchAsync(async (req, res, next) => {
     try {
         const template = await WorkoutTemplate.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
 
@@ -66,16 +62,13 @@ const getTemplateById = async (req, res) => {
         } else {
             res.status(404).json({ success: false, message: 'Template not found' });
         }
-    } catch (error) {
-        console.error("GET WORKOUT TEMPLATE BY ID ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Update workout template
 // @route   PUT /api/workout-templates/:id
 // @access  Private/Admin/Trainer
-const updateTemplate = async (req, res) => {
+const updateTemplate = catchAsync(async (req, res, next) => {
     try {
         const { name, description, exercises } = req.body;
 
@@ -98,16 +91,13 @@ const updateTemplate = async (req, res) => {
         } else {
             res.status(404).json({ success: false, message: 'Template not found' });
         }
-    } catch (error) {
-        console.error("UPDATE WORKOUT TEMPLATE ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 // @desc    Delete workout template
 // @route   DELETE /api/workout-templates/:id
 // @access  Private/Admin/Trainer
-const deleteTemplate = async (req, res) => {
+const deleteTemplate = catchAsync(async (req, res, next) => {
     try {
         const template = await WorkoutTemplate.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
 
@@ -117,10 +107,7 @@ const deleteTemplate = async (req, res) => {
         } else {
             res.status(404).json({ success: false, message: 'Template not found' });
         }
-    } catch (error) {
-        console.error("DELETE WORKOUT TEMPLATE ERROR:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    } catch (error) { next(error); }
 };
 
 module.exports = {

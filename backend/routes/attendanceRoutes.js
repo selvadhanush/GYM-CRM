@@ -6,11 +6,12 @@ const {
     getTodayAttendance,
 } = require('../controllers/attendanceController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+const tenantFilter = require('../middleware/tenantFilter');
 
 router.route('/')
     .post(protect, authorize('admin', 'trainer', 'h4_admin'), markAttendance);
 
-router.get('/today', protect, authorize('admin', 'trainer', 'h4_admin'), getTodayAttendance);
+router.get('/today', protect, authorize('admin', 'trainer', 'h4_admin'), tenantFilter, getTodayAttendance);
 router.get('/member/:memberId', protect, authorize('admin', 'trainer', 'h4_admin'), getMemberAttendance);
 
 module.exports = router;
