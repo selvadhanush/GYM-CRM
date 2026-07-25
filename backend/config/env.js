@@ -22,4 +22,11 @@ if (!parsed.success) {
     process.exit(1);
 }
 
-module.exports = parsed.data;
+const data = parsed.data;
+
+module.exports = {
+    ...data,
+    isProduction: data.NODE_ENV === 'production',
+    isDevelopment: data.NODE_ENV === 'development',
+    isTest: data.NODE_ENV === 'test'
+};

@@ -8,6 +8,7 @@ const Gym = require('../models/Gym');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const { expireIfDue } = require('../utils/sessionHelpers');
+const env = require('../config/env');
 
 // @desc    Get logged in member profile/plan
 // @route   GET /api/member-portal/plan
@@ -325,7 +326,7 @@ const purchasePlanOrder = catchAsync(async (req, res, next) => {
         const isMockEnv = !process.env.RAZORPAY_KEY_ID ||
                           !process.env.RAZORPAY_KEY_SECRET ||
                           process.env.RAZORPAY_KEY_ID === 'your_razorpay_key_id';
-        if (isMockEnv && process.env.NODE_ENV === 'production') {
+        if (isMockEnv && env.isProduction) {
             console.error('Razorpay keys missing in production; refusing to create a mock order.');
             return res.status(503).json({ message: 'Payments are not configured.' });
         }
@@ -371,7 +372,7 @@ const purchasePlanVerify = catchAsync(async (req, res, next) => {
     const isMock = (razorpay_order_id && razorpay_order_id.startsWith('order_mock_')) ||
                    !process.env.RAZORPAY_KEY_SECRET ||
                    process.env.RAZORPAY_KEY_SECRET === 'your_razorpay_key_secret';
-    if (isMock && process.env.NODE_ENV === 'production') {
+    if (isMock && env.isProduction) {
         return res.status(503).json({ success: false, message: 'Payments are not configured.' });
     }
 

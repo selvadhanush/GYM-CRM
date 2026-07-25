@@ -1,8 +1,9 @@
 const pino = require('pino');
+const env = require('../config/env');
 
 const logger = pino({
     level: process.env.LOG_LEVEL || 'info',
-    transport: process.env.NODE_ENV !== 'production'
+    transport: !env.isProduction
         ? { target: 'pino-pretty', options: { colorize: true } }
         : undefined,
 });

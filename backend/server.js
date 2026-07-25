@@ -41,7 +41,7 @@ app.use('/api', globalLimiter);
 // --- CORS (B4: tightened for production) ---
 // In production only explicit origins are trusted. In dev we also allow
 // localhost and local network IPs (for Expo / physical device testing).
-const isProd = process.env.NODE_ENV === 'production';
+const isProd = env.isProduction;
 const prodOrigins = (process.env.CORS_ORIGINS || '')
     .split(',')
     .map((s) => s.trim())
@@ -75,7 +75,7 @@ app.use(cors({
 }));
 
 app.use(express.json({ limit: '1mb' })); // bound body size -> mild DoS hardening
-if (process.env.NODE_ENV === 'development') {
+if (env.isDevelopment) {
     app.use(morgan('dev'));
 }
 
@@ -137,7 +137,7 @@ app.use('/api/v1/tickets', require('./routes/ticketRoutes'));
 
 
 // Test routes (Dev only)
-if (process.env.NODE_ENV !== 'production') {
+if (!env.isProduction) {
     app.use('/api/test', require('./routes/testRoutes'));
 }
 
@@ -145,9 +145,9 @@ if (process.env.NODE_ENV !== 'production') {
 app.use(notFound);
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
+const PORT = env.PORT || 5000;
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT} (${process.env.NODE_ENV || 'development'})`);
+    console.log(`Server running on port ${PORT} (${env.NODE_ENV || 'development'})`);
 });
 // Nodemon reload triggered for CORS connection fixes

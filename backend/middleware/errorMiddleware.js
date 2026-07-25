@@ -38,11 +38,13 @@ const errorHandler = (err, req, res, next) => {
         code = 'PRISMA_NOT_FOUND';
     }
 
+    const env = require('../config/env');
+
     res.status(statusCode).json({
         success: false,
         code,
         message,
-        stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+        stack: env.isProduction ? null : err.stack,
     });
 };
 
