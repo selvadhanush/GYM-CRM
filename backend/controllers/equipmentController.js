@@ -12,7 +12,7 @@ const getEquipments = catchAsync(async (req, res, next) => {
         const equipments = await Equipment.find(queryFilter);
         res.status(200).json(equipments);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Create new equipment
 // @route   POST /api/equipments
@@ -34,7 +34,7 @@ const createEquipment = catchAsync(async (req, res, next) => {
 
         res.status(201).json(equipment);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Update equipment
 // @route   PUT /api/equipments/:id
@@ -47,7 +47,7 @@ const updateEquipment = catchAsync(async (req, res, next) => {
         }
         res.status(200).json(equipment);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Delete equipment
 // @route   DELETE /api/equipments/:id
@@ -60,7 +60,7 @@ const deleteEquipment = catchAsync(async (req, res, next) => {
         }
         res.status(200).json({ message: 'Equipment deleted successfully' });
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get equipment maintenance logs
 // @route   GET /api/equipments/maintenance/logs
@@ -71,7 +71,7 @@ const getMaintenanceLogs = catchAsync(async (req, res, next) => {
         const logs = await MaintenanceLog.find(queryFilter);
         res.status(200).json(logs);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Create maintenance log
 // @route   POST /api/equipments/maintenance/logs
@@ -95,7 +95,7 @@ const createMaintenanceLog = catchAsync(async (req, res, next) => {
 
         res.status(201).json(log);
     } catch (error) { next(error); }
-};
+});
 
 module.exports = {
     getEquipments,

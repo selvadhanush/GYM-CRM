@@ -95,7 +95,7 @@ const createPartnerGym = catchAsync(async (req, res, next) => {
         res.status(400);
         throw new Error('Invalid data');
     }
-};
+});
 
 // @desc    Update a partner gym (incl. default session duration setting)
 // @route   PUT /api/superadmin/gyms/:id
@@ -143,7 +143,7 @@ const updatePartnerGym = catchAsync(async (req, res, next) => {
         status: gym.status,
         defaultSessionDurationMinutes: gym.defaultSessionDurationMinutes,
     });
-};
+});
 
 // @desc    Get all partner gyms
 // @route   GET /api/superadmin/gyms
@@ -190,7 +190,7 @@ const getPartnerGyms = catchAsync(async (req, res, next) => {
         console.error('Failed to include fitpass branches in partner list:', err);
         res.json(gymsWithAdmins);
     }
-};
+});
 
 // @desc    Get or create H4 gym
 // @route   GET /api/superadmin/h4-gym
@@ -207,7 +207,7 @@ const getOrCreateH4Gym = catchAsync(async (req, res, next) => {
         await logAudit(req, 'GYM_CREATED', 'Gym', gym._id, `System automatically created H4 Gym`, 'H4');
     }
     res.json(gym);
-};
+});
 
 // @desc    Delete a partner gym
 // @route   DELETE /api/superadmin/gyms/:id
@@ -222,7 +222,7 @@ const deletePartnerGym = catchAsync(async (req, res, next) => {
     await gym.deleteOne();
     await logAudit(req, 'GYM_DELETED', 'Gym', gym._id, `Super admin deleted partner gym: ${gym.name}`, gym.name);
     res.json({ message: 'Gym and associated admins removed' });
-};
+});
 
 // @desc    Create a FitPrime Plan (session-based global plan)
 // @route   POST /api/superadmin/plans
@@ -249,7 +249,7 @@ const createFitPrimePlan = catchAsync(async (req, res, next) => {
     await logAudit(req, 'PLAN_CREATED', 'Plan', plan._id, `Super admin created FitPrime plan: ${name} (${sessions} sessions)`, name);
 
     res.status(201).json(plan);
-};
+});
 
 // @desc    Update a FitPrime Plan
 // @route   PUT /api/superadmin/plans/:id
@@ -275,7 +275,7 @@ const updateFitPrimePlan = catchAsync(async (req, res, next) => {
     await logAudit(req, 'PLAN_UPDATED', 'Plan', plan._id, `Updated FitPrime plan: ${plan.name} (${plan.sessions} sessions)`, plan.name);
 
     res.json(plan);
-};
+});
 
 // @desc    Delete a FitPrime Plan
 // @route   DELETE /api/superadmin/plans/:id
@@ -289,7 +289,7 @@ const deleteFitPrimePlan = catchAsync(async (req, res, next) => {
     await plan.deleteOne();
     await logAudit(req, 'PLAN_DELETED', 'Plan', plan._id, `Deleted FitPrime plan: ${plan.name}`, plan.name);
     res.json({ message: 'Plan removed' });
-};
+});
 
 // @desc    Get all FitPrime Plans
 // @route   GET /api/superadmin/plans
@@ -297,7 +297,7 @@ const deleteFitPrimePlan = catchAsync(async (req, res, next) => {
 const getFitPrimePlans = catchAsync(async (req, res, next) => {
     const plans = await Plan.find({ gymId: 'SYSTEM' });
     res.json(plans);
-};
+});
 
 // --- dedicated admin management ---
 const createAdminSchema = z.object({
@@ -319,7 +319,7 @@ const updateAdminSchema = z.object({
 const getDedicatedAdmins = catchAsync(async (req, res, next) => {
     const admins = await User.find({ role: { $in: ['fitpass_admin', 'h4_admin'] } }).select('-password').lean();
     res.json(admins);
-};
+});
 
 // @desc    Create a dedicated admin account
 // @route   POST /api/superadmin/admins
@@ -367,7 +367,7 @@ const createDedicatedAdmin = catchAsync(async (req, res, next) => {
         res.status(400);
         throw new Error('Invalid data');
     }
-};
+});
 
 // @desc    Update a dedicated admin account
 // @route   PUT /api/superadmin/admins/:id
@@ -403,7 +403,7 @@ const updateDedicatedAdmin = catchAsync(async (req, res, next) => {
         role: admin.role,
         status: admin.status,
     });
-};
+});
 
 // @desc    Delete a dedicated admin account
 // @route   DELETE /api/superadmin/admins/:id
@@ -417,7 +417,7 @@ const deleteDedicatedAdmin = catchAsync(async (req, res, next) => {
     await admin.deleteOne();
     await logAudit(req, 'ADMIN_DELETED', 'User', admin._id, `Super admin deleted dedicated admin: ${admin.name}`, admin.name);
     res.json({ message: 'Dedicated admin removed' });
-};
+});
 
 // ─── SuperAdmin FitPass Analytics Endpoints ───────────────────────────────
 
@@ -464,7 +464,7 @@ const getFitPassAuditLog = catchAsync(async (req, res, next) => {
         data: logs,
         meta: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) },
     });
-};
+});
 
 // @desc    Get all FitPass member roster with stats
 // @route   GET /api/superadmin/fitpass/members
@@ -538,7 +538,7 @@ const getFitPassMemberRoster = catchAsync(async (req, res, next) => {
         plans: fitPassPlans,
         meta: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) },
     });
-};
+});
 
 // @desc    Get FitPass revenue & plan breakdown analytics
 // @route   GET /api/superadmin/fitpass/overview
@@ -685,7 +685,7 @@ const getFitPassOverview = catchAsync(async (req, res, next) => {
         planPopularity,
         failureBreakdown,
     });
-};
+});
 
 // @desc    Adjust FitPass subscriber session credits
 // @route   POST /api/superadmin/fitpass/users/:memberId/adjust-sessions
@@ -723,7 +723,7 @@ const adjustUserSessions = catchAsync(async (req, res, next) => {
         data: updated,
         message: `Sessions adjusted successfully. New balance: ${newSessions}`,
     });
-};
+});
 
 // @desc    Update FitPass subscriber status or extend membership expiry
 // @route   PUT /api/superadmin/fitpass/users/:memberId/status
@@ -761,7 +761,7 @@ const updateFitpassUserStatus = catchAsync(async (req, res, next) => {
         data: updated,
         message: 'Member account updated successfully',
     });
-};
+});
 
 module.exports = {
     createPartnerGym,

@@ -155,7 +155,7 @@ const registerUser = catchAsync(async (req, res, next) => {
             email: user.email,
         });
     }
-};
+});
 
 // @desc    Verify OTP (registration confirmation OR login)
 // @route   POST /api/auth/verify-otp
@@ -262,7 +262,7 @@ const verifyOTP = catchAsync(async (req, res, next) => {
         createdAt: user.createdAt,
         token: generateToken(user._id),
     });
-};
+});
 
 // @desc    Auth user & get token (web admin/superadmin email+password login)
 // @route   POST /api/auth/login
@@ -398,7 +398,7 @@ const authUser = catchAsync(async (req, res, next) => {
         memberId: user.memberId,
         token: generateToken(user._id),
     });
-};
+});
 
 // @desc    Check if user exists and send OTP if they do (mobile login flow)
 // @route   POST /api/auth/check-user
@@ -448,6 +448,6 @@ const checkUserAndSendOTP = catchAsync(async (req, res, next) => {
         status: 'exists',
         message: 'OTP sent to your email.',
     });
-};
+});
 
 module.exports = { registerUser, verifyOTP, authUser, checkUserAndSendOTP };

@@ -24,7 +24,7 @@ const createPackage = catchAsync(async (req, res, next) => {
 
         res.status(201).json(packageObj);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get all Personal Training packages
 // @route   GET /api/pt-packages
@@ -34,7 +34,7 @@ const getPackages = catchAsync(async (req, res, next) => {
         const packages = await PtPackage.find({ gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) }).lean();
         res.json(packages);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get single Personal Training package
 // @route   GET /api/pt-packages/:id
@@ -49,7 +49,7 @@ const getPackageById = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Package not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Update Personal Training package
 // @route   PUT /api/pt-packages/:id
@@ -73,7 +73,7 @@ const updatePackage = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Package not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Delete Personal Training package
 // @route   DELETE /api/pt-packages/:id
@@ -89,7 +89,7 @@ const deletePackage = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Package not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 module.exports = {
     createPackage,

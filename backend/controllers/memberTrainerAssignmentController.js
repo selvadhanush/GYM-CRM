@@ -47,7 +47,7 @@ const assignTrainer = catchAsync(async (req, res, next) => {
 
         res.status(201).json(assignment);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get all trainer assignments
 // @route   GET /api/trainer-assignments
@@ -96,7 +96,7 @@ const getAssignments = catchAsync(async (req, res, next) => {
             meta: { page, limit, total }
         });
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Remove a trainer assignment
 // @route   DELETE /api/trainer-assignments/:id
@@ -112,7 +112,7 @@ const removeAssignment = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Assignment not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 module.exports = {
     assignTrainer,

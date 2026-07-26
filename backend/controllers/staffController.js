@@ -15,7 +15,7 @@ const getStaff = catchAsync(async (req, res, next) => {
         const staff = await User.find(query).select('-password').lean();
         res.json(staff);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Create a new staff member
 // @route   POST /api/staff
@@ -50,7 +50,7 @@ const createStaff = catchAsync(async (req, res, next) => {
 
         res.status(201).json(result);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Update a staff member
 // @route   PUT /api/staff/:id
@@ -94,7 +94,7 @@ const updateStaff = catchAsync(async (req, res, next) => {
 
         res.json(result);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Delete a staff member
 // @route   DELETE /api/staff/:id
@@ -117,7 +117,7 @@ const deleteStaff = catchAsync(async (req, res, next) => {
         await staff.deleteOne();
         res.json({ message: 'Staff member removed' });
     } catch (error) { next(error); }
-};
+});
 
 module.exports = {
     getStaff,

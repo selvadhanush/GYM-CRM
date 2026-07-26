@@ -53,7 +53,7 @@ const createAssessment = catchAsync(async (req, res, next) => {
 
         res.status(201).json(assessment);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get body assessments history
 // @route   GET /api/body-assessments
@@ -109,7 +109,7 @@ const getAssessments = catchAsync(async (req, res, next) => {
             meta: { page, limit, total }
         });
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get single body assessment
 // @route   GET /api/body-assessments/:id
@@ -143,7 +143,7 @@ const getAssessmentById = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Assessment not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Update a body assessment record
 // @route   PUT /api/body-assessments/:id
@@ -181,7 +181,7 @@ const updateAssessment = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Assessment not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Delete a body assessment record
 // @route   DELETE /api/body-assessments/:id
@@ -201,7 +201,7 @@ const deleteAssessment = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Assessment not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 module.exports = {
     createAssessment,

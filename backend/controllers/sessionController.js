@@ -335,7 +335,7 @@ const checkIn = catchAsync(async (req, res, next) => {
     console.error('CHECK-IN ERROR:', error.message);
     return res.status(500).json({ success: false, message: 'Check-in failed.' });
   }
-};
+});
 
 // @desc    Get the member's current session state (for the mobile live timer)
 // @route   GET /api/member-portal/sessions/status
@@ -365,7 +365,7 @@ const getSessionStatus = catchAsync(async (req, res, next) => {
     console.error('SESSION STATUS ERROR:', error.message);
     return res.status(500).json({ success: false, message: 'Could not load session status.' });
   }
-};
+});
 
 // @desc    Get the member's check-in history with filters
 // @route   GET /api/member-portal/sessions/history
@@ -414,7 +414,7 @@ const getSessionHistory = catchAsync(async (req, res, next) => {
     console.error('SESSION HISTORY ERROR:', error.message);
     return res.status(500).json({ success: false, message: 'Could not load history.' });
   }
-};
+});
 
 // @desc    Get member's FitPass summary for admins
 // @route   GET /api/sessions/member-summary/:memberId
@@ -481,7 +481,7 @@ const getMemberFitPassSummary = catchAsync(async (req, res, next) => {
     console.error('MEMBER FITPASS SUMMARY ERROR:', error.message);
     return res.status(500).json({ success: false, message: 'Could not load member summary.' });
   }
-};
+});
 
 // @desc    Get FitPass analytics for admins
 // @route   GET /api/sessions/analytics
@@ -610,7 +610,7 @@ const getFitPassAnalytics = catchAsync(async (req, res, next) => {
     console.error('FITPASS ANALYTICS ERROR:', error.message);
     return res.status(500).json({ success: false, message: 'Could not load FitPass analytics.' });
   }
-};
+});
 
 // Zod schema for manual session-adjust
 const adminAdjustSchema = z.object({
@@ -658,7 +658,7 @@ const adminAdjustSessions = catchAsync(async (req, res, next) => {
     console.error('ADMIN SESSION ADJUST ERROR:', error.message);
     return res.status(500).json({ success: false, message: 'Could not adjust sessions.' });
   }
-};
+});
 
 /**
  * @desc    Get FitPass check-in audit for a partner's own gym (read-only)
@@ -716,7 +716,7 @@ const getPartnerVisitLog = catchAsync(async (req, res, next) => {
     console.error('PARTNER VISIT LOG ERROR:', error.message);
     return res.status(500).json({ success: false, message: 'Could not load visit log.' });
   }
-};
+});
 
 module.exports = {
   checkIn,

@@ -280,7 +280,7 @@ const GymProfile = () => {
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                         <Building2 size={18} style={{ color: 'var(--primary)', marginTop: '2px', flexShrink: 0 }} />
                         <div>
-                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: uppercase => 'uppercase' }}>GYM NAME</div>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>GYM NAME</div>
                             <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' }}>{gym.name}</div>
                         </div>
                     </div>
@@ -392,7 +392,7 @@ const GymProfile = () => {
                         <div className="empty-gallery">
                             <ImagePlus size={44} opacity={0.3} style={{ color: 'var(--primary)' }} />
                             <p style={{ fontWeight: 600, color: 'var(--text-primary)' }}>No photo uploads found</p>
-                            <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Click "Upload Photo" to add up to 5 gym gallery photos.</span>
+                            <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Click &quot;Upload Photo&quot; to add up to 5 gym gallery photos.</span>
                         </div>
                     )}
                 </div>
@@ -508,7 +508,7 @@ const GymProfile = () => {
                     </div>
 
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
-                        Are you sure you want to delete "{gym.name}"?
+                        Are you sure you want to delete &quot;{gym.name}&quot;?
                     </h3>
                     
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', maxWidth: '380px', margin: '0 auto 1.5rem', lineHeight: 1.5 }}>

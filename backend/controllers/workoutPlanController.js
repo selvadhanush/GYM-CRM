@@ -33,7 +33,7 @@ const createPlan = catchAsync(async (req, res, next) => {
 
         res.status(201).json(plan);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get all workout plans
 // @route   GET /api/workout-plans
@@ -101,7 +101,7 @@ const getPlans = catchAsync(async (req, res, next) => {
             meta: { page, limit, total }
         });
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get single workout plan
 // @route   GET /api/workout-plans/:id
@@ -134,7 +134,7 @@ const getPlanById = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Workout plan not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Update workout plan
 // @route   PUT /api/workout-plans/:id
@@ -165,7 +165,7 @@ const updatePlan = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Workout plan not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Delete workout plan
 // @route   DELETE /api/workout-plans/:id
@@ -181,7 +181,7 @@ const deletePlan = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Workout plan not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 module.exports = {
     createPlan,
