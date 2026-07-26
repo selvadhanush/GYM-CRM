@@ -19,7 +19,7 @@ const getClasses = catchAsync(async (req, res, next) => {
         }));
         res.json(result);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Create a class
 // @route   POST /api/classes
@@ -45,7 +45,7 @@ const createClass = catchAsync(async (req, res, next) => {
         });
         res.status(201).json(gymClass);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Delete a class
 // @route   DELETE /api/classes/:id
@@ -58,7 +58,7 @@ const deleteClass = catchAsync(async (req, res, next) => {
         if (!gymClass) return res.status(404).json({ message: 'Class not found' });
         res.json({ message: 'Class deleted' });
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get bookings for a class
 // @route   GET /api/classes/:id/bookings
@@ -72,7 +72,7 @@ const getClassBookings = catchAsync(async (req, res, next) => {
         if (!gymClass) return res.status(404).json({ message: 'Class not found' });
         res.json(gymClass);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Member books a class slot
 // @route   POST /api/member-portal/classes/:id/book
@@ -104,7 +104,7 @@ const bookClass = catchAsync(async (req, res, next) => {
             seatsAvailable: gymClass.maxSeats - gymClass.bookings.length
         });
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Member cancels a class booking
 // @route   DELETE /api/member-portal/classes/:id/book
@@ -127,7 +127,7 @@ const cancelBooking = catchAsync(async (req, res, next) => {
             seatsAvailable: gymClass.maxSeats - gymClass.bookings.length
         });
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Member views available classes
 // @route   GET /api/member-portal/classes
@@ -151,7 +151,7 @@ const getMemberClasses = catchAsync(async (req, res, next) => {
         }));
         res.json(result);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Admin books a class for a member
 // @route   POST /api/classes/:id/book
@@ -190,7 +190,7 @@ const adminBookClass = catchAsync(async (req, res, next) => {
             bookings: gymClass.bookings
         });
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Admin cancels a member booking
 // @route   DELETE /api/classes/:id/bookings/:memberId
@@ -214,7 +214,7 @@ const adminCancelBooking = catchAsync(async (req, res, next) => {
             bookings: gymClass.bookings
         });
     } catch (error) { next(error); }
-};
+});
 
 module.exports = { 
     getClasses, 

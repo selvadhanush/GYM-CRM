@@ -22,7 +22,7 @@ const createTemplate = catchAsync(async (req, res, next) => {
 
         res.status(201).json(template);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get all workout templates
 // @route   GET /api/workout-templates
@@ -43,7 +43,7 @@ const getTemplates = catchAsync(async (req, res, next) => {
 
         res.json(formatted);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get single workout template
 // @route   GET /api/workout-templates/:id
@@ -63,7 +63,7 @@ const getTemplateById = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Template not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Update workout template
 // @route   PUT /api/workout-templates/:id
@@ -92,7 +92,7 @@ const updateTemplate = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Template not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Delete workout template
 // @route   DELETE /api/workout-templates/:id
@@ -108,7 +108,7 @@ const deleteTemplate = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Template not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 module.exports = {
     createTemplate,

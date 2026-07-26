@@ -90,12 +90,17 @@ app.get('/api/health', (req, res) => {
 });
 
 // API Versioning redirection for backward compatibility
-app.use('/api/:path(*)', (req, res, next) => {
-    if (req.params.path.startsWith('v1/') || req.params.path === 'health') {
+app.use((req, res, next) => {
+    if (!req.path.startsWith('/api/')) {
+        return next();
+    }
+    const apiPath = req.path.substring(5); // Strips '/api/'
+    if (apiPath.startsWith('v1/') || apiPath === 'health') {
         return next();
     }
     // Redirect /api/X to /api/v1/X
-    res.redirect(301, `/api/v1/${req.params.path}${req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : ''}`);
+    const query = req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '';
+    res.redirect(301, `/api/v1/${apiPath}${query}`);
 });
 
 // Routes

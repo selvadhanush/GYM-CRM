@@ -15,7 +15,7 @@ const getLeads = catchAsync(async (req, res, next) => {
         const leads = await Lead.find(filter).sort({ createdAt: -1 });
         res.json(leads);
     } catch (err) { next(err); }
-};
+});
 
 // @desc    Create a lead
 // @route   POST /api/leads
@@ -32,7 +32,7 @@ const createLead = catchAsync(async (req, res, next) => {
         });
         res.status(201).json(lead);
     } catch (err) { next(err); }
-};
+});
 
 // @desc    Update lead status / details
 // @route   PUT /api/leads/:id
@@ -57,7 +57,7 @@ const updateLead = catchAsync(async (req, res, next) => {
         await lead.save();
         res.json(lead);
     } catch (err) { next(err); }
-};
+});
 
 // @desc    Delete a lead
 // @route   DELETE /api/leads/:id
@@ -69,7 +69,7 @@ const deleteLead = catchAsync(async (req, res, next) => {
         if (!lead) return res.status(404).json({ message: 'Lead not found' });
         res.json({ message: 'Lead deleted' });
     } catch (err) { next(err); }
-};
+});
 
 // @desc    Get lead pipeline summary (counts by status)
 // @route   GET /api/leads/summary
@@ -103,6 +103,6 @@ const getLeadSummary = catchAsync(async (req, res, next) => {
 
         res.json({ statusCounts, sourceCounts, followUpDue, total, converted, conversionRate });
     } catch (err) { next(err); }
-};
+});
 
 module.exports = { getLeads, createLead, updateLead, deleteLead, getLeadSummary };

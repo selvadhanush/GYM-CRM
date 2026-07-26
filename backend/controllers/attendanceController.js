@@ -63,7 +63,7 @@ const markAttendance = catchAsync(async (req, res, next) => {
         res.status(400);
         throw new Error('Invalid attendance data');
     }
-};
+});
 
 
 // @desc    Get today's attendance
@@ -84,7 +84,7 @@ const getTodayAttendance = catchAsync(async (req, res, next) => {
     const attendanceList = await Attendance.find(query).populate('memberId', 'name phone').lean();
 
     res.json(attendanceList);
-};
+});
 
 // @desc    Get attendance history for a member
 // @route   GET /api/attendance/member/:memberId
@@ -102,7 +102,7 @@ const getMemberAttendance = catchAsync(async (req, res, next) => {
         .sort({ createdAt: -1 })
         .lean();
     res.json(attendance);
-};
+});
 
 module.exports = {
     markAttendance,

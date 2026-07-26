@@ -50,7 +50,7 @@ const uploadGymImages = catchAsync(async (req, res, next) => {
             images: gym.images
         });
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get all partnered gyms with their images
 // @route   GET /api/gyms/partnered
@@ -61,7 +61,7 @@ const getPartneredGyms = catchAsync(async (req, res, next) => {
         const gyms = await Gym.find({ id: { $ne: 'SYSTEM' } }).select('id name address phone email status images');
         res.status(200).json(gyms);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Update/reorder gym images
 // @route   PUT /api/gyms/images
@@ -95,7 +95,7 @@ const updateGymImages = catchAsync(async (req, res, next) => {
             images: updatedGym.images
         });
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get gym settings
 // @route   GET /api/gyms/settings
@@ -115,7 +115,7 @@ const getGymSettings = catchAsync(async (req, res, next) => {
         }
         res.status(200).json(settings);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Update gym settings
 // @route   PUT /api/gyms/settings
@@ -147,7 +147,7 @@ const updateGymSettings = catchAsync(async (req, res, next) => {
         
         res.status(200).json({ message: 'Settings updated successfully', settings });
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get all gyms (for gym profile / operations hub)
 // @route   GET /api/gyms
@@ -161,7 +161,7 @@ const getGyms = catchAsync(async (req, res, next) => {
         const gyms = await Gym.find(query);
         res.status(200).json(gyms);
     } catch (error) { next(error); }
-};
+});
 
 module.exports = {
     getGyms,

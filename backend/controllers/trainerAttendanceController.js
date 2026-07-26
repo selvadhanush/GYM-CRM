@@ -58,7 +58,7 @@ const checkInTrainer = catchAsync(async (req, res, next) => {
 
         res.status(201).json(attendance);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Check Out Trainer
 // @route   POST /api/trainer-attendance/checkout
@@ -98,7 +98,7 @@ const checkOutTrainer = catchAsync(async (req, res, next) => {
         const updated = await attendance.save();
         res.json(updated);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get Trainer Attendance Logs
 // @route   GET /api/trainer-attendance
@@ -147,7 +147,7 @@ const getTrainerAttendance = catchAsync(async (req, res, next) => {
             meta: { page, limit, total }
         });
     } catch (error) { next(error); }
-};
+});
 
 module.exports = {
     checkInTrainer,

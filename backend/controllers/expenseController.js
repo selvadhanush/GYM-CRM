@@ -26,7 +26,7 @@ const createExpense = catchAsync(async (req, res, next) => {
         res.status(400);
         throw new Error('Invalid expense data');
     }
-};
+});
 
 // @desc    Get all expenses for a gym
 // @route   GET /api/expenses
@@ -35,7 +35,7 @@ const getExpenses = catchAsync(async (req, res, next) => {
     const query = { ...req.tenantFilter };
     const expenses = await Expense.find(query).sort({ date: -1 });
     res.json(expenses);
-};
+});
 
 // @desc    Delete an expense
 // @route   DELETE /api/expenses/:id
@@ -55,7 +55,7 @@ const deleteExpense = catchAsync(async (req, res, next) => {
         res.status(404);
         throw new Error('Expense not found');
     }
-};
+});
 
 module.exports = {
     createExpense,
