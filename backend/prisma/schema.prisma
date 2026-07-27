@@ -523,36 +523,6 @@ model Payroll {
   @@index([trainerId])
 }
 
-model Ticket {
-  id          String   @id @default(uuid())
-  subject     String
-  category    String
-  status      String   @default("pending") // pending, resolved
-  gymId       String
-  branchId    String?
-  creatorId   String   // The user who created the ticket
-  creatorName String
-  creatorRole String
-  messages    TicketMessage[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([gymId, status])
-  @@index([creatorId])
-}
-
-model TicketMessage {
-  id         String   @id @default(uuid())
-  ticketId   String
-  ticket     Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  senderId   String
-  senderName String
-  senderRole String
-  message    String
-  createdAt  DateTime @default(now())
-
-  @@index([ticketId])
-}
 
 model Equipment {
   id           String    @id @default(uuid())

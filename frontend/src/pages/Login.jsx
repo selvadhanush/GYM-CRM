@@ -61,7 +61,9 @@ const Login = () => {
             const isH4Gym = normalizedGym === 'H4' || userGymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
             const isPartnerAdmin = role === 'partner' || (role === 'admin' && !isH4Gym);
 
-            if (role === 'superadmin' || role === 'fitpass_admin') {
+            if (role === 'superadmin') {
+                navigate('/dashboard');
+            } else if (role === 'fitpass_admin') {
                 navigate('/superadmin/dashboard');
             } else if (isPartnerAdmin) {
                 navigate('/partner/visit-log');

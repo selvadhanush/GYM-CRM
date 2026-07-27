@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
 import Modal from '../components/Modal';
+import { Trash2 } from 'lucide-react';
 
 const Expenses = () => {
     const navigate = useNavigate();
@@ -21,10 +22,12 @@ const Expenses = () => {
     const fetchExpenses = useCallback(async () => {
         try {
             const { data } = await API.get('/expenses');
-            setExpenses(data);
+            const list = Array.isArray(data) ? data : (data?.data || []);
+            setExpenses(list);
             setLoading(false);
         } catch (error) {
             console.error('Error fetching expenses:', error);
+            setExpenses([]);
             setLoading(false);
         }
     }, []);
@@ -62,6 +65,8 @@ const Expenses = () => {
         }
     };
 
+    const safeExpenses = Array.isArray(expenses) ? expenses : [];
+
     return (
         <div className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
@@ -92,14 +97,14 @@ const Expenses = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {expenses.length === 0 ? (
+                            {safeExpenses.length === 0 ? (
                                 <tr>
                                     <td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
                                         No expenses recorded yet.
                                     </td>
                                 </tr>
                             ) : (
-                                expenses.map((expense) => (
+                                safeExpenses.map((expense) => (
                                     <tr key={expense._id}>
                                         <td>{new Date(expense.date).toLocaleDateString()}</td>
                                         <td style={{ fontWeight: '600' }}>{expense.title}</td>

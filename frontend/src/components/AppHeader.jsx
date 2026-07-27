@@ -40,8 +40,6 @@ const AppHeader = ({ onThemeToggle, isDark }) => {
             if (user?.role === 'superadmin' || user?.role === 'fitpass_admin') {
                 try {
                     if (activeDivision === 'h4' && user?.role !== 'fitpass_admin') {
-                        if (!selectedGymId) return;
-                        
                         // Fetch H4 gym and partner gyms to find the current gym's name
                         const [h4Res, partnerRes] = await Promise.all([
                             API.get('/superadmin/h4-gym').catch(() => ({ data: null })),
@@ -52,28 +50,37 @@ const AppHeader = ({ onThemeToggle, isDark }) => {
                         if (h4Res.data) allGyms.push(h4Res.data);
                         if (partnerRes.data) allGyms.push(...partnerRes.data);
                         
-                        const currentGym = allGyms.find(g => (g._id || g.id) === selectedGymId);
+                        const h4GymId = h4Res.data ? (h4Res.data._id || h4Res.data.id) : '';
+                        let currentGymId = selectedGymId;
+
+                        // Default to H4 gym if no selectedGymId is set
+                        if (!currentGymId && h4GymId) {
+                            currentGymId = h4GymId;
+                            changeSelectedGym(h4GymId);
+                        }
+
+                        const currentGym = allGyms.find(g => (g._id || g.id) === currentGymId) || (h4Res.data ? h4Res.data : allGyms[0]);
                         
                         if (currentGym) {
+                            const targetGymId = currentGym._id || currentGym.id;
                             // Fetch branches for the selected gym
                             const { data: branches } = await API.get('/branches', {
-                                headers: { 'x-gym-id': selectedGymId }
+                                headers: { 'x-gym-id': targetGymId }
                             });
                             
                             const branchOptions = (branches || []).map(b => ({
                                 _id: b._id || b.id,
                                 name: b.name,
                                 isBranch: true,
-                                parentGymId: selectedGymId
+                                parentGymId: targetGymId
                             }));
                             
-                            setGyms([currentGym, ...branchOptions]);
+                            setGyms(allGyms);
                             
                             // Ensure selected context is valid
                             const currentBranch = localStorage.getItem('selectedBranchId');
                             if (currentBranch && !branchOptions.some(b => b._id === currentBranch)) {
                                 changeSelectedBranch('');
-                                window.location.reload();
                             }
                         }
                     } else {

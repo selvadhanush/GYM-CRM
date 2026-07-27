@@ -15,8 +15,8 @@ const createPlan = catchAsync(async (req, res, next) => {
             return res.status(400).json({ success: false, message: 'Member ID and Plan name are required' });
         }
 
-        // Validate member exists
-        const member = await Member.findOne({ _id: memberId, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
+        // Validate member exists within the gym (across all branches)
+        const member = await Member.findOne({ _id: memberId, gymId: req.user.gymId });
         if (!member) {
             return res.status(404).json({ success: false, message: 'Member not found' });
         }
@@ -28,7 +28,8 @@ const createPlan = catchAsync(async (req, res, next) => {
             startDate: startDate ? new Date(startDate) : null,
             endDate: endDate ? new Date(endDate) : null,
             meals: meals ? (typeof meals === 'string' ? meals : JSON.stringify(meals)) : null,
-            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId })
+            gymId: req.user.gymId,
+            branchId: req.user.branchId || member.branchId || null
         });
 
         res.status(201).json(plan);
@@ -40,7 +41,12 @@ const createPlan = catchAsync(async (req, res, next) => {
 // @access  Private/Admin/Trainer/Member
 const getPlans = catchAsync(async (req, res, next) => {
     try {
-        let query = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };
+        // Query by gymId so plans are accessible across all branches of the gym
+        let query = { gymId: req.user.gymId };
+
+        if (req.query.branchId) {
+            query.branchId = req.query.branchId;
+        }
 
         // If member is fetching, only show their plans
         if (req.user.role === 'member') {
@@ -108,7 +114,7 @@ const getPlans = catchAsync(async (req, res, next) => {
 // @access  Private/Admin/Trainer/Member
 const getPlanById = catchAsync(async (req, res, next) => {
     try {
-        const plan = await DietPlan.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
+        const plan = await DietPlan.findOne({ _id: req.params.id, gymId: req.user.gymId });
 
         if (plan) {
             if (req.user.role === 'member' && plan.memberId !== req.user.memberId) {
@@ -142,7 +148,7 @@ const updatePlan = catchAsync(async (req, res, next) => {
     try {
         const { name, startDate, endDate, meals, trainerId } = req.body;
 
-        const plan = await DietPlan.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
+        const plan = await DietPlan.findOne({ _id: req.params.id, gymId: req.user.gymId });
 
         if (plan) {
             plan.name = name || plan.name;
@@ -171,7 +177,7 @@ const updatePlan = catchAsync(async (req, res, next) => {
 // @access  Private/Admin/Trainer
 const deletePlan = catchAsync(async (req, res, next) => {
     try {
-        const plan = await DietPlan.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
+        const plan = await DietPlan.findOne({ _id: req.params.id, gymId: req.user.gymId });
 
         if (plan) {
             await plan.deleteOne();

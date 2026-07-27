@@ -138,7 +138,6 @@ app.use('/api/v1/pt-sessions', require('./routes/ptSessionRoutes'));
 app.use('/api/v1/body-assessments', require('./routes/bodyAssessmentRoutes'));
 app.use('/api/v1/trainer-attendance', require('./routes/trainerAttendanceRoutes'));
 app.use('/api/v1/payroll', require('./routes/payrollRoutes'));
-app.use('/api/v1/tickets', require('./routes/ticketRoutes'));
 
 
 // Test routes (Dev only)
