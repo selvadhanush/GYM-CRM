@@ -8,7 +8,7 @@ import {
     UserCheck, Clock, Building2, History, ChevronRight,
     ChevronLeft, LogOut, Target, Package, Banknote,
     AlertTriangle, Receipt, CalendarCheck, Snowflake, LineChart, FileText, Home, Dumbbell, Image, Zap,
-    Settings, HelpCircle, Apple
+    Settings, Apple
 } from 'lucide-react';
 
 const NAV_GROUPS = {
@@ -32,7 +32,6 @@ const NAV_GROUPS = {
             items: [
                 { name: 'Audit Logs', path: '/audit', icon: History },
                 { name: 'Settings', path: '/settings', icon: Settings },
-                { name: 'Support Desk', path: '/support', icon: HelpCircle },
             ]
         }
     ],
@@ -72,7 +71,6 @@ const NAV_GROUPS = {
                 { name: 'Workout Plans', path: '/workout-plans', icon: Dumbbell },
                 { name: 'Diet Plans', path: '/diet-plans', icon: Apple },
                 { name: 'Settings', path: '/settings', icon: Settings },
-                { name: 'Support Desk', path: '/support', icon: HelpCircle },
             ]
         }
     ],
@@ -83,7 +81,6 @@ const NAV_GROUPS = {
                 { name: 'Members', path: '/members', icon: Users },
                 { name: 'Leads', path: '/leads', icon: Target },
                 { name: 'Attendance', path: '/attendance', icon: UserCheck },
-                { name: 'Support Desk', path: '/support', icon: HelpCircle },
             ]
         },
         {
@@ -105,7 +102,6 @@ const NAV_GROUPS = {
                 { name: 'Diet Plans', path: '/diet-plans', icon: Apple },
                 { name: 'Check In/Out', path: '/trainer-attendance', icon: Clock },
                 { name: 'My Payroll', path: '/payroll', icon: Banknote },
-                { name: 'Support Desk', path: '/support', icon: HelpCircle },
             ]
         }
     ],
@@ -118,7 +114,6 @@ const NAV_GROUPS = {
                 { name: 'Classes', path: '/member-classes', icon: Dumbbell },
                 { name: 'Workout Routine', path: '/workout-plans', icon: Dumbbell },
                 { name: 'Diet Chart', path: '/diet-plans', icon: Apple },
-                { name: 'Support Desk', path: '/support', icon: HelpCircle },
             ]
         }
     ],
@@ -190,7 +185,6 @@ const Sidebar = () => {
                     items: [
                         { name: 'Audit Logs', path: '/audit', icon: History },
                         { name: 'Settings', path: '/settings', icon: Settings },
-                        { name: 'Support Desk', path: '/support', icon: HelpCircle },
                     ]
                 }
             ];
@@ -242,7 +236,6 @@ const Sidebar = () => {
                             { name: `Diet Plans${suffix}`, path: '/diet-plans', icon: Apple },
                             { name: 'Audit Logs', path: '/audit', icon: History },
                             { name: `Settings${suffix}`, path: '/settings', icon: Settings },
-                            { name: `Support Desk${suffix}`, path: '/support', icon: HelpCircle },
                         ]
                     }
                 ];
@@ -279,7 +272,6 @@ const Sidebar = () => {
                 items: [
                     { name: 'Audit Logs', path: '/audit', icon: History },
                     { name: 'Settings', path: '/settings', icon: Settings },
-                    { name: 'Support Desk', path: '/support', icon: HelpCircle },
                 ]
             }
         ];
@@ -326,7 +318,6 @@ const Sidebar = () => {
                     { name: `Diet Plans${suffix}`, path: '/diet-plans', icon: Apple },
                     { name: 'Audit Logs', path: '/audit', icon: History },
                     { name: `Settings${suffix}`, path: '/settings', icon: Settings },
-                    { name: `Support Desk${suffix}`, path: '/support', icon: HelpCircle },
                 ]
             }
         ];

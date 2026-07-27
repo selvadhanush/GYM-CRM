@@ -61,17 +61,23 @@ const WorkoutPlans = () => {
         setLoading(true);
         try {
             const planRes = await API.get('/workout-plans');
-            setPlans(planRes.data);
+            const planData = planRes.data;
+            setPlans(Array.isArray(planData) ? planData : (planData?.data || []));
 
             const tempRes = await API.get('/workout-templates');
-            setTemplates(tempRes.data);
+            const tempData = tempRes.data;
+            setTemplates(Array.isArray(tempData) ? tempData : (tempData?.data || []));
 
             if (isTrainerOrAdmin) {
                 const memRes = await API.get('/members');
-                setMembers(memRes.data);
+                const memData = memRes.data;
+                setMembers(Array.isArray(memData) ? memData : (memData?.data || []));
             }
         } catch (err) {
             setError('Failed to sync workout system datasets');
+            setPlans([]);
+            setTemplates([]);
+            setMembers([]);
         } finally {
             setLoading(false);
         }
@@ -233,7 +239,8 @@ const WorkoutPlans = () => {
     };
 
     // --- MEMBER WORKOUT TRACKING ---
-    const activeMemberPlan = plans.find(p => p.memberId === user?.memberId || isMember);
+    const safePlans = Array.isArray(plans) ? plans : [];
+    const activeMemberPlan = safePlans.find(p => p.memberId === user?.memberId || isMember);
 
     const getExercisesForDay = () => {
         if (!activeMemberPlan || !activeMemberPlan.exercises) return [];
@@ -272,7 +279,7 @@ const WorkoutPlans = () => {
 
     const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-    const filteredPlans = plans.filter(p => 
+    const filteredPlans = safePlans.filter(p => 
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (p.member?.name && p.member.name.toLowerCase().includes(searchQuery.toLowerCase()))
     );

@@ -33,7 +33,6 @@ import FitPassAnalyticsPage from './pages/FitPassAnalyticsPage';
 import WorkoutPlans from './pages/WorkoutPlans';
 import DietPlans from './pages/DietPlans';
 import Settings from './pages/Settings';
-import Support from './pages/Support';
 import FitPassVisitLog from './pages/FitPassVisitLog';
 import FitPassPartnerLeads from './pages/FitPassPartnerLeads';
 import Layout from './components/Layout';
@@ -330,14 +329,6 @@ function App() {
           <ProtectedRoute roles={['admin', 'h4_admin', 'superadmin']}>
             <Layout>
               <Settings />
-            </Layout>
-          </ProtectedRoute>
-        } />
-
-        <Route path="/support" element={
-          <ProtectedRoute roles={['admin', 'receptionist', 'trainer', 'member', 'h4_admin', 'superadmin']}>
-            <Layout>
-              <Support />
             </Layout>
           </ProtectedRoute>
         } />

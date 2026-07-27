@@ -57,9 +57,11 @@ const BodyAssessments = () => {
         try {
             // Fetch first page/all members
             const res = await getMembers('', 1, '');
-            setMembers(res.members || []);
+            const memberList = Array.isArray(res) ? res : (res?.members || res?.data || []);
+            setMembers(memberList);
         } catch (error) {
             console.error('Error fetching members:', error);
+            setMembers([]);
         }
     };
 
@@ -67,11 +69,13 @@ const BodyAssessments = () => {
         setLoading(true);
         try {
             const data = await getBodyAssessments(memberId);
+            const list = Array.isArray(data) ? data : (data?.data || []);
             // Sort assessments chronologically for charts (date ascending)
-            const sorted = [...data].sort((a, b) => new Date(a.assessmentDate) - new Date(b.assessmentDate));
+            const sorted = [...list].sort((a, b) => new Date(a.assessmentDate) - new Date(b.assessmentDate));
             setAssessments(sorted);
         } catch (error) {
             console.error('Error fetching assessments:', error);
+            setAssessments([]);
         } finally {
             setLoading(false);
         }
@@ -141,8 +145,11 @@ const BodyAssessments = () => {
         }
     };
 
+    const safeAssessments = Array.isArray(assessments) ? assessments : [];
+    const safeMembers = Array.isArray(members) ? members : [];
+
     // Calculate charts data
-    const chartData = assessments.map(a => ({
+    const chartData = safeAssessments.map(a => ({
         date: new Date(a.assessmentDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
         Weight: a.weight,
         BMI: a.bmi,
@@ -153,7 +160,7 @@ const BodyAssessments = () => {
     }));
 
     // Get latest assessment for quick metrics
-    const latest = assessments[assessments.length - 1];
+    const latest = safeAssessments[safeAssessments.length - 1];
 
     // Helper to evaluate BMI status
     const getBmiStatus = (bmi) => {
@@ -196,7 +203,7 @@ const BodyAssessments = () => {
                         style={{ maxWidth: '400px' }}
                     >
                         <option value="">-- Choose a Member --</option>
-                        {members.map(m => (
+                        {safeMembers.map(m => (
                             <option key={m._id} value={m._id}>
                                 {m.name} ({m.phone})
                             </option>
@@ -276,7 +283,7 @@ const BodyAssessments = () => {
                         </div>
                     ) : null}
 
-                    {assessments.length === 0 ? (
+                    {safeAssessments.length === 0 ? (
                         <div className="card" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
                             <Activity size={48} style={{ margin: '0 auto 1rem', color: 'var(--primary-color)', opacity: 0.5 }} />
                             <h3>No assessments logged yet</h3>
@@ -341,7 +348,7 @@ const BodyAssessments = () => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {[...assessments].reverse().map(item => (
+                                            {[...safeAssessments].reverse().map(item => (
                                                 <tr key={item._id}>
                                                     <td style={{ fontWeight: '600' }}>
                                                         {new Date(item.assessmentDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}

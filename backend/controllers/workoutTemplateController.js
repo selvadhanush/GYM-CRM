@@ -17,7 +17,8 @@ const createTemplate = catchAsync(async (req, res, next) => {
             name,
             description: description || null,
             exercises: exercises ? (typeof exercises === 'string' ? exercises : JSON.stringify(exercises)) : null,
-            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId })
+            gymId: req.user.gymId,
+            branchId: req.user.branchId || null
         });
 
         res.status(201).json(template);
@@ -29,7 +30,7 @@ const createTemplate = catchAsync(async (req, res, next) => {
 // @access  Private/Admin/Trainer/Member
 const getTemplates = catchAsync(async (req, res, next) => {
     try {
-        const templates = await WorkoutTemplate.find({ gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) }).lean();
+        const templates = await WorkoutTemplate.find({ gymId: req.user.gymId }).lean();
         
         // Parse exercises JSON string if present
         const formatted = templates.map(t => {
@@ -50,7 +51,7 @@ const getTemplates = catchAsync(async (req, res, next) => {
 // @access  Private/Admin/Trainer/Member
 const getTemplateById = catchAsync(async (req, res, next) => {
     try {
-        const template = await WorkoutTemplate.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
+        const template = await WorkoutTemplate.findOne({ _id: req.params.id, gymId: req.user.gymId });
 
         if (template) {
             if (template.exercises && typeof template.exercises === 'string') {
@@ -72,7 +73,7 @@ const updateTemplate = catchAsync(async (req, res, next) => {
     try {
         const { name, description, exercises } = req.body;
 
-        const template = await WorkoutTemplate.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
+        const template = await WorkoutTemplate.findOne({ _id: req.params.id, gymId: req.user.gymId });
 
         if (template) {
             template.name = name || template.name;
@@ -99,7 +100,7 @@ const updateTemplate = catchAsync(async (req, res, next) => {
 // @access  Private/Admin/Trainer
 const deleteTemplate = catchAsync(async (req, res, next) => {
     try {
-        const template = await WorkoutTemplate.findOne({ _id: req.params.id, gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) });
+        const template = await WorkoutTemplate.findOne({ _id: req.params.id, gymId: req.user.gymId });
 
         if (template) {
             await template.deleteOne();

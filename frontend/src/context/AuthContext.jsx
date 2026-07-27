@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
             setUser(parsedUser);
             
             let division = localStorage.getItem('activeDivision');
-            if (parsedUser.role === 'h4_admin' || (parsedUser.gymName && parsedUser.gymName.toUpperCase() === 'H4') || parsedUser.gymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd') {
+            if (parsedUser.role === 'superadmin' || parsedUser.role === 'h4_admin' || (parsedUser.gymName && parsedUser.gymName.toUpperCase() === 'H4') || parsedUser.gymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd') {
                 division = 'h4';
             } else if (parsedUser.role === 'fitpass_admin') {
                 division = 'fitpass';
@@ -88,8 +88,8 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('user', JSON.stringify(data));
             localStorage.setItem('token', data.token);
             
-            let division = localStorage.getItem('activeDivision') || 'fitpass';
-            if (data.role === 'h4_admin' || (data.gymName && data.gymName.toUpperCase() === 'H4') || data.gymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd') {
+            let division = 'fitpass';
+            if (data.role === 'superadmin' || data.role === 'h4_admin' || (data.gymName && data.gymName.toUpperCase() === 'H4') || data.gymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd') {
                 division = 'h4';
             } else if (data.role === 'fitpass_admin') {
                 division = 'fitpass';
@@ -97,7 +97,18 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('activeDivision', division);
             setActiveDivision(division);
 
-            if (data.gymId) {
+            if (data.role === 'superadmin') {
+                try {
+                    const { data: h4Gym } = await API.get('/superadmin/h4-gym');
+                    if (h4Gym) {
+                        const h4Id = h4Gym._id || h4Gym.id;
+                        localStorage.setItem('selectedGymId', h4Id);
+                        setSelectedGymId(h4Id);
+                    }
+                } catch (err) {
+                    console.error('Failed to set default H4 gym on superadmin login:', err);
+                }
+            } else if (data.gymId) {
                 localStorage.setItem('selectedGymId', data.gymId);
                 setSelectedGymId(data.gymId);
             } else {

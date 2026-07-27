@@ -51,9 +51,11 @@ const DietPlans = () => {
         setLoading(true);
         try {
             const { data } = await API.get('/diet-plans');
-            setPlans(data);
+            const planList = Array.isArray(data) ? data : (data?.data || []);
+            setPlans(planList);
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to load diet plans');
+            setPlans([]);
         } finally {
             setLoading(false);
         }
@@ -62,9 +64,11 @@ const DietPlans = () => {
     const fetchMembers = async () => {
         try {
             const { data } = await API.get('/members');
-            setMembers(data);
+            const memberList = Array.isArray(data) ? data : (data?.data || []);
+            setMembers(memberList);
         } catch (err) {
             console.error('Failed to load members for select list:', err);
+            setMembers([]);
         }
     };
 
@@ -161,8 +165,10 @@ const DietPlans = () => {
         return acc;
     }, { calories: 0, protein: 0, carbs: 0, fats: 0 });
 
+    const safePlans = Array.isArray(plans) ? plans : [];
+
     // Active member diet plan details
-    const activeMemberDiet = plans.find(p => p.memberId === user?.memberId || isMember);
+    const activeMemberDiet = safePlans.find(p => p.memberId === user?.memberId || isMember);
 
     // Dynamic macro targets and consumed values
     const targetMacros = activeMemberDiet?.meals?.reduce((acc, curr) => {
@@ -195,7 +201,7 @@ const DietPlans = () => {
         localStorage.setItem(`water_${user.id}`, next.toString());
     };
 
-    const filteredPlans = plans.filter(p => 
+    const filteredPlans = safePlans.filter(p => 
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (p.member?.name && p.member.name.toLowerCase().includes(searchQuery.toLowerCase()))
     );

@@ -53,9 +53,11 @@ const PayrollPage = () => {
     const fetchTrainers = async () => {
         try {
             const data = await getStaff();
-            setTrainers(data.filter(s => s.role === 'trainer'));
+            const staffList = Array.isArray(data) ? data : (data?.data || []);
+            setTrainers(staffList.filter(s => s.role === 'trainer'));
         } catch (error) {
             console.error('Error fetching trainers:', error);
+            setTrainers([]);
         }
     };
 
@@ -69,9 +71,11 @@ const PayrollPage = () => {
             if (selectedTrainerId) params.trainerId = selectedTrainerId;
 
             const data = await getPayrolls(params);
-            setPayrolls(data);
+            const list = Array.isArray(data) ? data : (data?.data || []);
+            setPayrolls(list);
         } catch (error) {
             console.error('Error fetching payrolls:', error);
+            setPayrolls([]);
         } finally {
             setLoading(false);
         }
@@ -157,6 +161,9 @@ const PayrollPage = () => {
         'July', 'August', 'September', 'October', 'November', 'December'
     ];
 
+    const safePayrolls = Array.isArray(payrolls) ? payrolls : [];
+    const safeTrainers = Array.isArray(trainers) ? trainers : [];
+
     return (
         <div className="fade-in">
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
@@ -208,7 +215,7 @@ const PayrollPage = () => {
                                 onChange={(e) => setSelectedTrainerId(e.target.value)}
                             >
                                 <option value="">All Trainers</option>
-                                {trainers.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
+                                {safeTrainers.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
                             </select>
                         )}
                         <select
@@ -234,7 +241,7 @@ const PayrollPage = () => {
                     ) : (
                         <div className="card">
                             <h3 style={{ marginBottom: '1.25rem', fontSize: '1rem', fontWeight: '700' }}>📜 Monthly Pay Slips</h3>
-                            {payrolls.length === 0 ? (
+                            {safePayrolls.length === 0 ? (
                                 <div className="empty-state">
                                     <div className="empty-state-icon">💵</div>
                                     <h3>No payroll records found</h3>
@@ -256,7 +263,7 @@ const PayrollPage = () => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {payrolls.map(slip => (
+                                            {safePayrolls.map(slip => (
                                                 <tr key={slip._id}>
                                                     {isAdmin && (
                                                         <td>
@@ -327,7 +334,7 @@ const PayrollPage = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {trainers.map(t => (
+                                {safeTrainers.map(t => (
                                     <tr key={t._id}>
                                         <td style={{ fontWeight: '600' }}>{t.name}</td>
                                         <td>{t.email}</td>
@@ -396,7 +403,7 @@ const PayrollPage = () => {
                             required
                         >
                             <option value="">-- Choose Trainer --</option>
-                            {trainers.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
+                            {safeTrainers.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
                         </select>
                     </div>
 
@@ -454,7 +461,7 @@ const PayrollPage = () => {
                             required
                         >
                             <option value="">-- Choose Trainer --</option>
-                            {trainers.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
+                            {safeTrainers.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
                         </select>
                     </div>
 

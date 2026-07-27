@@ -35,10 +35,11 @@ const TrainerAttendancePage = () => {
     const fetchTrainers = async () => {
         try {
             const data = await getStaff();
-            // Filter only trainers
-            setTrainers(data.filter(s => s.role === 'trainer'));
+            const staffList = Array.isArray(data) ? data : (data?.data || []);
+            setTrainers(staffList.filter(s => s.role === 'trainer'));
         } catch (error) {
             console.error('Error fetching trainers:', error);
+            setTrainers([]);
         }
     };
 
@@ -46,12 +47,13 @@ const TrainerAttendancePage = () => {
         setLoading(true);
         try {
             const data = await getTrainerAttendance(selectedTrainerId);
-            setLogs(data);
+            const logList = Array.isArray(data) ? data : (data?.data || []);
+            setLogs(logList);
 
             // Check if trainer is currently checked in (has a record today where checkOutTime is null)
             const targetTrainer = selectedTrainerId || (isTrainer ? user.id : '');
             if (targetTrainer) {
-                const active = data.find(l => l.trainerId === targetTrainer && !l.checkOutTime);
+                const active = logList.find(l => l.trainerId === targetTrainer && !l.checkOutTime);
                 if (active) {
                     setIsCheckedIn(true);
                     setActiveLog(active);
@@ -62,6 +64,7 @@ const TrainerAttendancePage = () => {
             }
         } catch (error) {
             console.error('Error fetching attendance logs:', error);
+            setLogs([]);
         } finally {
             setLoading(false);
         }
@@ -89,11 +92,14 @@ const TrainerAttendancePage = () => {
         }
     };
 
+    const safeLogs = Array.isArray(logs) ? logs : [];
+    const safeTrainers = Array.isArray(trainers) ? trainers : [];
+
     // Calculate monthly stats
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
     
-    const monthlyLogs = logs.filter(l => {
+    const monthlyLogs = safeLogs.filter(l => {
         const d = new Date(l.date);
         return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
     });
@@ -119,7 +125,7 @@ const TrainerAttendancePage = () => {
                         style={{ maxWidth: '400px' }}
                     >
                         <option value="">-- All Trainer Logs --</option>
-                        {trainers.map(t => (
+                        {safeTrainers.map(t => (
                             <option key={t._id} value={t._id}>
                                 {t.name} ({t.email})
                             </option>
@@ -196,7 +202,7 @@ const TrainerAttendancePage = () => {
                     {/* Attendance Logs Table */}
                     <div className="card">
                         <h3 style={{ marginBottom: '1.25rem', fontSize: '1rem', fontWeight: '700' }}>📜 Attendance Shift History</h3>
-                        {logs.length === 0 ? (
+                        {safeLogs.length === 0 ? (
                             <div className="empty-state">
                                 <div className="empty-state-icon">⏱️</div>
                                 <h3>No attendance records found</h3>
@@ -216,7 +222,7 @@ const TrainerAttendancePage = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {logs.map(log => (
+                                        {safeLogs.map(log => (
                                             <tr key={log._id}>
                                                 <td style={{ fontWeight: '600' }}>
                                                     {new Date(log.date).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}

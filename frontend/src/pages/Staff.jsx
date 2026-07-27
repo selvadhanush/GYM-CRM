@@ -28,19 +28,19 @@ const Staff = () => {
     // --- Dynamic Permissions Matrix state ---
     const initialMatrix = {
         superadmin: {
-            members: true, workouts: true, settings: true, finance: true, classes: true, support: true, reports: true
+            members: true, workouts: true, settings: true, finance: true, classes: true, reports: true
         },
         admin: {
-            members: true, workouts: true, settings: true, finance: true, classes: true, support: true, reports: true
+            members: true, workouts: true, settings: true, finance: true, classes: true, reports: true
         },
         receptionist: {
-            members: true, workouts: false, settings: false, finance: false, classes: true, support: true, reports: false
+            members: true, workouts: false, settings: false, finance: false, classes: true, reports: false
         },
         trainer: {
-            members: true, workouts: true, settings: false, finance: false, classes: true, support: true, reports: false
+            members: true, workouts: true, settings: false, finance: false, classes: true, reports: false
         },
         member: {
-            members: false, workouts: true, settings: false, finance: false, classes: false, support: true, reports: false
+            members: false, workouts: true, settings: false, finance: false, classes: false, reports: false
         }
     };
 
@@ -326,7 +326,6 @@ const Staff = () => {
                                         { key: 'settings', label: 'Modify Branding & Cooldown Settings' },
                                         { key: 'finance', label: 'Access Financials, Dues & Taxes' },
                                         { key: 'classes', label: 'Manage Classes & Timetables' },
-                                        { key: 'support', label: 'Open & Reply to Help Desk Tickets' },
                                         { key: 'reports', label: 'Generate Audits & Executive Reports' }
                                     ].map(mod => (
                                         <tr key={mod.key}>

@@ -36,10 +36,15 @@ const Leads = () => {
                 API.get('/leads'),
                 API.get('/leads/summary')
             ]);
-            setLeads(leadsRes.data);
-            setSummary(summaryRes.data);
-        } catch (err) { console.error(err); }
-        finally { setLoading(false); }
+            const leadsList = Array.isArray(leadsRes.data) ? leadsRes.data : (leadsRes.data?.data || []);
+            const summaryData = summaryRes.data?.data || summaryRes.data || null;
+            setLeads(leadsList);
+            setSummary(summaryData);
+        } catch (err) { 
+            console.error(err);
+            setLeads([]);
+            setSummary(null);
+        } finally { setLoading(false); }
     };
 
     useEffect(() => { fetchAll(); }, []);
@@ -88,7 +93,9 @@ const Leads = () => {
         catch (err) { alert('Failed to delete'); }
     };
 
-    const filtered = leads.filter(l => {
+    const safeLeads = Array.isArray(leads) ? leads : [];
+
+    const filtered = safeLeads.filter(l => {
         const matchStatus = !filterStatus || l.status === filterStatus;
         const matchSearch = !search || l.name.toLowerCase().includes(search.toLowerCase()) || l.phone.includes(search);
         return matchStatus && matchSearch;
@@ -104,17 +111,18 @@ const Leads = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <div>
                     <h2 style={{ marginBottom: '0.25rem' }}>🎯 Lead Management</h2>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{leads.length} total leads · {summary?.followUpDue || 0} follow-up(s) due</p>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{safeLeads.length} total leads · {summary?.followUpDue || 0} follow-up(s) due</p>
                 </div>
                 <button className="btn btn-primary" onClick={openCreate}>+ Add Lead</button>
             </div>
 
             {/* Pipeline Summary Cards */}
             {summary && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
                     {STATUSES.map(s => {
-                        const count = summary.statusCounts?.find(x => x._id === s)?.count || 0;
-                        const col = STATUS_COLORS[s];
+                        const statusCounts = Array.isArray(summary.statusCounts) ? summary.statusCounts : [];
+                        const count = statusCounts.find(x => x._id === s)?.count || 0;
+                        const col = STATUS_COLORS[s] || { bg: 'var(--primary-muted)', text: 'var(--primary-color)' };
                         return (
                             <div key={s} className="card"
                                 onClick={() => setFilterStatus(filterStatus === s ? '' : s)}
@@ -127,14 +135,14 @@ const Leads = () => {
                     })}
                     <div className="card" style={{ padding: '1rem', borderLeft: '4px solid #10b981' }}>
                         <div style={{ fontSize: '1.5rem' }}>📈</div>
-                        <div style={{ fontWeight: '800', fontSize: '1.5rem', color: '#10b981' }}>{summary.conversionRate}%</div>
+                        <div style={{ fontWeight: '800', fontSize: '1.5rem', color: '#10b981' }}>{summary.conversionRate || 0}%</div>
                         <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>Conversion</div>
                     </div>
                 </div>
             )}
 
             {/* Source breakdown */}
-            {summary?.sourceCounts?.length > 0 && (
+            {Array.isArray(summary?.sourceCounts) && summary.sourceCounts.length > 0 && (
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
                     {summary.sourceCounts.map(s => (
                         <span key={s._id} style={{ background: 'var(--primary-light)', color: 'var(--primary-color)', padding: '0.3rem 0.75rem', borderRadius: '999px', fontSize: '0.8rem', fontWeight: '600' }}>
@@ -180,7 +188,7 @@ const Leads = () => {
                                 </td>
                             </tr>
                         ) : filtered.map(lead => {
-                            const col = STATUS_COLORS[lead.status];
+                            const col = STATUS_COLORS[lead.status] || { bg: 'var(--primary-muted)', text: 'var(--primary-color)' };
                             const followUp = lead.followUpDate ? lead.followUpDate.slice(0, 10) : null;
                             const isOverdue = followUp && followUp < todayStr && !['Converted', 'Lost'].includes(lead.status);
                             return (

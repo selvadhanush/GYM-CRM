@@ -20,9 +20,11 @@ const Plans = () => {
     const fetchPlans = async () => {
         try {
             const data = await getPlans();
-            setPlans(data);
+            const list = Array.isArray(data) ? data : (data?.data || []);
+            setPlans(list);
         } catch (error) {
             console.error('Error fetching plans:', error);
+            setPlans([]);
         } finally {
             setLoading(false);
         }
@@ -65,6 +67,8 @@ const Plans = () => {
         }
     };
 
+    const safePlans = Array.isArray(plans) ? plans : [];
+
     if (loading) return <div className="spinner"></div>;
 
     return (
@@ -87,7 +91,7 @@ const Plans = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {plans.length === 0 ? (
+                        {safePlans.length === 0 ? (
                             <tr>
                                 <td colSpan={isAdmin ? 4 : 3}>
                                     <div className="empty-state">
@@ -98,7 +102,7 @@ const Plans = () => {
                                 </td>
                             </tr>
                         ) : (
-                            plans.map(plan => (
+                            safePlans.map(plan => (
                                 <tr key={plan._id}>
                                     <td>
                                         {plan.name}
