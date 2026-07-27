@@ -38,7 +38,7 @@ const getAuditLogs = catchAsync(async (req, res, next) => {
 
         res.json({ logs, total, page: parseInt(page), pages: Math.ceil(total / parseInt(limit)) });
     } catch (err) { next(err); }
-};
+});
 
 // @desc    Get activity summary (counts by action type)
 // @route   GET /api/audit/summary
@@ -69,6 +69,6 @@ const getAuditSummary = catchAsync(async (req, res, next) => {
 
         res.json({ summary, recentLogins });
     } catch (err) { next(err); }
-};
+});
 
 module.exports = { getAuditLogs, getAuditSummary };

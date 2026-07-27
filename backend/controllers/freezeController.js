@@ -23,7 +23,7 @@ const freezeMember = catchAsync(async (req, res, next) => {
 
         res.json({ message: 'Member membership frozen successfully', member });
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Unfreeze a member's membership (adds frozen days to expiry)
 // @route   POST /api/members/:id/unfreeze
@@ -66,7 +66,7 @@ const unfreezeMember = catchAsync(async (req, res, next) => {
             member
         });
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get freeze history for a member
 // @route   GET /api/members/:id/freeze-history
@@ -81,6 +81,6 @@ const getFreezeHistory = catchAsync(async (req, res, next) => {
         if (!member) return res.status(404).json({ message: 'Member not found' });
         res.json({ name: member.name, status: member.status, freezeHistory: member.freezeHistory });
     } catch (error) { next(error); }
-};
+});
 
 module.exports = { freezeMember, unfreezeMember, getFreezeHistory };

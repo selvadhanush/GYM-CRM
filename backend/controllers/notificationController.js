@@ -18,7 +18,7 @@ const getNotifications = catchAsync(async (req, res, next) => {
 
         res.json(notifications);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Mark notification as read
 // @route   PUT /api/notifications/:id
@@ -35,7 +35,7 @@ const markAsRead = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Notification not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Create gym-wide announcement
 // @route   POST /api/notifications/announcement
@@ -62,7 +62,7 @@ const createAnnouncement = catchAsync(async (req, res, next) => {
         await Notification.insertMany(notifications);
         res.status(201).json({ message: 'Announcement sent to all users' });
     } catch (error) { next(error); }
-};
+});
 
 // Helper logic to find members with expiries or dues
 const generateAutomatedAlerts = async (user) => {

@@ -30,7 +30,7 @@ const createPlan = catchAsync(async (req, res, next) => {
             res.status(400).json({ success: false, message: 'Invalid plan data' });
         }
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get all plans (own gym + FitPrime SYSTEM plans)
 // @route   GET /api/plans
@@ -46,7 +46,7 @@ const getPlans = catchAsync(async (req, res, next) => {
         const plans = await Plan.find(query).lean();
         res.json(plans);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get single plan
 // @route   GET /api/plans/:id
@@ -63,7 +63,7 @@ const getPlanById = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Plan not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Update plan
 // @route   PUT /api/plans/:id
@@ -92,7 +92,7 @@ const updatePlan = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Plan not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Delete plan
 // @route   DELETE /api/plans/:id
@@ -111,7 +111,7 @@ const deletePlan = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Plan not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 module.exports = {
     createPlan,

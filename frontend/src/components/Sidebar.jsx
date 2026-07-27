@@ -331,7 +331,16 @@ const Sidebar = () => {
             }
         ];
     } else {
-        groups = NAV_GROUPS[role] || NAV_GROUPS.member;
+        const normalizedGym = (user?.gymName || user?.gymId?.name || '').toUpperCase();
+        const userGymId = user?.gymId?._id || user?.gymId || '';
+        const isH4Gym = normalizedGym === 'H4' || userGymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+        const isPartnerAdmin = role === 'partner' || (role === 'admin' && !isH4Gym);
+
+        if (isPartnerAdmin) {
+            groups = NAV_GROUPS.partner;
+        } else {
+            groups = NAV_GROUPS[role] || NAV_GROUPS.member;
+        }
     }
 
     const isActive = (path) => location.pathname === path;

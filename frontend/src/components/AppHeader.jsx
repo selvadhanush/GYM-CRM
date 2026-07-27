@@ -22,6 +22,8 @@ const PAGE_TITLES = {
     '/leads': 'Sales & Leads',
     '/member-dashboard': 'My Fitness Portal',
     '/member-classes': 'My Class Schedule',
+    '/partner/visit-log': 'FitPass Member Check-Ins',
+    '/partner/fitpass-leads': 'FitPass Member Audit & Leads',
 };
 
 const AppHeader = ({ onThemeToggle, isDark }) => {
@@ -420,7 +422,7 @@ const AppHeader = ({ onThemeToggle, isDark }) => {
                             {user?.name || 'User'}
                         </span>
                         <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.02em' }}>
-                            {user?.role}
+                            {user?.role === 'fitpass_admin' ? 'FitPass Admin' : user?.role === 'h4_admin' ? 'H4 Admin' : user?.role === 'superadmin' ? 'Super Admin' : user?.role === 'partner' ? 'Partner Admin' : user?.role}
                         </span>
                     </div>
                     <ChevronDown size={14} className="hide-mobile" style={{ color: 'var(--text-muted)', marginLeft: '4px' }} />

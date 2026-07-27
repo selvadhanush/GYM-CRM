@@ -104,7 +104,7 @@ const createMember = catchAsync(async (req, res, next) => {
             res.status(400).json({ success: false, message: 'Invalid member data' });
         }
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get all members with pagination and filters
 // @route   GET /api/members
@@ -157,7 +157,7 @@ const getMembers = catchAsync(async (req, res, next) => {
             total
         });
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get members expiring soon (within 7 days)
 // @route   GET /api/members/expiring-soon
@@ -176,14 +176,14 @@ const getExpiringSoonMembers = catchAsync(async (req, res, next) => {
 
         res.json(members);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get single member
 // @route   GET /api/members/:id
 // @access  Private/Admin
 const getPlanById = catchAsync(async (req, res, next) => {
     // Legacy placeholder
-};
+});
 const getMemberById = catchAsync(async (req, res, next) => {
     try {
         const query = await buildMemberQuery(req, req.params.id);
@@ -197,7 +197,7 @@ const getMemberById = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Member not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Update member
 // @route   PUT /api/members/:id
@@ -296,7 +296,7 @@ const updateMember = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Member not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Delete member
 // @route   DELETE /api/members/:id
@@ -318,7 +318,7 @@ const deleteMember = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Member not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Export members as CSV
 // @route   GET /api/members/export/csv
@@ -343,7 +343,7 @@ const exportMembersCSV = catchAsync(async (req, res, next) => {
         res.setHeader('Content-Disposition', 'attachment; filename=members.csv');
         res.status(200).send(csv);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get complete audit trail for a member (financial status, plans, division switches)
 // @route   GET /api/members/:id/audit
@@ -416,7 +416,7 @@ const getMemberAuditTrail = catchAsync(async (req, res, next) => {
             auditLogs
         });
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Renew a member's plan
 // @route   POST /api/members/:id/renew
@@ -472,7 +472,7 @@ const renewMember = catchAsync(async (req, res, next) => {
 
         res.json({ success: true, member });
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Transfer member to a different branch
 // @route   PUT /api/members/:id/transfer
@@ -495,7 +495,7 @@ const transferMember = catchAsync(async (req, res, next) => {
 
         res.json({ success: true, member });
     } catch (error) { next(error); }
-};
+});
 
 module.exports = {
     createMember,

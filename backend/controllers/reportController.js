@@ -36,7 +36,7 @@ const getRevenueReport = catchAsync(async (req, res, next) => {
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename=revenue_report_${month}_${year}.csv`);
     res.status(200).send(csv);
-};
+});
 
 // @desc    Download monthly expense report
 // @route   GET /api/reports/expenses
@@ -67,7 +67,7 @@ const getExpenseReport = catchAsync(async (req, res, next) => {
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename=expense_report_${month}_${year}.csv`);
     res.status(200).send(csv);
-};
+});
 
 // @desc    Get report summary dashboard data
 // @route   GET /api/reports/summary?year=YYYY
@@ -298,7 +298,7 @@ const getReportSummary = catchAsync(async (req, res, next) => {
             topMetrics,
         });
     } catch (err) { next(err); }
-};
+});
 
 module.exports = {
     getRevenueReport,

@@ -57,14 +57,20 @@ function App() {
         <Route path="/" element={
           <ProtectedRoute>
             <Layout>
-              <Navigate to={
-                (user?.role === 'superadmin' || user?.role === 'fitpass_admin') ? "/superadmin/dashboard" :
-                (user?.role === 'admin' || user?.role === 'h4_admin') ? "/dashboard" :
-                  user?.role === 'trainer' ? "/attendance" :
-                    user?.role === 'member' ? "/member-dashboard" :
-                      user?.role === 'partner' ? "/partner/visit-log" :
-                        "/members"
-              } replace />
+              {(() => {
+                const normalizedGym = (user?.gymName || user?.gymId?.name || '').toUpperCase();
+                const userGymId = user?.gymId?._id || user?.gymId || '';
+                const isH4Gym = normalizedGym === 'H4' || userGymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+                const isPartnerAdmin = user?.role === 'partner' || (user?.role === 'admin' && !isH4Gym);
+
+                const targetPath = (user?.role === 'superadmin' || user?.role === 'fitpass_admin') ? "/superadmin/dashboard" :
+                  isPartnerAdmin ? "/partner/visit-log" :
+                  (user?.role === 'admin' || user?.role === 'h4_admin') ? "/dashboard" :
+                    user?.role === 'trainer' ? "/attendance" :
+                      user?.role === 'member' ? "/member-dashboard" :
+                        "/members";
+                return <Navigate to={targetPath} replace />;
+              })()}
             </Layout>
           </ProtectedRoute>
         } />
@@ -241,7 +247,7 @@ function App() {
 
         {/* ─── FitPass Partner portal (read-only, gym-scoped) ─── */}
         <Route path="/partner/visit-log" element={
-          <ProtectedRoute roles={['partner']}>
+          <ProtectedRoute roles={['partner', 'admin']}>
             <Layout>
               <FitPassVisitLog />
             </Layout>
@@ -249,7 +255,7 @@ function App() {
         } />
 
         <Route path="/partner/fitpass-leads" element={
-          <ProtectedRoute roles={['partner']}>
+          <ProtectedRoute roles={['partner', 'admin']}>
             <Layout>
               <FitPassPartnerLeads />
             </Layout>

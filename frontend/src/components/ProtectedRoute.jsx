@@ -15,14 +15,23 @@ const ProtectedRoute = ({ children, roles }) => {
         return <Navigate to="/login" replace />;
     }
 
-    if (roles && user.role !== 'superadmin' && !roles.includes(user.role)) {
+    const normalizedGym = (user.gymName || user.gymId?.name || '').toUpperCase();
+    const userGymId = user.gymId?._id || user.gymId || '';
+    const isH4Gym = normalizedGym === 'H4' || userGymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+    const isPartnerAdmin = user.role === 'partner' || (user.role === 'admin' && !isH4Gym);
+
+    if (isPartnerAdmin && !['/partner/visit-log', '/partner/fitpass-leads', '/support'].includes(window.location.pathname)) {
+        return <Navigate to="/partner/visit-log" replace />;
+    }
+
+    if (roles && user.role !== 'superadmin' && !roles.includes(user.role) && !isPartnerAdmin) {
         const defaultPath = user.role === 'fitpass_admin' ? '/superadmin/dashboard' :
             user.role === 'h4_admin' ? '/dashboard' :
             user.role === 'superadmin' ? '/superadmin/dashboard' :
             user.role === 'admin' ? '/dashboard' :
                 user.role === 'trainer' ? '/attendance' :
                     user.role === 'member' ? '/member-dashboard' :
-                        user.role === 'partner' ? '/partner/visit-log' :
+                        isPartnerAdmin ? '/partner/visit-log' :
                             '/members';
         return <Navigate to={defaultPath} replace />;
     }

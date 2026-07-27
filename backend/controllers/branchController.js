@@ -29,7 +29,7 @@ const getBranches = catchAsync(async (req, res, next) => {
 
         res.json(enriched);
     } catch (err) { next(err); }
-};
+});
 
 const createBranch = catchAsync(async (req, res, next) => {
     try {
@@ -51,7 +51,7 @@ const createBranch = catchAsync(async (req, res, next) => {
         await logAudit(req, 'BRANCH_CREATED', 'Branch', branch._id, `Branch "${name}" created`, name);
         res.status(201).json(branch);
     } catch (err) { next(err); }
-};
+});
 
 // @desc    Update a branch
 // @route   PUT /api/branches/:id
@@ -69,7 +69,7 @@ const updateBranch = catchAsync(async (req, res, next) => {
         await logAudit(req, 'BRANCH_UPDATED', 'Branch', branch._id, `Branch "${branch.name}" updated`, branch.name);
         res.json(branch);
     } catch (err) { next(err); }
-};
+});
 
 // @desc    Delete a branch
 // @route   DELETE /api/branches/:id
@@ -83,7 +83,7 @@ const deleteBranch = catchAsync(async (req, res, next) => {
         await logAudit(req, 'BRANCH_DELETED', 'Branch', branch._id, `Branch "${branch.name}" deleted`, branch.name);
         res.json({ message: 'Branch deleted' });
     } catch (err) { next(err); }
-};
+});
 
 // @desc    Get members for a specific branch
 // @route   GET /api/branches/:id/members
@@ -96,6 +96,6 @@ const getBranchMembers = catchAsync(async (req, res, next) => {
             .populate('planId', 'name').sort({ createdAt: -1 });
         res.json(members);
     } catch (err) { next(err); }
-};
+});
 
 module.exports = { getBranches, createBranch, updateBranch, deleteBranch, getBranchMembers };

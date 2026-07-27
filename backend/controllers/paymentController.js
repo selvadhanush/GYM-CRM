@@ -41,7 +41,7 @@ const addPayment = catchAsync(async (req, res, next) => {
         res.status(400);
         throw new Error('Invalid payment data');
     }
-};
+});
 
 // @desc    Get all payments
 // @route   GET /api/payments
@@ -55,7 +55,7 @@ const getPayments = catchAsync(async (req, res, next) => {
             .lean();
         res.json(payments);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get payment history for a specific member
 // @route   GET /api/payments/member/:memberId
@@ -72,7 +72,7 @@ const getMemberPayments = catchAsync(async (req, res, next) => {
         .sort({ createdAt: -1 })
         .lean();
     res.json(payments);
-};
+});
 
 // @desc    Create Razorpay Order
 // @route   POST /api/payments/razorpay/order
@@ -108,7 +108,7 @@ const createRazorpayOrder = catchAsync(async (req, res, next) => {
             isMock: true
         });
     } catch (err) { next(err); }
-};
+});
 
 // @desc    Verify Razorpay Payment Signature and Record Payment
 // @route   POST /api/payments/razorpay/verify
@@ -139,7 +139,7 @@ const verifyRazorpayPayment = catchAsync(async (req, res, next) => {
 
         res.json({ success: true, payment });
     } catch (err) { next(err); }
-};
+});
 
 module.exports = {
     addPayment,

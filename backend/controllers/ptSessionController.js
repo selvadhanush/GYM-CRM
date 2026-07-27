@@ -48,7 +48,7 @@ const createSession = catchAsync(async (req, res, next) => {
 
         res.status(201).json(session);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get all PT sessions
 // @route   GET /api/pt-sessions
@@ -116,7 +116,7 @@ const getSessions = catchAsync(async (req, res, next) => {
             meta: { page, limit, total }
         });
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get single PT session
 // @route   GET /api/pt-sessions/:id
@@ -144,7 +144,7 @@ const getSessionById = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Session not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Update PT session status or details
 // @route   PUT /api/pt-sessions/:id
@@ -173,7 +173,7 @@ const updateSession = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Session not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Delete PT session
 // @route   DELETE /api/pt-sessions/:id
@@ -189,7 +189,7 @@ const deleteSession = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Session not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 module.exports = {
     createSession,

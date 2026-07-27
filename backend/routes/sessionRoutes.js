@@ -41,7 +41,7 @@ router.get(
 router.get(
   '/partner-visits',
   protect,
-  authorize('partner'),
+  authorize('partner', 'admin'),
   getPartnerVisitLog
 );
 

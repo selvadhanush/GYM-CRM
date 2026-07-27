@@ -33,7 +33,7 @@ const createPlan = catchAsync(async (req, res, next) => {
 
         res.status(201).json(plan);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get all diet plans
 // @route   GET /api/diet-plans
@@ -101,7 +101,7 @@ const getPlans = catchAsync(async (req, res, next) => {
             meta: { page, limit, total }
         });
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get single diet plan
 // @route   GET /api/diet-plans/:id
@@ -133,7 +133,7 @@ const getPlanById = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Diet plan not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Update diet plan
 // @route   PUT /api/diet-plans/:id
@@ -164,7 +164,7 @@ const updatePlan = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Diet plan not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Delete diet plan
 // @route   DELETE /api/diet-plans/:id
@@ -180,7 +180,7 @@ const deletePlan = catchAsync(async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Diet plan not found' });
         }
     } catch (error) { next(error); }
-};
+});
 
 module.exports = {
     createPlan,

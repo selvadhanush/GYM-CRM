@@ -194,14 +194,14 @@ function SuperAdminDashboard() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
                         <Dumbbell size={16} color="var(--primary)" />
                         <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--primary)' }}>
-                            FitPrime Super Admin
+                            {user?.role === 'fitpass_admin' ? 'FitPass Admin' : user?.role === 'h4_admin' ? 'H4 Admin' : 'FitPrime Super Admin'}
                         </span>
                     </div>
                     <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>
-                        {greeting}, {user?.name?.split(' ')[0] || 'Master Admin'} 👋
+                        {greeting}, {user?.name?.split(' ')[0] || (user?.role === 'fitpass_admin' ? 'FitPass Admin' : user?.role === 'h4_admin' ? 'H4 Admin' : 'Master Admin')} 👋
                     </h1>
                     <p style={{ margin: '0.4rem 0 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                        Global platform overview — {now.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                        {user?.role === 'fitpass_admin' ? 'FitPass Network Operations Overview' : user?.role === 'h4_admin' ? 'H4 Gym Network Overview' : 'Global platform overview'} — {now.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                     </p>
                 </div>
                 <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>

@@ -49,7 +49,7 @@ const upsertSalaryStructure = catchAsync(async (req, res, next) => {
             return res.status(201).json(created);
         }
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get Salary Configuration for a Trainer
 // @route   GET /api/payroll/salary-structure/:trainerId
@@ -79,7 +79,7 @@ const getSalaryStructure = catchAsync(async (req, res, next) => {
 
         res.json(salary);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Generate/Recalculate Monthly Payroll
 // @route   POST /api/payroll/generate
@@ -191,7 +191,7 @@ const generateMonthlyPayroll = catchAsync(async (req, res, next) => {
             return res.status(201).json(created);
         }
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Get Payroll Records
 // @route   GET /api/payroll
@@ -243,7 +243,7 @@ const getPayrolls = catchAsync(async (req, res, next) => {
             meta: { page, limit, total }
         });
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Update Payroll Status / Process Payment
 // @route   PUT /api/payroll/:id
@@ -278,7 +278,7 @@ const updatePayrollStatus = catchAsync(async (req, res, next) => {
         const updated = await payroll.save();
         res.json(updated);
     } catch (error) { next(error); }
-};
+});
 
 // @desc    Record manual commission entry
 // @route   POST /api/payroll/commission
@@ -312,7 +312,7 @@ const addCommission = catchAsync(async (req, res, next) => {
 
         res.status(201).json(commission);
     } catch (error) { next(error); }
-};
+});
 
 module.exports = {
     upsertSalaryStructure,
