@@ -73,7 +73,7 @@ const updateBranch = catchAsync(async (req, res, next) => {
 
 // @desc    Delete a branch
 // @route   DELETE /api/branches/:id
-const deleteBranch = catchAsync(async (req, res, next) => {
+const deleteBranch = catchAsync (async (req, res, next) => {
     try {
         if (req.user.branchId) {
             return res.status(403).json({ message: 'Branch administrators cannot delete branches' });

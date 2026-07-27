@@ -89,13 +89,18 @@ app.get('/api/health', (req, res) => {
     res.status(200).json({ success: true, status: 'Server running' });
 });
 
-// API Versioning internal rewrite for backward compatibility (preserves HTTP method & body)
-app.use('/api', (req, res, next) => {
-    if (req.path.startsWith('/v1') || req.path === '/health') {
+// API Versioning redirection for backward compatibility
+app.use((req, res, next) => {
+    if (!req.path.startsWith('/api/')) {
         return next();
     }
-    req.url = '/v1' + req.url;
-    next();
+    const apiPath = req.path.substring(5); // Strips '/api/'
+    if (apiPath.startsWith('v1/') || apiPath === 'health') {
+        return next();
+    }
+    // Redirect /api/X to /api/v1/X
+    const query = req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '';
+    res.redirect(301, `/api/v1/${apiPath}${query}`);
 });
 
 // Routes
