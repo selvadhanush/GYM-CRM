@@ -42,7 +42,8 @@ const globalLimiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: isProd ? 5 : 50, // 5 attempts / 15 min in production
+  max: isProd ? 5 : 500, // 5 attempts / 15 min in production
+  skip: () => !isProd,
   standardHeaders: true,
   legacyHeaders: true, // emit Retry-After for clients that read it
   message: {
@@ -53,7 +54,8 @@ const authLimiter = rateLimit({
 
 const otpVerifyLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutes
-  max: isProd ? 5 : 50, // 5 verification attempts / 10 min in production
+  max: isProd ? 5 : 500, // 5 verification attempts / 10 min in production
+  skip: () => !isProd,
   standardHeaders: true,
   legacyHeaders: true,
   message: {

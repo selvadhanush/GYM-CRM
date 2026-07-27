@@ -699,7 +699,6 @@ const getPartnerVisitLog = catchAsync(async (req, res, next) => {
           id: true,
           memberName: true,
           checkInTimestamp: true,
-          checkOutTimestamp: true,
           branchNameVisited: true,
           sessionsDeducted: true,
           accessStatus: true,
