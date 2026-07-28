@@ -59,9 +59,10 @@ const createMember = catchAsync(async (req, res, next) => {
             });
         }
 
+        const durationDays = plan.duration || (plan.validityDays ? Number(plan.validityDays) : 30);
         const startDate = joinDate ? new Date(joinDate) : new Date();
         const expiryDate = new Date(startDate);
-        expiryDate.setDate(startDate.getDate() + plan.duration);
+        expiryDate.setDate(startDate.getDate() + durationDays);
 
         const status = expiryDate < new Date() ? 'Expired' : 'Active';
 
@@ -87,11 +88,12 @@ const createMember = catchAsync(async (req, res, next) => {
 
         if (member) {
             // Create a User record for the member to allow login
-            // Default password is their phone number
+            // Default password is password param or phone number
+            const { password } = req.body;
             await User.create({
                 name: member.name,
                 email: emailCheck,
-                password: member.phone,
+                password: password || member.phone,
                 role: 'member',
                 gymId: targetGymId,
                 branchId: targetBranchId,
@@ -113,26 +115,15 @@ const getMembers = catchAsync(async (req, res, next) => {
     try {
         const { status, page = 1, limit = 10, search = '' } = req.query;
 
-        const query = {};
-        if (req.user.role === 'fitpass_admin') {
-            const Gym = require('../models/Gym');
-            const h4Gym = await Gym.findOne({ name: 'H4' });
-            const h4GymId = h4Gym ? h4Gym._id.toString() : '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
-            if (req.user.gymId && req.user.gymId !== 'SYSTEM') {
-                query.gymId = req.user.gymId;
-            } else {
-                query.gymId = { $ne: h4GymId };
-            }
-        } else {
-            if (req.user.gymId && req.user.gymId !== 'SYSTEM') {
-                query.gymId = req.user.gymId;
-            }
-            if (req.user.branchId) {
-                query.branchId = req.user.branchId;
-            }
-        }
+        const query = await buildMemberQuery(req);
 
         if (status) query.status = status;
+        if (search) {
+            query.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { phone: { $regex: search, $options: 'i' } }
+            ];
+        }
         if (search) {
             query.$or = [
                 { name: { $regex: search, $options: 'i' } },

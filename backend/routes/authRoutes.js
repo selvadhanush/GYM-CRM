@@ -1,7 +1,8 @@
 const express = require('express');
 const { z } = require('zod');
-const { registerUser, authUser, verifyOTP, checkUserAndSendOTP } = require('../controllers/authController');
+const { registerUser, authUser, verifyOTP, checkUserAndSendOTP, updateProfile } = require('../controllers/authController');
 const { authLimiter, otpVerifyLimiter } = require('../middleware/rateLimiters');
+const { protect } = require('../middleware/authMiddleware');
 const validate = require('../middleware/validate');
 
 const router = express.Router();
@@ -40,6 +41,7 @@ router.post('/register', authLimiter, validate({ body: registerSchema }), regist
 router.post('/login', authLimiter, validate({ body: loginSchema }), authUser);
 router.post('/check-user', authLimiter, validate({ body: checkUserSchema }), checkUserAndSendOTP);
 router.post('/verify-otp', otpVerifyLimiter, validate({ body: verifyOtpSchema }), verifyOTP);
+router.put('/profile', protect, updateProfile);
 
 module.exports = router;
 

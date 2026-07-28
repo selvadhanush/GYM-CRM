@@ -94,6 +94,7 @@ const Branches = () => {
 
     if (loading) return <div className="spinner"></div>;
 
+    const canManageBranches = !selectedBranchId || user?.role === 'superadmin' || user?.role === 'h4_admin';
     const totalMembers = branches.reduce((s, b) => s + (b.memberCount || 0), 0);
     const totalRevenue = branches.reduce((s, b) => s + (b.totalRevenue || 0), 0);
 
@@ -106,7 +107,7 @@ const Branches = () => {
                         {branches.length} branch(es) · {totalMembers} members · ₹{totalRevenue.toLocaleString()} total revenue
                     </p>
                 </div>
-                {!selectedBranchId && <button className="btn btn-primary" onClick={openCreate}>+ Add Branch</button>}
+                {canManageBranches && <button className="btn btn-primary" onClick={openCreate}>+ Add Branch</button>}
             </div>
 
             {branches.length === 0 ? (
@@ -115,7 +116,7 @@ const Branches = () => {
                         <div className="empty-state-icon">🏢</div>
                         <h3>No branches yet</h3>
                         <p>Create your first branch to start organising members by location.</p>
-                        {!selectedBranchId && <button className="btn btn-primary" onClick={openCreate} style={{ marginTop: '1rem' }}>+ Add First Branch</button>}
+                        {canManageBranches && <button className="btn btn-primary" onClick={openCreate} style={{ marginTop: '1rem' }}>+ Add First Branch</button>}
                     </div>
                 </div>
             ) : (
@@ -171,7 +172,7 @@ const Branches = () => {
                                         <QrCode size={16} />
                                     </button>
                                 )}
-                                {!selectedBranchId && (
+                                {canManageBranches && (
                                     <>
                                         <button onClick={() => openEdit(branch)} className="btn" style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-secondary)', background: 'transparent' }}>
                                             <Pencil size={16} />

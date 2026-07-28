@@ -53,8 +53,11 @@ const getPlans = catchAsync(async (req, res, next) => {
 // @access  Private/Admin
 const getPlanById = catchAsync(async (req, res, next) => {
     try {
-        const query = { _id: req.params.id, gymId: req.user.gymId };
-        if (req.user.branchId) query.branchId = req.user.branchId;
+        const isGlobalAdmin = ['superadmin', 'fitpass_admin'].includes(req.user.role);
+        const query = { _id: req.params.id };
+        if (!isGlobalAdmin && req.user.gymId) {
+            query.gymId = req.user.gymId;
+        }
         const plan = await Plan.findOne(query);
 
         if (plan) {
@@ -72,8 +75,11 @@ const updatePlan = catchAsync(async (req, res, next) => {
     try {
         const { name, duration, price } = req.body;
 
-        const query = { _id: req.params.id, gymId: req.user.gymId };
-        if (req.user.branchId) query.branchId = req.user.branchId;
+        const isGlobalAdmin = ['superadmin', 'fitpass_admin'].includes(req.user.role);
+        const query = { _id: req.params.id };
+        if (!isGlobalAdmin && req.user.gymId) {
+            query.gymId = req.user.gymId;
+        }
         const plan = await Plan.findOne(query);
 
         if (plan) {
@@ -99,8 +105,11 @@ const updatePlan = catchAsync(async (req, res, next) => {
 // @access  Private/Admin
 const deletePlan = catchAsync(async (req, res, next) => {
     try {
-        const query = { _id: req.params.id, gymId: req.user.gymId };
-        if (req.user.branchId) query.branchId = req.user.branchId;
+        const isGlobalAdmin = ['superadmin', 'fitpass_admin'].includes(req.user.role);
+        const query = { _id: req.params.id };
+        if (!isGlobalAdmin && req.user.gymId) {
+            query.gymId = req.user.gymId;
+        }
         const plan = await Plan.findOne(query);
 
         if (plan) {

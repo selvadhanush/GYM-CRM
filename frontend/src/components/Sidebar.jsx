@@ -67,7 +67,6 @@ const NAV_GROUPS = {
                 { name: 'Reports', path: '/reports', icon: FileText },
                 { name: 'Freeze System', path: '/freeze', icon: Snowflake },
                 { name: 'Analytics', path: '/analytics', icon: LineChart },
-                { name: 'FitPass Reports', path: '/fitpass-analytics', icon: Zap },
                 { name: 'Workout Plans', path: '/workout-plans', icon: Dumbbell },
                 { name: 'Diet Plans', path: '/diet-plans', icon: Apple },
                 { name: 'Settings', path: '/settings', icon: Settings },
@@ -202,12 +201,8 @@ const Sidebar = () => {
                     { name: `Classes${suffix}`, path: '/classes', icon: Dumbbell },
                     { name: `Assessments${suffix}`, path: '/body-assessments', icon: LineChart },
                     { name: `Staff${suffix}`, path: '/staff', icon: ShieldCheck },
+                    { name: 'Branches', path: '/branches', icon: Building2 },
                 ];
-
-                // H4 has overall branch management, H5 (sub-branch) does not
-                if (!selectedBranchId) {
-                    gymMgmtItems.push({ name: 'Branches', path: '/branches', icon: Building2 });
-                }
 
                 groups = [
                     {
@@ -231,7 +226,6 @@ const Sidebar = () => {
                             { name: `Reports${suffix}`, path: '/reports', icon: FileText },
                             { name: `Freeze System${suffix}`, path: '/freeze', icon: Snowflake },
                             { name: `Analytics${suffix}`, path: '/analytics', icon: LineChart },
-                            { name: `FitPass Reports${suffix}`, path: '/fitpass-analytics', icon: Zap },
                             { name: `Workout Plans${suffix}`, path: '/workout-plans', icon: Dumbbell },
                             { name: `Diet Plans${suffix}`, path: '/diet-plans', icon: Apple },
                             { name: 'Audit Logs', path: '/audit', icon: History },
@@ -286,11 +280,8 @@ const Sidebar = () => {
             { name: `Classes${suffix}`, path: '/classes', icon: Dumbbell },
             { name: `Assessments${suffix}`, path: '/body-assessments', icon: LineChart },
             { name: `Staff${suffix}`, path: '/staff', icon: ShieldCheck },
+            ...(!user?.branchId ? [{ name: 'Branches', path: '/branches', icon: Building2 }] : []),
         ];
-
-        if (!selectedBranchId) {
-            gymMgmtItems.push({ name: 'Branches', path: '/branches', icon: Building2 });
-        }
 
         groups = [
             {
@@ -332,6 +323,13 @@ const Sidebar = () => {
         } else {
             groups = NAV_GROUPS[role] || NAV_GROUPS.member;
         }
+    }
+
+    if (user?.branchId && Array.isArray(groups)) {
+        groups = groups.map(group => ({
+            ...group,
+            items: group.items.filter(item => item.path !== '/branches')
+        }));
     }
 
     const isActive = (path) => location.pathname === path;

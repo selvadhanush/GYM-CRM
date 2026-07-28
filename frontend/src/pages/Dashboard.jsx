@@ -3,7 +3,7 @@ import { getStats, getMembers } from '../services/apiService';
 import { AuthContext } from '../context/AuthContext';
 import API from '../services/api';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie } from 'recharts';
-import { Users, CheckCircle2, AlertTriangle, Clock, Sparkles, IndianRupee, TrendingDown, TrendingUp, Megaphone, Check, QrCode, Calendar, Phone } from 'lucide-react';
+import { Users, CheckCircle2, AlertTriangle, Clock, Sparkles, IndianRupee, TrendingDown, TrendingUp, Megaphone, Check, QrCode, Calendar, Phone, ChevronDown } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 
 const COLORS = ['var(--primary-color)', 'var(--accent-color)', '#a855f7', '#d946ef', '#f43f5e'];
@@ -44,7 +44,7 @@ const LiveSessionTimer = ({ expiresAt }) => {
 };
 
 const Dashboard = () => {
-    const { user, activeDivision, selectedBranchId } = useContext(AuthContext);
+    const { user, activeDivision, selectedGymId, changeSelectedGym, selectedBranchId, changeSelectedBranch } = useContext(AuthContext);
     const [stats, setStats] = useState(null);
     const [expiringMembers, setExpiringMembers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -53,9 +53,33 @@ const Dashboard = () => {
     const [announcing, setAnnouncing] = useState(false);
     const [announceSuccess, setAnnounceSuccess] = useState(false);
     const [showQR, setShowQR] = useState(false);
+    const [gymList, setGymList] = useState([]);
+
+    useEffect(() => {
+        const fetchGymsAndBranches = async () => {
+            try {
+                if (user?.role === 'superadmin' || user?.role === 'fitpass_admin') {
+                    if (activeDivision === 'h4') {
+                        const { data: branches } = await API.get('/branches');
+                        setGymList(Array.isArray(branches) ? branches : []);
+                    } else {
+                        const { data } = await API.get('/superadmin/gyms');
+                        setGymList(Array.isArray(data) ? data : []);
+                    }
+                } else if (['partner', 'h4_admin', 'admin'].includes(user?.role)) {
+                    const { data: branches } = await API.get('/branches');
+                    setGymList(Array.isArray(branches) ? branches : []);
+                }
+            } catch (err) {
+                console.error('Failed to fetch gyms for dashboard selector:', err);
+            }
+        };
+        fetchGymsAndBranches();
+    }, [user, activeDivision]);
 
     useEffect(() => {
         const fetchDashboardData = async () => {
+            setLoading(true);
             try {
                 const [statsData, membersData] = await Promise.all([
                     getStats(),
@@ -81,7 +105,7 @@ const Dashboard = () => {
         };
 
         fetchDashboardData();
-    }, [activeDivision, selectedBranchId]);
+    }, [activeDivision, selectedGymId, selectedBranchId]);
 
     const formatTrendData = (trend) => {
         if (!trend) return [];
@@ -135,12 +159,96 @@ const Dashboard = () => {
 
     return (
         <div className="fade-in">
-            <div className="page-header">
+            <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                 <div className="page-header-left">
-                    <h2>{activeDivision === 'h4' ? 'Gym CRM Dashboard' : 'Partner Dashboard'}</h2>
-                    <p>
-                        {activeDivision === 'h4'
-                            ? `Welcome back, ${user?.name || 'Admin'}. Overall analysis across ${selectedBranchId ? 'the selected branch' : 'all branches'}.`
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                        <h2 style={{ margin: 0 }}>{activeDivision === 'h4' ? 'Gym CRM Dashboard' : 'Partner Dashboard'}</h2>
+                        {['superadmin', 'fitpass_admin', 'h4_admin', 'partner', 'admin'].includes(user?.role) && (
+                            <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+                                {user?.branchId ? (
+                                    <div style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        background: '#FBF6EC',
+                                        border: '1px solid #E5D5C0',
+                                        borderRadius: '20px',
+                                        padding: '0.35rem 1rem',
+                                        color: '#231D14',
+                                        fontWeight: 700,
+                                        fontSize: '0.875rem',
+                                        boxShadow: '0 2px 6px rgba(0, 0, 0, 0.08)'
+                                    }}>
+                                        {gymList.find(b => (b._id || b.id) === user.branchId)?.name || 'H4 Branch'}
+                                    </div>
+                                ) : (
+                                    <div style={{
+                                        position: 'relative',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        background: '#FBF6EC',
+                                        border: '1px solid #E5D5C0',
+                                        borderRadius: '20px',
+                                        padding: '0.25rem 0.75rem 0.25rem 1rem',
+                                        boxShadow: '0 2px 6px rgba(0, 0, 0, 0.08)',
+                                        cursor: 'pointer'
+                                    }}>
+                                        <select
+                                            style={{
+                                                appearance: 'none',
+                                                WebkitAppearance: 'none',
+                                                MozAppearance: 'none',
+                                                background: 'transparent',
+                                                border: 'none',
+                                                outline: 'none',
+                                                color: '#231D14',
+                                                fontWeight: 700,
+                                                fontSize: '0.875rem',
+                                                paddingRight: '1.6rem',
+                                                cursor: 'pointer',
+                                                margin: 0
+                                            }}
+                                            value={activeDivision === 'h4' || ['partner', 'h4_admin', 'admin'].includes(user?.role) ? selectedBranchId : selectedGymId}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (activeDivision === 'h4' || ['partner', 'h4_admin', 'admin'].includes(user?.role)) {
+                                                    changeSelectedBranch(val);
+                                                } else {
+                                                    changeSelectedGym(val);
+                                                    changeSelectedBranch('');
+                                                }
+                                            }}
+                                        >
+                                            {activeDivision === 'h4' || ['partner', 'h4_admin', 'admin'].includes(user?.role) ? (
+                                                <>
+                                                    <option value="">H4 (All Branches)</option>
+                                                    {gymList.map(branch => (
+                                                        <option key={branch._id || branch.id} value={branch._id || branch.id}>
+                                                            {branch.name}
+                                                        </option>
+                                                    ))}
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <option value="">All Partner Gyms</option>
+                                                    {gymList.map(gym => (
+                                                        <option key={gym._id || gym.id} value={gym._id || gym.id}>
+                                                            {gym.name}
+                                                        </option>
+                                                    ))}
+                                                </>
+                                            )}
+                                        </select>
+                                        <ChevronDown size={15} style={{ position: 'absolute', right: '0.65rem', color: '#6D6154', pointerEvents: 'none' }} />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                    <p style={{ marginTop: '0.25rem' }}>
+                        {user?.branchId
+                            ? `Welcome back, ${user?.name || 'Admin'}. View real-time analytics for ${gymList.find(b => (b._id || b.id) === user.branchId)?.name || 'your branch'}.`
+                            : activeDivision === 'h4'
+                            ? `Welcome back, ${user?.name || 'Admin'}. View real-time analytics for the selected gym and branches.`
                             : `Welcome back, ${user?.name || 'Partner'}. Here's the activity at your gym today.`
                         }
                     </p>
@@ -255,36 +363,116 @@ const Dashboard = () => {
                     </div>
 
                     <div className="charts-grid" style={{ marginBottom: '2.5rem' }}>
-                        <div className="card">
-                            <h3 style={{ marginBottom: '2rem' }}>Collections by Method</h3>
-                            <div style={{ width: '100%', height: 300 }}>
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <PieChart>
-                                        <Pie
-                                            data={stats?.methodBreakdown}
-                                            innerRadius={70}
-                                            outerRadius={95}
-                                            paddingAngle={8}
-                                            dataKey="value"
-                                            nameKey="_id"
-                                            stroke="none"
-                                        >
-                                            {stats?.methodBreakdown?.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip
-                                            contentStyle={{
-                                                borderRadius: 'var(--radius-md)',
-                                                border: '1px solid var(--border)',
-                                                boxShadow: 'var(--shadow-lg)',
-                                                background: 'var(--bg-secondary)'
-                                            }}
-                                            formatter={(value) => [`₹${value}`, 'Total Collected']}
-                                        />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            </div>
+                        <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+                            {(() => {
+                                const methodData = Array.isArray(stats?.methodBreakdown) ? stats.methodBreakdown : [];
+                                const totalCollections = methodData.reduce((acc, curr) => acc + (Number(curr.value) || 0), 0);
+                                const METHOD_COLORS = ['#F0A020', '#34d399', '#60a5fa', '#a78bfa', '#f59e0b', '#f43f5e'];
+
+                                return (
+                                    <>
+                                        <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                            <div>
+                                                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>Collections by Method</h3>
+                                                <p style={{ margin: '0.2rem 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Payment method distribution & revenue share</p>
+                                            </div>
+                                            {totalCollections > 0 && (
+                                                <div style={{ background: 'rgba(240, 160, 32, 0.1)', border: '1px solid rgba(240, 160, 32, 0.25)', borderRadius: '8px', padding: '0.35rem 0.75rem', textAlign: 'right' }}>
+                                                    <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>Total Collections</div>
+                                                    <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--primary-color, #F0A020)' }}>₹{totalCollections.toLocaleString('en-IN')}</div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {methodData.length === 0 || totalCollections === 0 ? (
+                                            <div style={{ height: 240, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', gap: '0.75rem' }}>
+                                                <IndianRupee size={36} opacity={0.3} />
+                                                <p style={{ margin: 0, fontSize: '0.9rem' }}>No payment collections recorded yet</p>
+                                            </div>
+                                        ) : (
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', alignItems: 'center' }}>
+                                                {/* Donut Chart with Center Total */}
+                                                <div style={{ position: 'relative', width: '100%', height: 230 }}>
+                                                    <ResponsiveContainer width="100%" height={230}>
+                                                        <PieChart>
+                                                            <Pie
+                                                                data={methodData}
+                                                                innerRadius={62}
+                                                                outerRadius={90}
+                                                                paddingAngle={5}
+                                                                dataKey="value"
+                                                                nameKey="_id"
+                                                                stroke="none"
+                                                                cornerRadius={6}
+                                                            >
+                                                                {methodData.map((entry, index) => (
+                                                                    <Cell key={`cell-${index}`} fill={METHOD_COLORS[index % METHOD_COLORS.length]} />
+                                                                ))}
+                                                            </Pie>
+                                                            <Tooltip
+                                                                content={({ active, payload }) => {
+                                                                    if (!active || !payload?.length) return null;
+                                                                    const item = payload[0];
+                                                                    const pct = totalCollections ? ((item.value / totalCollections) * 100).toFixed(1) : 0;
+                                                                    return (
+                                                                        <div style={{
+                                                                            background: 'var(--bg-secondary, #2D251C)',
+                                                                            border: '1px solid var(--border-color, #3A3025)',
+                                                                            borderRadius: '10px',
+                                                                            padding: '10px 14px',
+                                                                            boxShadow: '0 8px 24px rgba(0,0,0,0.5)'
+                                                                        }}>
+                                                                            <p style={{ color: 'var(--text-secondary, #A39686)', fontSize: 12, marginBottom: 4, fontWeight: 600 }}>{item.name || item.payload._id}</p>
+                                                                            <p style={{ color: item.color || '#F0A020', fontWeight: 800, fontSize: 14, margin: 0 }}>
+                                                                                ₹{Number(item.value).toLocaleString('en-IN')} <span style={{ fontSize: 11, color: 'var(--text-muted, #6D6154)', fontWeight: 500 }}>({pct}%)</span>
+                                                                            </p>
+                                                                        </div>
+                                                                    );
+                                                                }}
+                                                            />
+                                                        </PieChart>
+                                                    </ResponsiveContainer>
+                                                    <div style={{
+                                                        position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                                                        textAlign: 'center', pointerEvents: 'none'
+                                                    }}>
+                                                        <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>TOTAL</div>
+                                                        <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                                                            ₹{totalCollections >= 100000 ? `${(totalCollections / 100000).toFixed(1)}L` : totalCollections >= 1000 ? `${(totalCollections / 1000).toFixed(1)}K` : totalCollections}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Interactive Legend with Progress Bars */}
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                                    {methodData.map((item, idx) => {
+                                                        const color = METHOD_COLORS[idx % METHOD_COLORS.length];
+                                                        const val = Number(item.value) || 0;
+                                                        const pct = totalCollections ? Math.round((val / totalCollections) * 100) : 0;
+                                                        return (
+                                                            <div key={idx} style={{ background: 'var(--bg-tertiary, rgba(255,255,255,0.03))', borderRadius: '10px', padding: '0.65rem 0.85rem', border: '1px solid var(--border, rgba(255,255,255,0.05))' }}>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                        <div style={{ width: 9, height: 9, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                                                                        <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>{item._id || 'Other'}</span>
+                                                                    </div>
+                                                                    <div>
+                                                                        <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)' }}>₹{val.toLocaleString('en-IN')}</span>
+                                                                        <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginLeft: '0.35rem', fontWeight: 600 }}>({pct}%)</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div style={{ height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 999, overflow: 'hidden' }}>
+                                                                    <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 999, transition: 'width 0.8s ease' }} />
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                );
+                            })()}
                         </div>
                     </div>
                 </>

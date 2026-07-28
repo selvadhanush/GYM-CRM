@@ -2,16 +2,23 @@ import { useState, useEffect, useContext } from 'react';
 import API from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import { 
-    Settings as SettingsIcon, Sliders, Shield, Bell, Moon, Sun, 
-    Database, Palette, Building2, Clock, Landmark, QrCode, Sparkles
+    Sliders, Bell, Building2, Clock, Landmark, UserCheck, Key, Check, AlertCircle, Save, Sparkles
 } from 'lucide-react';
 
 const Settings = () => {
     const { user } = useContext(AuthContext);
-    const [subTab, setSubTab] = useState('branding'); // 'branding' | 'operations' | 'finance' | 'notifications' | 'hours'
+    const [subTab, setSubTab] = useState('profile'); // 'profile' | 'branding' | 'operations' | 'finance' | 'notifications' | 'hours'
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+
+    // --- Tab 0: Profile & Account Credentials State ---
+    const [profileName, setProfileName] = useState(user?.name || '');
+    const [profileEmail, setProfileEmail] = useState(user?.email || '');
+    const [profilePhone, setProfilePhone] = useState(user?.phone || '');
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
 
     // --- Tab 1: Branding State ---
     const [gymName, setGymName] = useState('GYM CRM PRO');
@@ -20,15 +27,15 @@ const Settings = () => {
     const [brandTheme, setBrandTheme] = useState('dark');
 
     // --- Tab 2: Operations & QR State ---
-    const [sessionDuration, setSessionDuration] = useState(120); // mins
-    const [scanCooldown, setScanCooldown] = useState(300); // secs
-    const [qrRefreshRate, setQrRefreshRate] = useState(15); // secs
+    const [sessionDuration, setSessionDuration] = useState(120);
+    const [scanCooldown, setScanCooldown] = useState(300);
+    const [qrRefreshRate, setQrRefreshRate] = useState(15);
     const [checkInSound, setCheckInSound] = useState(true);
 
     // --- Tab 3: Finance & Tax State ---
     const [currency, setCurrency] = useState('INR');
-    const [taxRate, setTaxRate] = useState(18); // GST %
-    const [taxId, setTaxId] = useState('27AAAAA1111A1Z1'); // GSTIN
+    const [taxRate, setTaxRate] = useState(18);
+    const [taxId, setTaxId] = useState('27AAAAA1111A1Z1');
     const [razorpayEnabled, setRazorpayEnabled] = useState(true);
     const [razorpayKey, setRazorpayKey] = useState('rzp_test_xxxxxxxxx');
 
@@ -45,6 +52,12 @@ const Settings = () => {
     });
 
     useEffect(() => {
+        if (user) {
+            if (user.name) setProfileName(user.name);
+            if (user.email) setProfileEmail(user.email);
+            if (user.phone) setProfilePhone(user.phone);
+        }
+
         const loadSettings = async () => {
             try {
                 const res = await API.get('/gyms/settings');
@@ -76,12 +89,41 @@ const Settings = () => {
                     }
                 }
             } catch (err) {
-                console.error('Error loading settings', err, err.response?.data);
-                setError("Failed to load settings from server.");
+                console.error('Error loading settings', err);
             }
         };
         loadSettings();
-    }, []);
+    }, [user]);
+
+    const handleSaveProfile = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setMessage('');
+        setError('');
+
+        if (newPassword && newPassword !== confirmPassword) {
+            setLoading(false);
+            return setError('New passwords do not match');
+        }
+
+        try {
+            await API.put('/auth/profile', {
+                name: profileName,
+                email: profileEmail,
+                phone: profilePhone,
+                currentPassword,
+                newPassword: newPassword || undefined
+            });
+            setLoading(false);
+            setMessage('Account credentials updated successfully!');
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+        } catch (err) {
+            setLoading(false);
+            setError(err.response?.data?.message || 'Error updating account credentials');
+        }
+    };
 
     const handleSaveSettings = async (e) => {
         e.preventDefault();
@@ -100,290 +142,446 @@ const Settings = () => {
             
             await API.put('/gyms/settings', payload);
             setLoading(false);
-            setMessage('Configuration parameters saved successfully!');
+            setMessage('Settings & preferences saved successfully!');
         } catch (err) {
             setLoading(false);
-            setError(err.response?.data?.message || 'Error saving settings to server');
+            setError(err.response?.data?.message || 'Error saving settings');
         }
     };
 
+    const navItems = [
+        { id: 'profile', label: 'My Account & Credentials', icon: UserCheck },
+        { id: 'branding', label: 'Gym Branding & Theme', icon: Building2 },
+        { id: 'operations', label: 'Operations & QR Parameters', icon: Sliders },
+        { id: 'finance', label: 'Finance & Tax Setup', icon: Landmark },
+        { id: 'notifications', label: 'Notification Routing', icon: Bell },
+        { id: 'hours', label: 'Business Hours', icon: Clock }
+    ];
+
     return (
-        <div className="fade-in" style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: '2rem', alignItems: 'start' }}>
-            {/* LEFT SUBNAV */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <div style={{ padding: '0.5rem 0.75rem', fontWeight: '800', fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Settings Menu</div>
-                
-                <button 
-                    onClick={() => setSubTab('branding')}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', borderRadius: '10px',
-                        border: 'none', background: subTab === 'branding' ? 'var(--bg-secondary)' : 'none',
-                        color: subTab === 'branding' ? 'var(--primary)' : 'var(--text-secondary)',
-                        fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s'
-                    }}
-                >
-                    <Building2 size={16} /> Gym Branding
-                </button>
-
-                <button 
-                    onClick={() => setSubTab('operations')}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', borderRadius: '10px',
-                        border: 'none', background: subTab === 'operations' ? 'var(--bg-secondary)' : 'none',
-                        color: subTab === 'operations' ? 'var(--primary)' : 'var(--text-secondary)',
-                        fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s'
-                    }}
-                >
-                    <Sliders size={16} /> Operations & QR
-                </button>
-
-                <button 
-                    onClick={() => setSubTab('finance')}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', borderRadius: '10px',
-                        border: 'none', background: subTab === 'finance' ? 'var(--bg-secondary)' : 'none',
-                        color: subTab === 'finance' ? 'var(--primary)' : 'var(--text-secondary)',
-                        fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s'
-                    }}
-                >
-                    <Landmark size={16} /> Finance & Taxes
-                </button>
-
-                <button 
-                    onClick={() => setSubTab('notifications')}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', borderRadius: '10px',
-                        border: 'none', background: subTab === 'notifications' ? 'var(--bg-secondary)' : 'none',
-                        color: subTab === 'notifications' ? 'var(--primary)' : 'var(--text-secondary)',
-                        fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s'
-                    }}
-                >
-                    <Bell size={16} /> Notifications
-                </button>
-
-                <button 
-                    onClick={() => setSubTab('hours')}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', borderRadius: '10px',
-                        border: 'none', background: subTab === 'hours' ? 'var(--bg-secondary)' : 'none',
-                        color: subTab === 'hours' ? 'var(--primary)' : 'var(--text-secondary)',
-                        fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s'
-                    }}
-                >
-                    <Clock size={16} /> Business Hours
-                </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {/* Header */}
+            <div>
+                <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: '#111827' }}>Settings & Configurations</h2>
+                <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: '#6B7280' }}>
+                    Manage platform parameters, security credentials, branding, and automated rules
+                </p>
             </div>
 
-            {/* RIGHT SETTINGS PANEL */}
-            <div className="card" style={{ padding: '2.5rem' }}>
-                {message && (
-                    <div style={{
-                        background: 'rgba(46, 125, 50, 0.1)', border: '1px solid var(--success)',
-                        color: 'var(--success)', borderRadius: '12px', padding: '1rem', marginBottom: '1.5rem', fontWeight: '600'
-                    }}>
-                        ✓ {message}
+            <div style={{ display: 'grid', gridTemplateColumns: '250px 1fr', gap: '1.5rem', alignItems: 'start' }}>
+                {/* LEFT NAV PANEL */}
+                <div style={{
+                    background: '#FFFFFF',
+                    border: '1px solid #E5E7EB',
+                    borderRadius: '16px',
+                    padding: '0.75rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.35rem',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+                }}>
+                    <div style={{ padding: '0.5rem 0.75rem 0.25rem', fontWeight: 700, fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#EA580C' }}>
+                        System Preferences
                     </div>
-                )}
-                {error && (
-                    <div style={{
-                        background: 'rgba(198, 40, 40, 0.1)', border: '1px solid var(--error)',
-                        color: 'var(--error)', borderRadius: '12px', padding: '1rem', marginBottom: '1.5rem', fontWeight: '600'
-                    }}>
-                        ⚠ {error}
-                    </div>
-                )}
 
-                <form onSubmit={handleSaveSettings}>
-                    {/* branding tab */}
-                    {subTab === 'branding' && (
-                        <div>
-                            <h3 style={{ margin: '0 0 1.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <Building2 color="var(--primary)" /> Gym Branding & Theme
-                            </h3>
+                    {navItems.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = subTab === item.id;
+                        return (
+                            <button
+                                key={item.id}
+                                onClick={() => setSubTab(item.id)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.75rem',
+                                    padding: '0.75rem 1rem',
+                                    borderRadius: '10px',
+                                    border: isActive ? '1px solid #FDBA74' : '1px solid transparent',
+                                    background: isActive ? '#FFF7ED' : 'transparent',
+                                    color: isActive ? '#C2410C' : '#4B5563',
+                                    fontWeight: isActive ? 700 : 500,
+                                    fontSize: '0.85rem',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    transition: 'all 0.2s ease',
+                                    outline: 'none'
+                                }}
+                            >
+                                <Icon size={18} color={isActive ? '#EA580C' : '#6B7280'} />
+                                <span style={{ flex: 1 }}>{item.label}</span>
+                            </button>
+                        );
+                    })}
+                </div>
 
-                            <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', marginBottom: '2rem', background: 'var(--bg-secondary)', padding: '1.25rem', borderRadius: '16px', border: '1px solid var(--border)' }}>
-                                <img src={logoUrl} alt="logo preview" style={{ width: '80px', height: '80px', borderRadius: '16px', objectFit: 'cover', border: '2px solid var(--primary)' }} />
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ fontWeight: '700', fontSize: '1rem' }}>{gymName || 'GYM NAME'}</div>
-                                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{tagline || 'Tagline'}</div>
-                                </div>
-                            </div>
-
-                            <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Gym/Organization Name</label>
-                                <input type="text" className="form-control" value={gymName} onChange={(e) => setGymName(e.target.value)} required />
-                            </div>
-
-                            <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Brand Tagline</label>
-                                <input type="text" className="form-control" value={tagline} onChange={(e) => setTagline(e.target.value)} />
-                            </div>
-
-                            <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Logo URL</label>
-                                <input type="text" className="form-control" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} />
-                            </div>
-
-                            <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Global Theme Base</label>
-                                <select className="form-control" value={brandTheme} onChange={(e) => setBrandTheme(e.target.value)}>
-                                    <option value="dark">Amber Gold Dark (Recommended)</option>
-                                    <option value="light">Amber Gold Light</option>
-                                </select>
-                            </div>
+                {/* RIGHT MAIN PANEL */}
+                <div style={{
+                    background: '#FFFFFF',
+                    border: '1px solid #E5E7EB',
+                    borderRadius: '16px',
+                    padding: '2rem',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+                }}>
+                    {message && (
+                        <div style={{
+                            background: '#F0FDF4',
+                            border: '1px solid #BBF7D0',
+                            color: '#15803D',
+                            borderRadius: '10px',
+                            padding: '0.85rem 1rem',
+                            marginBottom: '1.5rem',
+                            fontSize: '0.88rem',
+                            fontWeight: 600,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                        }}>
+                            <Check size={18} color="#15803D" />
+                            <span>{message}</span>
                         </div>
                     )}
 
-                    {/* operations & QR tab */}
-                    {subTab === 'operations' && (
-                        <div>
-                            <h3 style={{ margin: '0 0 1.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <Sliders color="var(--primary)" /> Operations & QR Parameters
-                            </h3>
-
-                            <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Max Session Duration (Minutes)</label>
-                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: 0, marginBottom: '0.5rem' }}>FitPrime sessions are auto-expired after this period.</p>
-                                <input type="number" className="form-control" value={sessionDuration} onChange={(e) => setSessionDuration(parseInt(e.target.value) || 0)} style={{ maxWidth: '160px' }} />
-                            </div>
-
-                            <div className="form-group" style={{ marginBottom: '1.25rem', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>QR Scan Cooldown (Seconds)</label>
-                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: 0, marginBottom: '0.5rem' }}>Minimum delay required between successful checks.</p>
-                                <input type="number" className="form-control" value={scanCooldown} onChange={(e) => setScanCooldown(parseInt(e.target.value) || 0)} style={{ maxWidth: '160px' }} />
-                            </div>
-
-                            <div className="form-group" style={{ marginBottom: '1.25rem', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>QR Code Auto-Refresh Interval (Seconds)</label>
-                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: 0, marginBottom: '0.5rem' }}>Protects screens against snapshot sharing.</p>
-                                <input type="number" className="form-control" value={qrRefreshRate} onChange={(e) => setQrRefreshRate(parseInt(e.target.value) || 0)} style={{ maxWidth: '160px' }} />
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
-                                <div>
-                                    <label style={{ fontWeight: '600' }}>Play sound on check-in</label>
-                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '0.25rem 0 0 0' }}>Validate QR scan events audibly.</p>
-                                </div>
-                                <input type="checkbox" style={{ width: '20px', height: '20px', accentColor: 'var(--primary)', cursor: 'pointer' }} checked={checkInSound} onChange={(e) => setCheckInSound(e.target.checked)} />
-                            </div>
+                    {error && (
+                        <div style={{
+                            background: '#FEF2F2',
+                            border: '1px solid #FECACA',
+                            color: '#B91C1C',
+                            borderRadius: '10px',
+                            padding: '0.85rem 1rem',
+                            marginBottom: '1.5rem',
+                            fontSize: '0.88rem',
+                            fontWeight: 600,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                        }}>
+                            <AlertCircle size={18} color="#B91C1C" />
+                            <span>{error}</span>
                         </div>
                     )}
 
-                    {/* finance & tax tab */}
-                    {subTab === 'finance' && (
-                        <div>
-                            <h3 style={{ margin: '0 0 1.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <Landmark color="var(--primary)" /> Financial Configuration
-                            </h3>
-
-                            <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Local Currency</label>
-                                <select className="form-control" value={currency} onChange={(e) => setCurrency(e.target.value)} style={{ maxWidth: '160px' }}>
-                                    <option value="INR">Indian Rupee (₹)</option>
-                                    <option value="USD">US Dollar ($)</option>
-                                    <option value="EUR">Euro (€)</option>
-                                </select>
-                            </div>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
-                                <div className="form-group">
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Tax / GST Rate (%)</label>
-                                    <input type="number" className="form-control" value={taxRate} onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)} />
-                                </div>
-                                <div className="form-group">
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Tax ID / GSTIN</label>
-                                    <input type="text" className="form-control" value={taxId} onChange={(e) => setTaxId(e.target.value)} />
-                                </div>
-                            </div>
-
-                            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                                    <div>
-                                        <label style={{ fontWeight: '600' }}>Enable Razorpay Gateway</label>
-                                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '0.25rem 0 0 0' }}>Collect online membership renewals.</p>
-                                    </div>
-                                    <input type="checkbox" style={{ width: '20px', height: '20px', accentColor: 'var(--primary)', cursor: 'pointer' }} checked={razorpayEnabled} onChange={(e) => setRazorpayEnabled(e.target.checked)} />
-                                </div>
-
-                                {razorpayEnabled && (
-                                    <div className="form-group">
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.85rem' }}>Razorpay Key ID</label>
-                                        <input type="text" className="form-control" value={razorpayKey} onChange={(e) => setRazorpayKey(e.target.value)} />
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* notifications tab */}
-                    {subTab === 'notifications' && (
-                        <div>
-                            <h3 style={{ margin: '0 0 1.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <Bell color="var(--primary)" /> Notification Routing
-                            </h3>
-
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <div>
-                                        <label style={{ fontWeight: '600' }}>Send Email Alerts</label>
-                                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '0.25rem 0 0 0' }}>Send check-in alerts and dues receipts via SMTP.</p>
-                                    </div>
-                                    <input type="checkbox" style={{ width: '20px', height: '20px', accentColor: 'var(--primary)', cursor: 'pointer' }} checked={emailAlerts} onChange={(e) => setEmailAlerts(e.target.checked)} />
-                                </div>
-
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
-                                    <div>
-                                        <label style={{ fontWeight: '600' }}>Send SMS Notifications</label>
-                                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '0.25rem 0 0 0' }}>Deliver OTP requests and renewals via bulk gateway.</p>
-                                    </div>
-                                    <input type="checkbox" style={{ width: '20px', height: '20px', accentColor: 'var(--primary)', cursor: 'pointer' }} checked={smsAlerts} onChange={(e) => setSmsAlerts(e.target.checked)} />
-                                </div>
-
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
-                                    <div>
-                                        <label style={{ fontWeight: '600' }}>Enable Web Push Subscriptions</label>
-                                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '0.25rem 0 0 0' }}>Receive native browser notification banners.</p>
-                                    </div>
-                                    <input type="checkbox" style={{ width: '20px', height: '20px', accentColor: 'var(--primary)', cursor: 'pointer' }} checked={pushAlerts} onChange={(e) => setPushAlerts(e.target.checked)} />
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* business hours tab */}
-                    {subTab === 'hours' && (
-                        <div>
-                            <h3 style={{ margin: '0 0 1.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <Clock color="var(--primary)" /> Business Hours
-                            </h3>
-
+                    <form onSubmit={subTab === 'profile' ? handleSaveProfile : handleSaveSettings}>
+                        {/* TAB 0: Account & Profile */}
+                        {subTab === 'profile' && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                                <div className="form-group">
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Weekdays (Monday - Friday)</label>
-                                    <input type="text" className="form-control" value={hours.weekday} onChange={(e) => setHours({ ...hours, weekday: e.target.value })} />
+                                <div>
+                                    <h3 style={{ margin: '0 0 0.35rem', fontSize: '1.15rem', color: '#111827', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <UserCheck color="#EA580C" size={22} /> Account & Security Credentials
+                                    </h3>
+                                    <p style={{ margin: 0, fontSize: '0.82rem', color: '#6B7280' }}>
+                                        Update your login credentials (email and mobile number) and maintain account password security.
+                                    </p>
                                 </div>
-                                <div className="form-group" style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Saturdays</label>
-                                    <input type="text" className="form-control" value={hours.saturday} onChange={(e) => setHours({ ...hours, saturday: e.target.value })} />
+
+                                <hr style={{ borderColor: '#E5E7EB', margin: '0.5rem 0' }} />
+
+                                <div className="input-group">
+                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>Full Name</label>
+                                    <input type="text" className="input" style={{ background: '#FFFFFF', border: '1px solid #D1D5DB', color: '#111827' }} value={profileName} onChange={(e) => setProfileName(e.target.value)} required />
                                 </div>
-                                <div className="form-group" style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Sundays</label>
-                                    <input type="text" className="form-control" value={hours.sunday} onChange={(e) => setHours({ ...hours, sunday: e.target.value })} />
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                    <div className="input-group">
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>Login Email Address</label>
+                                        <input type="email" className="input" style={{ background: '#FFFFFF', border: '1px solid #D1D5DB', color: '#111827' }} value={profileEmail} onChange={(e) => setProfileEmail(e.target.value)} required />
+                                    </div>
+                                    <div className="input-group">
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>Mobile Phone Number</label>
+                                        <input type="text" className="input" style={{ background: '#FFFFFF', border: '1px solid #D1D5DB', color: '#111827' }} value={profilePhone} onChange={(e) => setProfilePhone(e.target.value)} placeholder="+91 9876543210" />
+                                    </div>
+                                </div>
+
+                                <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '1.25rem', marginTop: '0.5rem' }}>
+                                    <h4 style={{ margin: '0 0 1rem', fontSize: '0.95rem', color: '#111827', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <Key size={18} color="#EA580C" /> Update Password
+                                    </h4>
+
+                                    <div className="input-group" style={{ marginBottom: '1rem' }}>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.82rem', fontWeight: 600, color: '#4B5563' }}>Current Password</label>
+                                        <input type="password" className="input" style={{ background: '#FFFFFF', border: '1px solid #D1D5DB', color: '#111827' }} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Enter current password to authorize change" />
+                                    </div>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                        <div className="input-group">
+                                            <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.82rem', fontWeight: 600, color: '#4B5563' }}>New Password</label>
+                                            <input type="password" className="input" style={{ background: '#FFFFFF', border: '1px solid #D1D5DB', color: '#111827' }} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Minimum 6 characters" />
+                                        </div>
+                                        <div className="input-group">
+                                            <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.82rem', fontWeight: 600, color: '#4B5563' }}>Confirm New Password</label>
+                                            <input type="password" className="input" style={{ background: '#FFFFFF', border: '1px solid #D1D5DB', color: '#111827' }} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter new password" />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {/* Submit */}
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2.5rem', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
-                        <button type="submit" className="btn btn-primary" disabled={loading}>
-                            {loading ? 'Saving Parameters...' : 'Save Settings'}
-                        </button>
-                    </div>
-                </form>
+                        {/* TAB 1: Gym Branding */}
+                        {subTab === 'branding' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                                <div>
+                                    <h3 style={{ margin: '0 0 0.35rem', fontSize: '1.15rem', color: '#111827', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <Building2 color="#EA580C" size={22} /> Gym Branding & Identity
+                                    </h3>
+                                    <p style={{ margin: 0, fontSize: '0.82rem', color: '#6B7280' }}>
+                                        Customize your gym title, brand slogan, logo mark, and theme mode.
+                                    </p>
+                                </div>
+
+                                <hr style={{ borderColor: '#E5E7EB', margin: '0.5rem 0' }} />
+
+                                {/* Preview Pill */}
+                                <div style={{
+                                    display: 'flex', alignItems: 'center', gap: '1.25rem',
+                                    background: '#FFF7ED', padding: '1.25rem',
+                                    borderRadius: '12px', border: '1px solid #FFEDD5'
+                                }}>
+                                    <img src={logoUrl} alt="Logo preview" style={{ width: '64px', height: '64px', borderRadius: '12px', objectFit: 'cover', border: '2px solid #EA580C' }} />
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#111827' }}>{gymName || 'YOUR GYM BRAND'}</div>
+                                        <div style={{ color: '#4B5563', fontSize: '0.82rem' }}>{tagline || 'Your Slogan Here'}</div>
+                                    </div>
+                                    <span style={{ fontSize: '0.75rem', color: '#C2410C', fontWeight: 600, background: '#FFEDD5', padding: '0.3rem 0.6rem', borderRadius: '6px' }}>
+                                        Live Preview
+                                    </span>
+                                </div>
+
+                                <div className="input-group">
+                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>Gym / Organization Name</label>
+                                    <input type="text" className="input" style={{ background: '#FFFFFF', border: '1px solid #D1D5DB', color: '#111827' }} value={gymName} onChange={(e) => setGymName(e.target.value)} required />
+                                </div>
+
+                                <div className="input-group">
+                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>Brand Tagline</label>
+                                    <input type="text" className="input" style={{ background: '#FFFFFF', border: '1px solid #D1D5DB', color: '#111827' }} value={tagline} onChange={(e) => setTagline(e.target.value)} placeholder="e.g. Elevate Your Fitness Operations" />
+                                </div>
+
+                                <div className="input-group">
+                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>Logo Image URL</label>
+                                    <input type="text" className="input" style={{ background: '#FFFFFF', border: '1px solid #D1D5DB', color: '#111827' }} value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="https://..." />
+                                </div>
+
+                                <div className="input-group">
+                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>Global Theme Palette</label>
+                                    <select className="input" style={{ background: '#FFFFFF', border: '1px solid #D1D5DB', color: '#111827' }} value={brandTheme} onChange={(e) => setBrandTheme(e.target.value)}>
+                                        <option value="light">Crisp White Light (Default)</option>
+                                        <option value="dark">Warm Amber-Gold Dark</option>
+                                    </select>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TAB 2: Operations & QR */}
+                        {subTab === 'operations' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                                <div>
+                                    <h3 style={{ margin: '0 0 0.35rem', fontSize: '1.15rem', color: '#111827', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <Sliders color="#EA580C" size={22} /> Operations & Check-In Parameters
+                                    </h3>
+                                    <p style={{ margin: 0, fontSize: '0.82rem', color: '#6B7280' }}>
+                                        Configure attendance session limits, QR scanner refresh intervals, and audio alerts.
+                                    </p>
+                                </div>
+
+                                <hr style={{ borderColor: '#E5E7EB', margin: '0.5rem 0' }} />
+
+                                <div className="input-group">
+                                    <label style={{ display: 'block', marginBottom: '0.2rem', fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>Max Session Duration (Minutes)</label>
+                                    <p style={{ margin: '0 0 0.5rem', fontSize: '0.78rem', color: '#6B7280' }}>Automatic checkout limit for member active pass sessions.</p>
+                                    <input type="number" className="input" style={{ maxWidth: '200px', background: '#FFFFFF', border: '1px solid #D1D5DB', color: '#111827' }} value={sessionDuration} onChange={(e) => setSessionDuration(parseInt(e.target.value) || 0)} />
+                                </div>
+
+                                <div className="input-group">
+                                    <label style={{ display: 'block', marginBottom: '0.2rem', fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>QR Scan Cooldown Delay (Seconds)</label>
+                                    <p style={{ margin: '0 0 0.5rem', fontSize: '0.78rem', color: '#6B7280' }}>Minimum waiting period before registering another check-in scan.</p>
+                                    <input type="number" className="input" style={{ maxWidth: '200px', background: '#FFFFFF', border: '1px solid #D1D5DB', color: '#111827' }} value={scanCooldown} onChange={(e) => setScanCooldown(parseInt(e.target.value) || 0)} />
+                                </div>
+
+                                <div className="input-group">
+                                    <label style={{ display: 'block', marginBottom: '0.2rem', fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>QR Code Auto-Refresh Speed (Seconds)</label>
+                                    <p style={{ margin: '0 0 0.5rem', fontSize: '0.78rem', color: '#6B7280' }}>Dynamic rotation to prevent unauthorized barcode photo sharing.</p>
+                                    <input type="number" className="input" style={{ maxWidth: '200px', background: '#FFFFFF', border: '1px solid #D1D5DB', color: '#111827' }} value={qrRefreshRate} onChange={(e) => setQrRefreshRate(parseInt(e.target.value) || 0)} />
+                                </div>
+
+                                <div style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                    background: '#F9FAFB', padding: '1rem 1.25rem',
+                                    borderRadius: '12px', border: '1px solid #E5E7EB'
+                                }}>
+                                    <div>
+                                        <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#111827' }}>Audible Check-In Sound</div>
+                                        <p style={{ margin: '0.2rem 0 0', fontSize: '0.78rem', color: '#6B7280' }}>Play chime confirmation upon successful QR scanner read.</p>
+                                    </div>
+                                    <input type="checkbox" style={{ width: '20px', height: '20px', accentColor: '#EA580C', cursor: 'pointer' }} checked={checkInSound} onChange={(e) => setCheckInSound(e.target.checked)} />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TAB 3: Finance */}
+                        {subTab === 'finance' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                                <div>
+                                    <h3 style={{ margin: '0 0 0.35rem', fontSize: '1.15rem', color: '#111827', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <Landmark color="#EA580C" size={22} /> Financial Setup & Tax Rates
+                                    </h3>
+                                    <p style={{ margin: 0, fontSize: '0.82rem', color: '#6B7280' }}>
+                                        Manage currency formatting, GST tax identifiers, and payment gateway keys.
+                                    </p>
+                                </div>
+
+                                <hr style={{ borderColor: '#E5E7EB', margin: '0.5rem 0' }} />
+
+                                <div className="input-group">
+                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>Local Operating Currency</label>
+                                    <select className="input" style={{ maxWidth: '240px', background: '#FFFFFF', border: '1px solid #D1D5DB', color: '#111827' }} value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                                        <option value="INR">Indian Rupee (₹ INR)</option>
+                                        <option value="USD">US Dollar ($ USD)</option>
+                                        <option value="EUR">Euro (€ EUR)</option>
+                                    </select>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                    <div className="input-group">
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>Applied Tax / GST Rate (%)</label>
+                                        <input type="number" className="input" style={{ background: '#FFFFFF', border: '1px solid #D1D5DB', color: '#111827' }} value={taxRate} onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)} />
+                                    </div>
+                                    <div className="input-group">
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>Tax ID / GSTIN</label>
+                                        <input type="text" className="input" style={{ background: '#FFFFFF', border: '1px solid #D1D5DB', color: '#111827' }} value={taxId} onChange={(e) => setTaxId(e.target.value)} placeholder="e.g. 27AAAAA1111A1Z1" />
+                                    </div>
+                                </div>
+
+                                <div style={{
+                                    background: '#F9FAFB', padding: '1.25rem',
+                                    borderRadius: '12px', border: '1px solid #E5E7EB',
+                                    display: 'flex', flexDirection: 'column', gap: '1rem'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <div>
+                                            <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#111827' }}>Online Payments (Razorpay Gateway)</div>
+                                            <p style={{ margin: '0.2rem 0 0', fontSize: '0.78rem', color: '#6B7280' }}>Enable digital membership checkout & renewal links.</p>
+                                        </div>
+                                        <input type="checkbox" style={{ width: '20px', height: '20px', accentColor: '#EA580C', cursor: 'pointer' }} checked={razorpayEnabled} onChange={(e) => setRazorpayEnabled(e.target.checked)} />
+                                    </div>
+
+                                    {razorpayEnabled && (
+                                        <div className="input-group">
+                                            <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.82rem', fontWeight: 600, color: '#374151' }}>Razorpay Key ID</label>
+                                            <input type="text" className="input" style={{ background: '#FFFFFF', border: '1px solid #D1D5DB', color: '#111827' }} value={razorpayKey} onChange={(e) => setRazorpayKey(e.target.value)} placeholder="rzp_live_..." />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TAB 4: Notifications */}
+                        {subTab === 'notifications' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                                <div>
+                                    <h3 style={{ margin: '0 0 0.35rem', fontSize: '1.15rem', color: '#111827', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <Bell color="#EA580C" size={22} /> Notification Channels
+                                    </h3>
+                                    <p style={{ margin: 0, fontSize: '0.82rem', color: '#6B7280' }}>
+                                        Control automated dispatch channels for membership renewals and payment receipts.
+                                    </p>
+                                </div>
+
+                                <hr style={{ borderColor: '#E5E7EB', margin: '0.5rem 0' }} />
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                    <div style={{
+                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                        background: '#F9FAFB', padding: '1rem 1.25rem',
+                                        borderRadius: '12px', border: '1px solid #E5E7EB'
+                                    }}>
+                                        <div>
+                                            <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#111827' }}>Email Automated Notifications</div>
+                                            <p style={{ margin: '0.2rem 0 0', fontSize: '0.78rem', color: '#6B7280' }}>Dispatch receipt invoices and plan expiry warnings via SMTP.</p>
+                                        </div>
+                                        <input type="checkbox" style={{ width: '20px', height: '20px', accentColor: '#EA580C', cursor: 'pointer' }} checked={emailAlerts} onChange={(e) => setEmailAlerts(e.target.checked)} />
+                                    </div>
+
+                                    <div style={{
+                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                        background: '#F9FAFB', padding: '1rem 1.25rem',
+                                        borderRadius: '12px', border: '1px solid #E5E7EB'
+                                    }}>
+                                        <div>
+                                            <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#111827' }}>SMS Gateway Reminders</div>
+                                            <p style={{ margin: '0.2rem 0 0', fontSize: '0.78rem', color: '#6B7280' }}>Send SMS OTP requests and payment renewal prompts.</p>
+                                        </div>
+                                        <input type="checkbox" style={{ width: '20px', height: '20px', accentColor: '#EA580C', cursor: 'pointer' }} checked={smsAlerts} onChange={(e) => setSmsAlerts(e.target.checked)} />
+                                    </div>
+
+                                    <div style={{
+                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                        background: '#F9FAFB', padding: '1rem 1.25rem',
+                                        borderRadius: '12px', border: '1px solid #E5E7EB'
+                                    }}>
+                                        <div>
+                                            <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#111827' }}>Web Push Notifications</div>
+                                            <p style={{ margin: '0.2rem 0 0', fontSize: '0.78rem', color: '#6B7280' }}>Deliver native browser alerts for instant check-in events.</p>
+                                        </div>
+                                        <input type="checkbox" style={{ width: '20px', height: '20px', accentColor: '#EA580C', cursor: 'pointer' }} checked={pushAlerts} onChange={(e) => setPushAlerts(e.target.checked)} />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TAB 5: Business Hours */}
+                        {subTab === 'hours' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                                <div>
+                                    <h3 style={{ margin: '0 0 0.35rem', fontSize: '1.15rem', color: '#111827', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <Clock color="#EA580C" size={22} /> Operating Schedule
+                                    </h3>
+                                    <p style={{ margin: 0, fontSize: '0.82rem', color: '#6B7280' }}>
+                                        Set facility operating hours displayed on member passes and reports.
+                                    </p>
+                                </div>
+
+                                <hr style={{ borderColor: '#E5E7EB', margin: '0.5rem 0' }} />
+
+                                <div className="input-group">
+                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>Weekdays (Monday - Friday)</label>
+                                    <input type="text" className="input" style={{ background: '#FFFFFF', border: '1px solid #D1D5DB', color: '#111827' }} value={hours.weekday} onChange={(e) => setHours({ ...hours, weekday: e.target.value })} placeholder="e.g. 06:00 AM - 10:00 PM" />
+                                </div>
+
+                                <div className="input-group">
+                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>Saturdays</label>
+                                    <input type="text" className="input" style={{ background: '#FFFFFF', border: '1px solid #D1D5DB', color: '#111827' }} value={hours.saturday} onChange={(e) => setHours({ ...hours, saturday: e.target.value })} placeholder="e.g. 07:00 AM - 08:00 PM" />
+                                </div>
+
+                                <div className="input-group">
+                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>Sundays & Public Holidays</label>
+                                    <input type="text" className="input" style={{ background: '#FFFFFF', border: '1px solid #D1D5DB', color: '#111827' }} value={hours.sunday} onChange={(e) => setHours({ ...hours, sunday: e.target.value })} placeholder="e.g. 08:00 AM - 02:00 PM" />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Save Button */}
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2rem', paddingTop: '1.25rem', borderTop: '1px solid #E5E7EB' }}>
+                            <button
+                                type="submit"
+                                className="btn btn-primary"
+                                disabled={loading}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                    padding: '0.75rem 1.75rem', fontWeight: 700, fontSize: '0.9rem',
+                                    background: 'linear-gradient(135deg, #FF5F1F 0%, #E04E10 100%)',
+                                    color: '#FFFFFF', border: 'none', borderRadius: '10px'
+                                }}
+                            >
+                                <Save size={18} />
+                                {loading ? (subTab === 'profile' ? 'Updating...' : 'Saving...') : (subTab === 'profile' ? 'Save Account Credentials' : 'Save Settings')}
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     );
 };
 
 export default Settings;
+

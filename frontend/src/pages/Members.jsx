@@ -5,7 +5,7 @@ import Modal from '../components/Modal';
 import { AuthContext } from '../context/AuthContext';
 import { QRCodeCanvas } from 'qrcode.react';
 import API from '../services/api';
-import { Pencil, Trash2, Smartphone, FileText, RefreshCw, ArrowRightLeft } from 'lucide-react';
+import { Pencil, Trash2, Smartphone, FileText, RefreshCw, ArrowRightLeft, Download } from 'lucide-react';
 
 const Members = () => {
     const navigate = useNavigate();
@@ -40,6 +40,7 @@ const Members = () => {
     const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
     const [auditData, setAuditData] = useState(null);
     const [loadingAudit, setLoadingAudit] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
 
     // Read URL params from global search
     useEffect(() => {
@@ -105,14 +106,14 @@ const Members = () => {
                 phone: member.phone,
                 email: member.email || '',
                 planId: member.planId?._id || '',
-                joinDate: member.joinDate.split('T')[0],
+                joinDate: member.joinDate ? member.joinDate.split('T')[0] : '',
                 branchId: member.branchId?._id || member.branchId || '',
                 gymId: member.gymId?._id || member.gymId || '',
                 password: ''
             });
         } else {
             setEditingMember(null);
-            setFormData({ name: '', phone: '', email: '', planId: '', joinDate: new Date().toISOString().split('T')[0], branchId: '', gymId: '', password: '' });
+            setFormData({ name: '', phone: '', email: '', planId: '', joinDate: new Date().toISOString().split('T')[0], branchId: user?.branchId || '', gymId: '', password: '' });
         }
         setIsModalOpen(true);
     };
@@ -173,13 +174,187 @@ const Members = () => {
         return matchSearch && matchBranch;
     });
 
-    if (loading) return <div className="spinner"></div>;
+    const activeCount = members.filter(m => m.status === 'Active').length;
+    const expiredCount = members.filter(m => m.status === 'Expired').length;
+    const frozenCount = members.filter(m => m.status === 'Frozen').length;
 
+    const handleDownloadCSV = async (exportFullRoster = false) => {
+        setIsExporting(true);
+        try {
+            let exportData = filteredMembers;
+
+            // If user requests full roster export, fetch all members from backend without pagination limits
+            if (exportFullRoster) {
+                const fullRes = await getMembers(statusFilter, 1, searchTerm, 10000);
+                if (fullRes?.members && Array.isArray(fullRes.members)) {
+                    exportData = fullRes.members.filter(m => {
+                        const matchBranch = !branchFilter || (m.branchId?._id || m.branchId || '') === branchFilter;
+                        return matchBranch;
+                    });
+                }
+            }
+
+            if (!exportData || exportData.length === 0) {
+                alert('No member records available for export.');
+                return;
+            }
+
+            const headers = [
+                'Member ID',
+                'Full Name',
+                'Phone Number',
+                'Email Address',
+                'Membership Status',
+                'Plan Name',
+                'Plan Total Price (INR)',
+                'Amount Paid (INR)',
+                'Pending Balance (INR)',
+                'Payment Status',
+                'Home Branch',
+                'Gym / Tenant ID',
+                'Join Date',
+                'Expiry Date',
+                'Days Remaining / Overdue',
+                'Total Sessions Granted',
+                'Sessions Remaining',
+                'Sessions Used',
+                'Last Check-In Time',
+                'Is Account Frozen',
+                'Member Registered At',
+                'Last Updated At'
+            ];
+
+            const now = new Date();
+
+            const rows = exportData.map(m => {
+                const branchObj = branches.find(b => b._id === (m.branchId?._id || m.branchId));
+                const branchName = branchObj ? branchObj.name : (m.branchId?.name || 'Main Branch');
+                const planName = m.planId?.name || 'N/A';
+                const planPrice = Number(m.planPrice || m.planId?.price || 0);
+                const paidAmount = Number(m.paidAmount || 0);
+                const dueAmount = Math.max(0, planPrice - paidAmount);
+                
+                let paymentStatus = 'Paid in Full';
+                if (paidAmount === 0 && planPrice > 0) {
+                    paymentStatus = 'Unpaid';
+                } else if (dueAmount > 0) {
+                    paymentStatus = `Partial Due (₹${dueAmount.toLocaleString('en-IN')})`;
+                }
+
+                const joinDateStr = m.joinDate ? new Date(m.joinDate).toISOString().slice(0, 10) : 'N/A';
+                const expiryDateStr = m.expiryDate ? new Date(m.expiryDate).toISOString().slice(0, 10) : 'N/A';
+                
+                let daysLeftStr = 'N/A';
+                if (m.expiryDate) {
+                    const exp = new Date(m.expiryDate);
+                    const diffTime = exp.getTime() - now.getTime();
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    if (diffDays > 0) {
+                        daysLeftStr = `${diffDays} Days Active`;
+                    } else if (diffDays === 0) {
+                        daysLeftStr = 'Expires Today';
+                    } else {
+                        daysLeftStr = `${Math.abs(diffDays)} Days Overdue`;
+                    }
+                }
+
+                const sessionsTotal = Number(m.sessionsTotal || 0);
+                const sessionsRemaining = Number(m.sessionsRemaining || 0);
+                const sessionsUsed = Math.max(0, sessionsTotal - sessionsRemaining);
+
+                const lastCheckInStr = m.lastCheckInAt ? new Date(m.lastCheckInAt).toLocaleString('en-IN') : 'No check-ins logged';
+                const isFrozenStr = m.status === 'Frozen' ? 'Yes (Frozen)' : 'No';
+                const createdAtStr = m.createdAt ? new Date(m.createdAt).toLocaleString('en-IN') : 'N/A';
+                const updatedAtStr = m.updatedAt ? new Date(m.updatedAt).toLocaleString('en-IN') : 'N/A';
+
+                return [
+                    `"${(m._id || m.id || '').toString().replace(/"/g, '""')}"`,
+                    `"${(m.name || '').replace(/"/g, '""')}"`,
+                    `"${(m.phone || '').replace(/"/g, '""')}"`,
+                    `"${(m.email || 'N/A').replace(/"/g, '""')}"`,
+                    `"${(m.status || 'Active').replace(/"/g, '""')}"`,
+                    `"${planName.replace(/"/g, '""')}"`,
+                    planPrice,
+                    paidAmount,
+                    dueAmount,
+                    `"${paymentStatus.replace(/"/g, '""')}"`,
+                    `"${branchName.replace(/"/g, '""')}"`,
+                    `"${(m.gymId || 'Default').replace(/"/g, '""')}"`,
+                    `"${joinDateStr}"`,
+                    `"${expiryDateStr}"`,
+                    `"${daysLeftStr}"`,
+                    sessionsTotal,
+                    sessionsRemaining,
+                    sessionsUsed,
+                    `"${lastCheckInStr.replace(/"/g, '""')}"`,
+                    `"${isFrozenStr}"`,
+                    `"${createdAtStr.replace(/"/g, '""')}"`,
+                    `"${updatedAtStr.replace(/"/g, '""')}"`
+                ];
+            });
+
+            const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            const todayStr = new Date().toISOString().slice(0, 10);
+            const exportTypeStr = exportFullRoster ? 'Full_Roster' : 'Filtered_View';
+            link.href = url;
+            link.setAttribute('download', `Gym_Members_Detailed_${exportTypeStr}_${todayStr}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Failed to export CSV:', error);
+            alert('Failed to generate CSV export. Please try again.');
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
+    if (loading) return <div className="spinner"></div>;
     return (
         <div>
-            <div className="page-header">
-                <h2>Members Management</h2>
-                <button className="btn btn-primary" onClick={() => handleOpenModal()}>+ Add New Member</button>
+            <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                    <h2 style={{ margin: 0 }}>Members Management</h2>
+                    <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Manage member profiles, subscriptions, and download detailed reports</p>
+                </div>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', background: 'var(--bg-secondary, #2D251C)', border: '1px solid var(--border-color, #3A3025)', borderRadius: '8px', overflow: 'hidden' }}>
+                        <button
+                            className="btn"
+                            onClick={() => handleDownloadCSV(false)}
+                            disabled={isExporting}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '0.4rem',
+                                padding: '0.5rem 0.85rem', background: 'transparent',
+                                border: 'none', color: 'var(--primary, #F0A020)', fontWeight: 600,
+                                cursor: isExporting ? 'wait' : 'pointer'
+                            }}
+                            title="Export currently filtered view to CSV"
+                        >
+                            <Download size={16} /> {isExporting ? 'Exporting...' : 'Export Filtered'}
+                        </button>
+                        <div style={{ width: '1px', background: 'var(--border-color, #3A3025)' }} />
+                        <button
+                            className="btn"
+                            onClick={() => handleDownloadCSV(true)}
+                            disabled={isExporting}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '0.4rem',
+                                padding: '0.5rem 0.85rem', background: 'rgba(240, 160, 32, 0.12)',
+                                border: 'none', color: 'var(--primary, #F0A020)', fontWeight: 700,
+                                cursor: isExporting ? 'wait' : 'pointer'
+                            }}
+                            title="Export entire member database to CSV"
+                        >
+                            Export Full Database
+                        </button>
+                    </div>
+                    <button className="btn btn-primary" onClick={() => handleOpenModal()}>+ Add New Member</button>
+                </div>
             </div>
 
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
@@ -201,7 +376,7 @@ const Members = () => {
                     <option value="Expired">Expired</option>
                     <option value="Frozen">❄️ Frozen</option>
                 </select>
-                {branches.length > 0 && (
+                {!user?.branchId && branches.length > 0 && (
                     <select
                         className="input"
                         style={{ flex: '1', minWidth: '150px' }}
@@ -303,8 +478,7 @@ const Members = () => {
                     </tbody>
                 </table>
             </div>
-
-            {/* Pagination Controls */}
+                 {/* Pagination Controls */}
             {pages > 1 && (
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '2rem' }}>
                     <button
@@ -349,13 +523,15 @@ const Members = () => {
                                 {plans.map(p => <option key={p._id} value={p._id}>{p.name} (₹{p.price})</option>)}
                             </select>
                         </div>
-                        <div className="input-group">
-                            <label>Branch (optional)</label>
-                            <select className="input" value={formData.branchId} onChange={(e) => setFormData({ ...formData, branchId: e.target.value })}>
-                                <option value="">No Branch / All Locations</option>
-                                {branches.map(b => <option key={b._id} value={b._id}>🏢 {b.name}</option>)}
-                            </select>
-                        </div>
+                        {!user?.branchId && (
+                            <div className="input-group">
+                                <label>Branch (optional)</label>
+                                <select className="input" value={formData.branchId} onChange={(e) => setFormData({ ...formData, branchId: e.target.value })}>
+                                    <option value="">No Branch / All Locations</option>
+                                    {branches.map(b => <option key={b._id} value={b._id}>🏢 {b.name}</option>)}
+                                </select>
+                            </div>
+                        )}
                         {['superadmin', 'fitpass_admin'].includes(user?.role) && (
                             <div className="input-group">
                                 <label>Gym Division / Partner Gym</label>
