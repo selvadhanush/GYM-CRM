@@ -23,6 +23,7 @@ const protect = async (req, res, next) => {
             }
 
             req.user = user;
+            req.user.userBranchId = user.branchId || null;
             if (req.log) {
                 req.log = req.log.child({ userId: user._id || user.id });
             }
@@ -63,7 +64,10 @@ const protect = async (req, res, next) => {
                 const h4Gym = await Gym.findOne({ name: 'H4' });
                 req.user.gymId = h4Gym ? h4Gym._id.toString() : '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
                 
-                if (req.headers['x-branch-id']) {
+                if (req.user.userBranchId) {
+                    // Branch-level admin created for a specific location
+                    req.user.branchId = req.user.userBranchId;
+                } else if (req.headers['x-branch-id']) {
                     const targetBranch = await Branch.findOne({ 
                         _id: req.headers['x-branch-id'], 
                         gymId: req.user.gymId 
@@ -79,7 +83,9 @@ const protect = async (req, res, next) => {
             } else if (req.user.role === 'partner') {
                 // Organization Admin is locked to their gymId
                 req.user.gymId = user.gymId;
-                if (req.headers['x-branch-id']) {
+                if (req.user.userBranchId) {
+                    req.user.branchId = req.user.userBranchId;
+                } else if (req.headers['x-branch-id']) {
                     // Only allow switching to branches that belong to their gymId
                     const targetBranch = await Branch.findOne({ 
                         _id: req.headers['x-branch-id'], 
@@ -96,7 +102,7 @@ const protect = async (req, res, next) => {
             } else {
                 // All other roles (admin, receptionist, trainer, member) are strictly isolated
                 req.user.gymId = user.gymId;
-                req.user.branchId = user.branchId;
+                req.user.branchId = user.userBranchId || user.branchId || null;
             }
 
             next();

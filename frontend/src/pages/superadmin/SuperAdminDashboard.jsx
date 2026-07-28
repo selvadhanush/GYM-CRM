@@ -382,42 +382,97 @@ function SuperAdminDashboard() {
             <div className="charts-grid">
                 {/* Payment Method Breakdown */}
                 <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ marginBottom: '1.5rem' }}>
-                        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                            Collections by Method
-                        </h3>
-                        <p style={{ margin: '0.2rem 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Payment method distribution</p>
-                    </div>
-                    {methodBreakdownData.length > 0 ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-                            <ResponsiveContainer width="55%" height={220}>
-                                <PieChart>
-                                    <Pie data={methodBreakdownData} innerRadius={60} outerRadius={90} paddingAngle={5} dataKey="value" nameKey="name" stroke="none">
-                                        {methodBreakdownData.map((_, index) => (
-                                            <Cell key={`cell-${index}`} fill={AMBER_COLORS[index % AMBER_COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip formatter={(v) => [formatCurrency(v), 'Collected']} contentStyle={{ background: '#2D251C', border: '1px solid #3A3025', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }} itemStyle={{ color: '#F0A020', fontWeight: 700 }} />
-                                </PieChart>
-                            </ResponsiveContainer>
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                                {methodBreakdownData.map((item, idx) => (
-                                    <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: AMBER_COLORS[idx % AMBER_COLORS.length], flexShrink: 0 }} />
-                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 500 }}>{item.name}</span>
-                                        </div>
-                                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>{formatCurrency(item.value)}</span>
+                    {(() => {
+                        const totalCollections = methodBreakdownData.reduce((acc, curr) => acc + (Number(curr.value) || 0), 0);
+                        return (
+                            <>
+                                <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                    <div>
+                                        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                                            Collections by Method
+                                        </h3>
+                                        <p style={{ margin: '0.2rem 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Payment method distribution & revenue share</p>
                                     </div>
-                                ))}
-                            </div>
-                        </div>
-                    ) : (
-                        <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.875rem', flexDirection: 'column', gap: '0.5rem' }}>
-                            <IndianRupee size={32} opacity={0.3} />
-                            <span>No payment data yet</span>
-                        </div>
-                    )}
+                                    {totalCollections > 0 && (
+                                        <div style={{ background: 'rgba(240, 160, 32, 0.1)', border: '1px solid rgba(240, 160, 32, 0.25)', borderRadius: '8px', padding: '0.35rem 0.75rem', textAlign: 'right' }}>
+                                            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Total</div>
+                                            <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#F0A020' }}>{formatCurrency(totalCollections)}</div>
+                                        </div>
+                                    )}
+                                </div>
+                                {methodBreakdownData.length > 0 && totalCollections > 0 ? (
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', alignItems: 'center' }}>
+                                        <div style={{ position: 'relative', width: '100%', height: 220 }}>
+                                            <ResponsiveContainer width="100%" height={220}>
+                                                <PieChart>
+                                                    <Pie data={methodBreakdownData} innerRadius={60} outerRadius={88} paddingAngle={5} dataKey="value" nameKey="name" stroke="none" cornerRadius={6}>
+                                                        {methodBreakdownData.map((_, index) => (
+                                                            <Cell key={`cell-${index}`} fill={AMBER_COLORS[index % AMBER_COLORS.length]} />
+                                                        ))}
+                                                    </Pie>
+                                                    <Tooltip
+                                                        content={({ active, payload }) => {
+                                                            if (!active || !payload?.length) return null;
+                                                            const item = payload[0];
+                                                            const pct = totalCollections ? ((item.value / totalCollections) * 100).toFixed(1) : 0;
+                                                            return (
+                                                                <div style={{
+                                                                    background: '#2D251C', border: '1px solid #3A3025', borderRadius: 10,
+                                                                    padding: '10px 14px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)'
+                                                                }}>
+                                                                    <p style={{ color: '#A39686', fontSize: 12, marginBottom: 4, fontWeight: 600 }}>{item.name}</p>
+                                                                    <p style={{ color: '#F0A020', fontWeight: 800, fontSize: 14, margin: 0 }}>
+                                                                        {formatCurrency(item.value)} <span style={{ fontSize: 11, color: '#6D6154', fontWeight: 500 }}>({pct}%)</span>
+                                                                    </p>
+                                                                </div>
+                                                            );
+                                                        }}
+                                                    />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                            <div style={{
+                                                position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                                                textAlign: 'center', pointerEvents: 'none'
+                                            }}>
+                                                <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>TOTAL</div>
+                                                <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                                                    {formatCurrency(totalCollections)}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                            {methodBreakdownData.map((item, idx) => {
+                                                const color = AMBER_COLORS[idx % AMBER_COLORS.length];
+                                                const pct = totalCollections ? Math.round((item.value / totalCollections) * 100) : 0;
+                                                return (
+                                                    <div key={idx} style={{ background: 'var(--bg-tertiary, rgba(255,255,255,0.03))', borderRadius: '10px', padding: '0.6rem 0.8rem', border: '1px solid var(--border, rgba(255,255,255,0.05))' }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                <div style={{ width: 9, height: 9, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                                                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>{item.name}</span>
+                                                            </div>
+                                                            <div>
+                                                                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>{formatCurrency(item.value)}</span>
+                                                                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: '0.35rem', fontWeight: 600 }}>({pct}%)</span>
+                                                            </div>
+                                                        </div>
+                                                        <div style={{ height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 999, overflow: 'hidden' }}>
+                                                            <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 999, transition: 'width 0.8s ease' }} />
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.875rem', flexDirection: 'column', gap: '0.5rem' }}>
+                                        <IndianRupee size={32} opacity={0.3} />
+                                        <span>No payment data yet</span>
+                                    </div>
+                                )}
+                            </>
+                        );
+                    })()}
                 </div>
 
                 {/* Member Status Summary */}

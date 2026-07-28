@@ -450,4 +450,55 @@ const checkUserAndSendOTP = catchAsync(async (req, res, next) => {
     });
 });
 
-module.exports = { registerUser, verifyOTP, authUser, checkUserAndSendOTP };
+// @desc    Update current user profile & credentials
+// @route   PUT /api/auth/profile
+// @access  Private
+const updateProfile = catchAsync(async (req, res, next) => {
+    const userId = req.user._id || req.user.id;
+    const user = await User.findById(userId);
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
+
+    const { name, email, phone, currentPassword, newPassword } = req.body;
+
+    if (newPassword) {
+        if (!currentPassword) {
+            res.status(400);
+            throw new Error('Current password is required to set a new password');
+        }
+        const isMatch = await user.matchPassword(currentPassword);
+        if (!isMatch) {
+            res.status(400);
+            throw new Error('Incorrect current password');
+        }
+        user.password = newPassword;
+    }
+
+    if (name) user.name = name;
+    if (phone !== undefined) user.phone = phone;
+    if (email && normalizeEmail(email) !== normalizeEmail(user.email)) {
+        const emailExists = await User.findOne({ email: normalizeEmail(email) });
+        if (emailExists && String(emailExists._id || emailExists.id) !== String(userId)) {
+            res.status(400);
+            throw new Error('Email is already taken by another user');
+        }
+        user.email = normalizeEmail(email);
+    }
+
+    await user.save();
+
+    res.json({
+        _id: user._id || user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone || null,
+        role: user.role,
+        gymId: user.gymId?._id || user.gymId,
+        branchId: user.branchId || null,
+        message: 'Profile and credentials updated successfully'
+    });
+});
+
+module.exports = { registerUser, verifyOTP, authUser, checkUserAndSendOTP, updateProfile };

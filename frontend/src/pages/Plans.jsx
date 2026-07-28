@@ -44,15 +44,22 @@ const Plans = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            const planId = editingPlan?._id || editingPlan?.id;
+            const payload = {
+                name: formData.name,
+                duration: Number(formData.duration),
+                price: Number(formData.price)
+            };
             if (editingPlan) {
-                await updatePlan(editingPlan._id, formData);
+                await updatePlan(planId, payload);
             } else {
-                await createPlan(formData);
+                await createPlan(payload);
             }
             fetchPlans();
             setIsModalOpen(false);
         } catch (error) {
-            alert('Error saving plan');
+            console.error('Error saving plan:', error);
+            alert(error.response?.data?.message || 'Error saving plan');
         }
     };
 
@@ -102,28 +109,31 @@ const Plans = () => {
                                 </td>
                             </tr>
                         ) : (
-                            safePlans.map(plan => (
-                                <tr key={plan._id}>
-                                    <td>
-                                        {plan.name}
-                                        {plan.gymId === 'SYSTEM' && (
-                                            <span style={{ marginLeft: '8px', fontSize: '12px', padding: '2px 6px', backgroundColor: '#e0f2fe', color: '#0369a1', borderRadius: '4px' }}>Global</span>
-                                        )}
-                                    </td>
-                                    <td>{plan.gymId === 'SYSTEM' ? `${plan.sessions} sessions` : plan.duration}</td>
-                                    <td>{plan.price}</td>
-                                    {isAdmin && (
-                                        <td style={{ display: 'flex', gap: '0.5rem' }}>
-                                            <button className="btn" style={{ padding: '0.4rem', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }} onClick={() => handleOpenModal(plan)}>
-                                                <Pencil size={16} />
-                                            </button>
-                                            <button className="btn btn-danger" style={{ padding: '0.4rem' }} onClick={() => handleDelete(plan._id)}>
-                                                <Trash2 size={16} />
-                                            </button>
+                            safePlans.map(plan => {
+                                const planId = plan._id || plan.id;
+                                return (
+                                    <tr key={planId}>
+                                        <td>
+                                            {plan.name}
+                                            {plan.gymId === 'SYSTEM' && (
+                                                <span style={{ marginLeft: '8px', fontSize: '12px', padding: '2px 6px', backgroundColor: '#e0f2fe', color: '#0369a1', borderRadius: '4px' }}>Global</span>
+                                            )}
                                         </td>
-                                    )}
-                                </tr>
-                            ))
+                                        <td>{plan.gymId === 'SYSTEM' ? `${plan.sessions} sessions` : plan.duration}</td>
+                                        <td>{plan.price}</td>
+                                        {isAdmin && (
+                                            <td style={{ display: 'flex', gap: '0.5rem' }}>
+                                                <button className="btn" style={{ padding: '0.4rem', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }} onClick={() => handleOpenModal(plan)}>
+                                                    <Pencil size={16} />
+                                                </button>
+                                                <button className="btn btn-danger" style={{ padding: '0.4rem' }} onClick={() => handleDelete(planId)}>
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </td>
+                                        )}
+                                    </tr>
+                                );
+                            })
                         )}
                     </tbody>
                 </table>

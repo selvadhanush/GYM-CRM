@@ -2,17 +2,16 @@ const express = require('express');
 const router = express.Router();
 const { getBranches, createBranch, updateBranch, deleteBranch, getBranchMembers } = require('../controllers/branchController');
 const { protect, authorize } = require('../middleware/authMiddleware');
-const tenantFilter = require('../middleware/tenantFilter');
 
 router.use(protect);
 router.route('/')
-    .get(authorize('admin', 'receptionist', 'trainer', 'superadmin', 'fitpass_admin', 'h4_admin'), tenantFilter, getBranches)
-    .post(authorize('admin', 'fitpass_admin', 'h4_admin'), createBranch);
+    .get(authorize('admin', 'receptionist', 'trainer', 'superadmin', 'fitpass_admin', 'h4_admin', 'partner'), getBranches)
+    .post(authorize('admin', 'fitpass_admin', 'h4_admin', 'partner', 'superadmin'), createBranch);
 
 router.route('/:id')
-    .put(authorize('admin', 'fitpass_admin', 'h4_admin'), updateBranch)
-    .delete(authorize('admin', 'fitpass_admin', 'h4_admin'), deleteBranch);
+    .put(authorize('admin', 'fitpass_admin', 'h4_admin', 'partner', 'superadmin'), updateBranch)
+    .delete(authorize('admin', 'fitpass_admin', 'h4_admin', 'partner', 'superadmin'), deleteBranch);
 
-router.get('/:id/members', authorize('admin', 'receptionist', 'trainer', 'superadmin', 'fitpass_admin', 'h4_admin'), getBranchMembers);
+router.get('/:id/members', authorize('admin', 'receptionist', 'trainer', 'superadmin', 'fitpass_admin', 'h4_admin', 'partner'), getBranchMembers);
 
 module.exports = router;

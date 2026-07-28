@@ -10,14 +10,25 @@
  */
 const tenantFilter = (req, res, next) => {
     const filter = {};
+    const headerGymId = req.headers['x-gym-id'];
+    const headerBranchId = req.headers['x-branch-id'];
+
     if (req.query.gymId) {
         filter.gymId = req.query.gymId;
+    } else if (headerGymId && headerGymId !== 'SYSTEM' && headerGymId !== 'null' && headerGymId !== 'undefined') {
+        filter.gymId = headerGymId;
     } else if (req.user?.gymId && req.user.gymId !== 'SYSTEM' && req.user.role !== 'superadmin') {
         filter.gymId = req.user.gymId;
     }
-    if (req.user?.branchId) {
+
+    if (req.query.branchId) {
+        filter.branchId = req.query.branchId;
+    } else if (headerBranchId && headerBranchId !== 'null' && headerBranchId !== 'undefined') {
+        filter.branchId = headerBranchId;
+    } else if (req.user?.branchId) {
         filter.branchId = req.user.branchId;
     }
+
     req.tenantFilter = filter;
     next();
 };

@@ -40,67 +40,33 @@ const AppHeader = ({ onThemeToggle, isDark }) => {
             if (user?.role === 'superadmin' || user?.role === 'fitpass_admin') {
                 try {
                     if (activeDivision === 'h4' && user?.role !== 'fitpass_admin') {
-                        // Fetch H4 gym and partner gyms to find the current gym's name
-                        const [h4Res, partnerRes] = await Promise.all([
+                        // Fetch H4 main gym and H4 branches
+                        const [h4Res, branchesRes] = await Promise.all([
                             API.get('/superadmin/h4-gym').catch(() => ({ data: null })),
-                            API.get('/superadmin/gyms').catch(() => ({ data: [] }))
+                            API.get('/branches').catch(() => ({ data: [] }))
                         ]);
                         
-                        const allGyms = [];
-                        if (h4Res.data) allGyms.push(h4Res.data);
-                        if (partnerRes.data) allGyms.push(...partnerRes.data);
+                        const h4Gym = h4Res.data;
+                        const h4GymId = h4Gym ? (h4Gym._id || h4Gym.id) : '';
                         
-                        const h4GymId = h4Res.data ? (h4Res.data._id || h4Res.data.id) : '';
-                        let currentGymId = selectedGymId;
-
-                        // Default to H4 gym if no selectedGymId is set
-                        if (!currentGymId && h4GymId) {
-                            currentGymId = h4GymId;
+                        if (h4GymId && !selectedGymId) {
                             changeSelectedGym(h4GymId);
                         }
 
-                        const currentGym = allGyms.find(g => (g._id || g.id) === currentGymId) || (h4Res.data ? h4Res.data : allGyms[0]);
-                        
-                        if (currentGym) {
-                            const targetGymId = currentGym._id || currentGym.id;
-                            // Fetch branches for the selected gym
-                            const { data: branches } = await API.get('/branches', {
-                                headers: { 'x-gym-id': targetGymId }
-                            });
-                            
-                            const branchOptions = (branches || []).map(b => ({
-                                _id: b._id || b.id,
-                                name: b.name,
-                                isBranch: true,
-                                parentGymId: targetGymId
-                            }));
-                            
-                            setGyms(allGyms);
-                            
-                            // Ensure selected context is valid
-                            const currentBranch = localStorage.getItem('selectedBranchId');
-                            if (currentBranch && !branchOptions.some(b => b._id === currentBranch)) {
-                                changeSelectedBranch('');
-                            }
-                        }
+                        const branches = Array.isArray(branchesRes.data) ? branchesRes.data : [];
+                        setGyms(branches);
                     } else {
-                        // Fetch FitPass partner gyms (which excludes H4 from backend now)
+                        // Fetch FitPass partner gyms for FitPass Portal
                         const { data } = await API.get('/superadmin/gyms');
                         setGyms(data || []);
                     }
                 } catch (err) {
                     console.error('Failed to fetch gyms for selector:', err);
                 }
-            } else if (user?.role === 'partner' || user?.role === 'h4_admin') {
+            } else if (['partner', 'h4_admin', 'admin'].includes(user?.role)) {
                 try {
                     const { data: branches } = await API.get('/branches');
-                    const branchOptions = (branches || []).map(b => ({
-                        _id: b._id || b.id,
-                        name: b.name,
-                        isBranch: true,
-                        parentGymId: user.gymId
-                    }));
-                    setGyms(branchOptions);
+                    setGyms(Array.isArray(branches) ? branches : []);
                 } catch (err) {
                     console.error('Failed to fetch branches for partner/h4_admin:', err);
                 }
@@ -209,58 +175,84 @@ const AppHeader = ({ onThemeToggle, isDark }) => {
                 </button>
                 <h1 className="page-title">{getPageTitle()}</h1>
 
-                {((user?.role === 'superadmin' && activeDivision === 'h4') || user?.role === 'partner' || user?.role === 'h4_admin') && (
-                    <div style={{ marginLeft: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                            {user?.role === 'partner' || user?.role === 'h4_admin' ? 'Active Branch:' : 'Managing Gym:'}
-                        </span>
-                        <select
-                            className="input"
-                            style={{ 
-                                padding: '0.2rem 1.8rem 0.2rem 0.6rem', 
-                                fontSize: '0.8rem', 
-                                width: '200px', 
-                                height: '32px',
-                                margin: 0,
-                                backgroundPosition: 'right 0.4rem center'
-                            }}
-                            value={selectedBranchId || (user?.role === 'partner' || user?.role === 'h4_admin' ? '' : selectedGymId)}
-                            onChange={(e) => {
-                                const val = e.target.value;
-                                if (user?.role === 'partner' || user?.role === 'h4_admin') {
-                                    changeSelectedBranch(val);
-                                } else {
-                                    const selectedObj = gyms.find(g => (g._id || g.id) === val);
-                                    if (selectedObj && selectedObj.isBranch) {
-                                        changeSelectedGym(selectedObj.parentGymId);
-                                        changeSelectedBranch(val);
-                                    } else {
-                                        changeSelectedGym(val);
-                                        changeSelectedBranch('');
-                                    }
-                                }
-                                // Reload page to reset data and refresh queries
-                                window.location.reload();
-                            }}
-                        >
-                            {user?.role === 'partner' || user?.role === 'h4_admin' ? (
-                                <>
-                                    <option value="">-- All Branches --</option>
-                                    {gyms.map(branch => (
-                                        <option key={branch._id || branch.id} value={branch._id || branch.id}>
-                                            {branch.name}
-                                        </option>
-                                    ))}
-                                </>
-                            ) : (
-                                <>
-                                    <option value="">-- Select a Gym --</option>
-                                    {gyms.map(gym => (
-                                        <option key={gym._id || gym.id} value={gym._id || gym.id}>{gym.name}</option>
-                                    ))}
-                                </>
-                            )}
-                        </select>
+                {['superadmin', 'fitpass_admin', 'h4_admin', 'partner', 'admin'].includes(user?.role) && (
+                    <div style={{ marginLeft: '0.75rem', display: 'flex', alignItems: 'center', position: 'relative' }}>
+                        {user?.branchId ? (
+                            <div style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                background: '#FBF6EC',
+                                border: '1px solid #E5D5C0',
+                                borderRadius: '20px',
+                                padding: '0.35rem 1rem',
+                                color: '#231D14',
+                                fontWeight: 700,
+                                fontSize: '0.875rem',
+                                boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
+                            }}>
+                                {gyms.find(b => (b._id || b.id) === user.branchId)?.name || 'H4 Branch'}
+                            </div>
+                        ) : (
+                            <div style={{
+                                position: 'relative',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                background: '#FBF6EC',
+                                border: '1px solid #E5D5C0',
+                                borderRadius: '20px',
+                                padding: '0.2rem 0.6rem 0.2rem 1rem',
+                                cursor: 'pointer',
+                                boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
+                                transition: 'all 0.2s ease'
+                            }}>
+                                <select
+                                    style={{
+                                        appearance: 'none',
+                                        WebkitAppearance: 'none',
+                                        MozAppearance: 'none',
+                                        background: 'transparent',
+                                        border: 'none',
+                                        outline: 'none',
+                                        color: '#231D14',
+                                        fontWeight: 700,
+                                        fontSize: '0.875rem',
+                                        paddingRight: '1.5rem',
+                                        cursor: 'pointer',
+                                        margin: 0
+                                    }}
+                                    value={activeDivision === 'h4' || ['partner', 'h4_admin', 'admin'].includes(user?.role) ? selectedBranchId : selectedGymId}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (activeDivision === 'h4' || ['partner', 'h4_admin', 'admin'].includes(user?.role)) {
+                                            changeSelectedBranch(val);
+                                        } else {
+                                            changeSelectedGym(val);
+                                            changeSelectedBranch('');
+                                        }
+                                        window.location.reload();
+                                    }}
+                                >
+                                    {activeDivision === 'h4' || ['partner', 'h4_admin', 'admin'].includes(user?.role) ? (
+                                        <>
+                                            <option value="">H4 (All Branches)</option>
+                                            {gyms.map(branch => (
+                                                <option key={branch._id || branch.id} value={branch._id || branch.id}>
+                                                    {branch.name}
+                                                </option>
+                                            ))}
+                                        </>
+                                    ) : (
+                                        <>
+                                            <option value="">All Partner Gyms</option>
+                                            {gyms.map(gym => (
+                                                <option key={gym._id || gym.id} value={gym._id || gym.id}>{gym.name}</option>
+                                            ))}
+                                        </>
+                                    )}
+                                </select>
+                                <ChevronDown size={15} style={{ position: 'absolute', right: '0.6rem', color: '#6D6154', pointerEvents: 'none' }} />
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
