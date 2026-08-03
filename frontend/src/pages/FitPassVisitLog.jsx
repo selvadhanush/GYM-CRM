@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Zap, Calendar, ChevronLeft, ChevronRight, RefreshCw, Clock, User, Building2 } from 'lucide-react';
 import API from '../services/api';
+import { SkeletonRow } from '../components/Skeleton';
+import EmptyState from '../components/ui/EmptyState';
 
 // ─── Stat card component ─────────────────────────────────────────────────────
 const StatCard = ({ icon: Icon, label, value, color }) => (
@@ -210,7 +212,7 @@ const FitPassVisitLog = () => {
                     </div>
                 )}
 
-                <div style={{ overflowX: 'auto' }}>
+                <div className="responsive-table-cards" style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
                         <thead>
                             <tr style={{ borderBottom: '1px solid var(--border)' }}>
@@ -233,18 +235,17 @@ const FitPassVisitLog = () => {
                         </thead>
                         <tbody>
                             {loading ? (
-                                <tr>
-                                    <td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                        <RefreshCw size={20} style={{ animation: 'spin 1s linear infinite', marginBottom: 8 }} />
-                                        <div>Loading visits…</div>
-                                    </td>
-                                </tr>
+                                Array.from({ length: 5 }).map((_, i) => (
+                                    <SkeletonRow key={i} cols={6} />
+                                ))
                             ) : visits.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                                        <Zap size={32} style={{ opacity: 0.3, marginBottom: 8 }} />
-                                        <div>No FitPass check-ins found for this gym.</div>
-                                        <div style={{ fontSize: '0.8rem', marginTop: 4 }}>Try adjusting the date range or check back later.</div>
+                                    <td colSpan={6} style={{ padding: '1rem' }}>
+                                        <EmptyState
+                                            icon={Zap}
+                                            title="No FitPass Check-Ins Found"
+                                            description="No FitPass member visits recorded for your gym branch yet. Try adjusting the date range or check back later."
+                                        />
                                     </td>
                                 </tr>
                             ) : visits.map((v, idx) => (

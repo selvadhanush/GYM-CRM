@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import API from '../services/api';
+import { useToast } from '../components/ui/Toast';
+import PasswordInput from '../components/ui/PasswordInput';
 
 const MemberDashboard = () => {
+    const toast = useToast();
     const [plan, setPlan] = useState(null);
     const [attendance, setAttendance] = useState([]);
     const [payments, setPayments] = useState([]);
@@ -112,12 +115,12 @@ const MemberDashboard = () => {
                 phone: profilePhone,
                 password: profilePassword || undefined
             });
-            alert('Profile updated successfully!');
+            toast.success('Profile updated successfully!');
             setProfileModal(false);
             fetchMemberData();
         } catch (error) {
             console.error('Error updating profile:', error);
-            alert(error.response?.data?.message || 'Failed to update profile.');
+            toast.error(error.response?.data?.message || 'Failed to update profile.');
         } finally {
             setUpdatingProfile(false);
         }
@@ -133,7 +136,7 @@ const MemberDashboard = () => {
     const handlePayment = async () => {
         const amount = parseFloat(customAmount);
         if (!amount || amount <= 0 || amount > amountDue) {
-            alert(`Please enter a valid amount between ₹1 and ₹${amountDue}`);
+            toast.warning(`Please enter a valid amount between ₹1 and ₹${amountDue}`);
             return;
         }
 
@@ -154,13 +157,13 @@ const MemberDashboard = () => {
                     });
                     const remaining = verifyRes.data.remainingDue || 0;
                     if (remaining > 0) {
-                        alert(`✅ [MOCK PAYMENT] Payment of ₹${amount} successful!\n💳 Remaining due: ₹${remaining}`);
+                        toast.success(`Payment of ₹${amount} successful! Remaining due: ₹${remaining}`);
                     } else {
-                        alert('✅ [MOCK PAYMENT] Payment successful! Your dues are fully cleared.');
+                        toast.success('Payment successful! Your dues are fully cleared.');
                     }
                     fetchMemberData(); // Refresh UI
                 } catch (err) {
-                    alert('Mock payment verification failed.');
+                    toast.error('Mock payment verification failed.');
                 }
                 return;
             }
@@ -184,13 +187,13 @@ const MemberDashboard = () => {
                         });
                         const remaining = verifyRes.data.remainingDue || 0;
                         if (remaining > 0) {
-                            alert(`✅ Payment of ₹${amount} successful!\n💳 Remaining due: ₹${remaining}`);
+                            toast.success(`Payment of ₹${amount} successful! Remaining due: ₹${remaining}`);
                         } else {
-                            alert('✅ Payment successful! Your dues are fully cleared.');
+                            toast.success('Payment successful! Your dues are fully cleared.');
                         }
                         fetchMemberData(); // Refresh UI
                     } catch (err) {
-                        alert('Payment verification failed.');
+                        toast.error('Payment verification failed.');
                     }
                 },
                 prefill: {
@@ -199,7 +202,7 @@ const MemberDashboard = () => {
                     contact: plan?.phone
                 },
                 theme: {
-                    color: "#6366f1"
+                    color: "#F0A020"
                 }
             };
 
@@ -207,7 +210,7 @@ const MemberDashboard = () => {
             rzp.open();
         } catch (error) {
             console.error('Payment initiation failed:', error);
-            alert(error.response?.data?.message || 'Failed to initiate payment.');
+            toast.error(error.response?.data?.message || 'Failed to initiate payment.');
         } finally {
             setPaying(false);
         }
@@ -395,8 +398,25 @@ const MemberDashboard = () => {
                 </div>
             )}
 
-            {/* History Tables */}
+            {/* Quick Action Navigation */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+                <a href="/explore-gyms" style={{ textDecoration: 'none' }}>
+                    <div className="glass" style={{
+                        padding: '1.25rem 1.5rem', borderRadius: '14px',
+                        borderLeft: '5px solid var(--primary)', cursor: 'pointer',
+                        transition: 'transform 0.2s', display: 'flex', alignItems: 'center', gap: '1rem'
+                    }}
+                        onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                        onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+                    >
+                        <span style={{ fontSize: '2rem' }}>🧭</span>
+                        <div>
+                            <div style={{ fontWeight: '800', fontSize: '0.95rem' }}>Explore Partner Gyms</div>
+                            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Discover &amp; check-in at FitPass gyms</div>
+                        </div>
+                    </div>
+                </a>
+
                 <a href="/member-classes" style={{ textDecoration: 'none' }}>
                     <div className="glass" style={{
                         padding: '1.25rem 1.5rem', borderRadius: '14px',
@@ -729,13 +749,10 @@ const MemberDashboard = () => {
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)' }}>New Password</label>
-                            <input
-                                type="password"
-                                className="input"
+                            <PasswordInput
                                 placeholder="Leave blank to keep current password"
                                 value={profilePassword}
                                 onChange={e => setProfilePassword(e.target.value)}
-                                style={{ width: '100%' }}
                             />
                         </div>
 
