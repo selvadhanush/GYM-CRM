@@ -8,7 +8,7 @@ import {
     UserCheck, Clock, Building2, History, ChevronRight,
     ChevronLeft, LogOut, Target, Package, Banknote,
     AlertTriangle, Receipt, CalendarCheck, Snowflake, LineChart, FileText, Home, Dumbbell, Image, Zap,
-    Settings, Apple
+    Settings, Apple, Compass
 } from 'lucide-react';
 
 const NAV_GROUPS = {
@@ -109,6 +109,7 @@ const NAV_GROUPS = {
             label: 'My Portal',
             items: [
                 { name: 'Dashboard', path: '/member-dashboard', icon: Home },
+                { name: 'Explore Gyms', path: '/explore-gyms', icon: Compass },
                 { name: 'My InBody', path: '/body-assessments', icon: LineChart },
                 { name: 'Classes', path: '/member-classes', icon: Dumbbell },
                 { name: 'Workout Routine', path: '/workout-plans', icon: Dumbbell },
@@ -118,10 +119,23 @@ const NAV_GROUPS = {
     ],
     partner: [
         {
-            label: 'FitPass Partner Portal',
+            label: 'Member Operations',
             items: [
                 { name: 'FitPass Visits', path: '/partner/visit-log', icon: Zap },
                 { name: 'FitPass Leads', path: '/partner/fitpass-leads', icon: Target },
+            ]
+        },
+        {
+            label: 'Brand & Discovery',
+            items: [
+                { name: 'Gym Social Profile', path: '/gym-social-profile', icon: Image },
+                { name: 'Explore Network', path: '/explore-gyms', icon: Compass },
+            ]
+        },
+        {
+            label: 'Account & Config',
+            items: [
+                { name: 'Partner Settings', path: '/settings', icon: Settings },
             ]
         }
     ]
@@ -175,6 +189,7 @@ const Sidebar = () => {
                         { name: 'Partner Gyms', path: '/superadmin/gyms', icon: Building2 },
                         { name: 'Fit-Prime Plans', path: '/superadmin/plans', icon: Package },
                         { name: 'FitPass Members', path: '/superadmin/fitpass-members', icon: Users },
+                        { name: 'Discovery Approvals', path: '/superadmin/discovery-approvals', icon: ShieldCheck },
                         { name: 'FitPass Reports', path: '/superadmin/fitpass-analytics', icon: Zap },
                         { name: 'Admins Directory', path: '/superadmin/admins', icon: ShieldCheck },
                     ]
@@ -258,6 +273,7 @@ const Sidebar = () => {
                     { name: 'Partner Gyms', path: '/superadmin/gyms', icon: Building2 },
                     { name: 'Fit-Prime Plans', path: '/superadmin/plans', icon: Package },
                     { name: 'FitPass Members', path: '/superadmin/fitpass-members', icon: Users },
+                    { name: 'Discovery Approvals', path: '/superadmin/discovery-approvals', icon: ShieldCheck },
                     { name: 'FitPass Reports', path: '/superadmin/fitpass-analytics', icon: Zap },
                 ]
             },

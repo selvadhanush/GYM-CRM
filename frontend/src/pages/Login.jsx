@@ -2,6 +2,7 @@ import { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { Shield, Award, Dumbbell, Building, User, Users, ArrowLeft } from 'lucide-react';
+import PasswordInput from '../components/ui/PasswordInput';
 
 const Login = () => {
     const [currentView, setCurrentView] = useState('main'); // 'main' | 'admin_sub' | 'gym_sub' | 'gym_admin_branch_sub' | 'member_sub' | 'login_form'
@@ -566,11 +567,11 @@ const Login = () => {
                     )}
 
                     <div className="input-group">
-                        <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '0.6rem', fontSize: '0.875rem', fontWeight: '600', fontFamily: 'Outfit' }}>Email Address</label>
+                        <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '0.6rem', fontSize: '0.875rem', fontWeight: '600', fontFamily: 'Outfit' }}>Email Address or Phone Number</label>
                         <input
-                            type="email"
+                            type="text"
                             className="input"
-                            placeholder="name@gym.com"
+                            placeholder="Email address or phone number"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
@@ -579,9 +580,7 @@ const Login = () => {
 
                     <div className="input-group" style={{ marginBottom: '2.5rem' }}>
                         <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '0.6rem', fontSize: '0.875rem', fontWeight: '600', fontFamily: 'Outfit' }}>Password</label>
-                        <input
-                            type="password"
-                            className="input"
+                        <PasswordInput
                             placeholder="••••••••"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}

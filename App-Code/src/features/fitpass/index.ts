@@ -6,5 +6,6 @@ export * from './components/FitPassDashboard';
 export * from './components/PartnerGymsList';
 export * from './components/CheckInHistory';
 export * from './components/FitPassProfile';
+export * from './components/GymDiscoveryExplore';
 export * from './api/fitpass.api';
 export * from './types';

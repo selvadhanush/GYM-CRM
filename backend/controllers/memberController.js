@@ -14,7 +14,7 @@ const buildMemberQuery = async (req, memberId) => {
     }
 
     if (req.user.role === 'superadmin') {
-        return memberId ? { _id: memberId } : {};
+        return query;
     }
 
     if (req.user.role === 'fitpass_admin') {
@@ -23,7 +23,7 @@ const buildMemberQuery = async (req, memberId) => {
         const h4GymId = h4Gym ? h4Gym._id.toString() : '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
         if (req.user.gymId && req.user.gymId !== 'SYSTEM') {
             query.gymId = req.user.gymId;
-        } else {
+        } else if (!query.gymId) {
             query.gymId = { $ne: h4GymId };
         }
     }
@@ -66,9 +66,22 @@ const createMember = catchAsync(async (req, res, next) => {
 
         const status = expiryDate < new Date() ? 'Expired' : 'Active';
 
-        const targetGymId = (req.user.role === 'superadmin' || req.user.role === 'fitpass_admin') 
-            ? (gymId || req.user.gymId || 'public')
-            : req.user.gymId;
+        let targetGymId;
+        if (gymId) {
+            targetGymId = gymId;
+        } else if (plan && plan.gymId && plan.gymId !== 'SYSTEM') {
+            targetGymId = plan.gymId;
+        } else if (plan && plan.gymId === 'SYSTEM') {
+            targetGymId = 'SYSTEM';
+        } else if (req.tenantFilter && req.tenantFilter.gymId) {
+            targetGymId = req.tenantFilter.gymId;
+        } else if (req.user.gymId && req.user.gymId !== 'SYSTEM') {
+            targetGymId = req.user.gymId;
+        } else {
+            const Gym = require('../models/Gym');
+            const h4Gym = await Gym.findOne({ name: 'H4' });
+            targetGymId = h4Gym ? h4Gym._id.toString() : '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+        }
 
         const targetBranchId = req.user.branchId || branchId || null;
 
@@ -97,7 +110,8 @@ const createMember = catchAsync(async (req, res, next) => {
                 role: 'member',
                 gymId: targetGymId,
                 branchId: targetBranchId,
-                memberId: member._id
+                memberId: member._id,
+                isVerified: true
             });
 
             await logAudit(req, 'MEMBER_CREATED', 'Member', member._id, `Created member: ${member.name}`, member.name);

@@ -269,17 +269,26 @@ const verifyOTP = catchAsync(async (req, res, next) => {
 // @access  Public (rate-limited + account lockout)
 const authUser = catchAsync(async (req, res, next) => {
     const { password, portalType } = req.body;
-    const email = normalizeEmail(req.body.email);
+    const inputIdentifier = (req.body.email || '').trim();
 
-    if (!email || !password) {
+    if (!inputIdentifier || !password) {
         res.status(400);
-        throw new Error('Email and password are required');
+        throw new Error('Email/Phone and password are required');
     }
 
-    const user = await User.findOne({ email }).populate('gymId');
+    const email = normalizeEmail(inputIdentifier);
+    let user = await User.findOne({ email }).populate('gymId');
+    if (!user) {
+        user = await User.findOne({
+            $or: [
+                { phone: inputIdentifier },
+                { email: `${inputIdentifier}@gym.com` }
+            ]
+        }).populate('gymId');
+    }
 
     // Generic "invalid credentials" for every failure path to avoid enumeration.
-    const GENERIC = 'Invalid email or password';
+    const GENERIC = 'Invalid email/phone or password';
 
     // Non-existent user -> still consume time and return the generic message.
     if (!user) {

@@ -125,6 +125,7 @@ app.use('/api/v1/staff', require('./routes/staffRoutes'));
 app.use('/api/v1/superadmin', require('./routes/superAdminRoutes'));
 app.use('/api/v1/gyms', require('./routes/gymRoutes'));
 app.use('/api/v1/equipments', require('./routes/equipmentRoutes'));
+app.use('/api/v1/discovery', require('./routes/discoveryRoutes'));
 
 // FitPrime session admin-adjust (member-facing session routes live under
 // member-portal above). Mounted standalone with its own protect/authorize.

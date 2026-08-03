@@ -35,8 +35,12 @@ import DietPlans from './pages/DietPlans';
 import Settings from './pages/Settings';
 import FitPassVisitLog from './pages/FitPassVisitLog';
 import FitPassPartnerLeads from './pages/FitPassPartnerLeads';
+import GymProfileDiscovery from './pages/GymProfileDiscovery';
+import DiscoveryApprovalQueue from './pages/superadmin/DiscoveryApprovalQueue';
+import FitPassGymExplore from './pages/FitPassGymExplore';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
+import { ToastProvider } from './components/ui/Toast';
 
 function App() {
   const { user, loading } = useContext(AuthContext);
@@ -48,8 +52,9 @@ function App() {
   );
 
   return (
-    <Router>
-      <Routes>
+    <ToastProvider>
+      <Router>
+        <Routes>
         <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
         <Route path="/register" element={!user ? <Register /> : <Navigate to="/dashboard" />} />
 
@@ -325,8 +330,32 @@ function App() {
           </ProtectedRoute>
         } />
 
+        <Route path="/gym-social-profile" element={
+          <ProtectedRoute roles={['admin', 'partner', 'h4_admin']}>
+            <Layout>
+              <GymProfileDiscovery />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/explore-gyms" element={
+          <ProtectedRoute roles={['member', 'admin', 'partner', 'superadmin', 'h4_admin', 'fitpass_admin']}>
+            <Layout>
+              <FitPassGymExplore />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/superadmin/discovery-approvals" element={
+          <ProtectedRoute roles={['superadmin', 'fitpass_admin', 'h4_admin']}>
+            <Layout>
+              <DiscoveryApprovalQueue />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
         <Route path="/settings" element={
-          <ProtectedRoute roles={['admin', 'h4_admin', 'superadmin']}>
+          <ProtectedRoute roles={['admin', 'h4_admin', 'superadmin', 'partner']}>
             <Layout>
               <Settings />
             </Layout>
@@ -336,6 +365,7 @@ function App() {
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
+  </ToastProvider>
   );
 }
 

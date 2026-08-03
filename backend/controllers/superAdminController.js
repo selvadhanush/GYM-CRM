@@ -107,10 +107,36 @@ const updatePartnerGym = catchAsync(async (req, res, next) => {
         throw new Error(parsed.error.issues[0].message);
     }
 
-    const gym = await Gym.findById(req.params.id);
+    const targetId = req.params.id;
+    let gym = await Gym.findById(targetId);
+
     if (!gym) {
-        res.status(404);
-        throw new Error('Gym not found');
+        const branch = await prisma.branch.findUnique({ where: { id: targetId } });
+        if (!branch) {
+            res.status(404);
+            throw new Error('Gym or Branch not found');
+        }
+        const updates = parsed.data;
+        const branchData = {};
+        if (updates.name !== undefined) branchData.name = updates.name.replace(/\s*\([^)]*\)/g, '').trim();
+        if (updates.address !== undefined) branchData.address = updates.address;
+        if (updates.phone !== undefined) branchData.phone = updates.phone;
+        if (updates.email !== undefined) branchData.email = updates.email;
+        if (updates.status !== undefined) branchData.isActive = updates.status === 'Active';
+
+        const updatedBranch = await prisma.branch.update({
+            where: { id: targetId },
+            data: branchData
+        });
+        await logAudit(req, 'BRANCH_UPDATED', 'Branch', updatedBranch.id, `Updated branch: ${updatedBranch.name}`, updatedBranch.name);
+        return res.json({
+            _id: updatedBranch.id,
+            name: updatedBranch.name,
+            address: updatedBranch.address,
+            phone: updatedBranch.phone,
+            email: updatedBranch.email,
+            status: updatedBranch.isActive ? 'Active' : 'Inactive',
+        });
     }
 
     const updates = parsed.data;
@@ -163,7 +189,6 @@ const getPartnerGyms = catchAsync(async (req, res, next) => {
     });
 
     try {
-        const prisma = require('../config/prisma');
         const fitPassBranches = await prisma.branch.findMany({
             where: { fitPassEnabled: true }
         });
@@ -209,15 +234,35 @@ const getOrCreateH4Gym = catchAsync(async (req, res, next) => {
     res.json(gym);
 });
 
-// @desc    Delete a partner gym
+// @desc    Delete a partner gym or disable branch FitPass access
 // @route   DELETE /api/superadmin/gyms/:id
 // @access  Private (Super Admin)
 const deletePartnerGym = catchAsync(async (req, res, next) => {
-    const gym = await Gym.findById(req.params.id);
+    const targetId = req.params.id;
+    const gym = await Gym.findById(targetId);
+
     if (!gym) {
+        const branch = await prisma.branch.findUnique({ where: { id: targetId } });
+        if (branch) {
+            await prisma.branch.update({
+                where: { id: targetId },
+                data: { fitPassEnabled: false }
+            });
+            await logAudit(req, 'BRANCH_DISABLED_FITPASS', 'Branch', branch.id, `Disabled FitPass for branch: ${branch.name}`, branch.name);
+            return res.json({ message: 'Branch removed from FitPass network' });
+        }
         res.status(404);
-        throw new Error('Gym not found');
+        throw new Error('Gym or Branch not found');
     }
+
+    try {
+        await prisma.gymPost.deleteMany({ where: { gymId: targetId } });
+        await prisma.gymProfileViewLog.deleteMany({ where: { gymId: targetId } });
+        await prisma.gymProfile.deleteMany({ where: { gymId: targetId } });
+    } catch (e) {
+        console.error('Non-critical cleanup error during gym delete:', e.message);
+    }
+
     await User.deleteMany({ gymId: gym._id, role: 'admin' });
     await gym.deleteOne();
     await logAudit(req, 'GYM_DELETED', 'Gym', gym._id, `Super admin deleted partner gym: ${gym.name}`, gym.name);
@@ -481,7 +526,13 @@ const getFitPassMemberRoster = catchAsync(async (req, res, next) => {
     });
     const fitPassPlanIds = fitPassPlans.map(p => p.id);
 
-    const where = { planId: { in: fitPassPlanIds } };
+    const h4Gym = await prisma.gym.findFirst({ where: { name: 'H4' } });
+    const h4GymId = h4Gym ? h4Gym.id : '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+
+    const where = { 
+        planId: { in: fitPassPlanIds },
+        gymId: { not: h4GymId }
+    };
     const now = new Date();
 
     if (req.query.status === 'Active') {
