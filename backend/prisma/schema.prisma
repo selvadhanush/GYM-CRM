@@ -14,6 +14,8 @@ model Gym {
   email                         String?
   status                        String   @default("Active")
   images                        String[] @default([])
+  latitude                      Float?
+  longitude                     Float?
   // Per-gym default session duration (minutes). Controls how long a FitPrime
   // session stays active before auto-closing. Default 2 hours.
   defaultSessionDurationMinutes Int      @default(120)
@@ -310,6 +312,8 @@ model Branch {
   managerName    String   @default("")
   isActive       Boolean  @default(true)
   fitPassEnabled Boolean  @default(true)
+  latitude       Float?
+  longitude      Float?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -554,3 +558,17 @@ model MaintenanceLog {
   @@index([gymId, loggedDate])
 }
 
+model Review {
+  id         String   @id @default(uuid())
+  gymId      String
+  memberId   String
+  memberName String   @default("Verified Member")
+  rating     Int      @default(5)
+  comment    String   @default("")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([gymId])
+  @@index([memberId])
+  @@index([gymId, memberId])
+}

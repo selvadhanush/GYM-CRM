@@ -188,10 +188,87 @@ const deletePlan = catchAsync(async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
+// @desc    Log a completed daily nutrition & hydration goal for member (notifies coach & admin)
+// @route   POST /api/diet-plans/log
+// @access  Private/Member/Trainer
+const logCompletedNutrition = catchAsync(async (req, res, next) => {
+    try {
+        const { planId, calories, protein, waterCups, notes } = req.body;
+        let memberId = req.user?.memberId;
+        let gymId = req.user?.gymId;
+        let memberName = req.user?.name || '';
+
+        try {
+            if (memberId) {
+                const m = await Member.findById(memberId).select('gymId name');
+                if (m) {
+                    if (m.gymId) gymId = m.gymId;
+                    if (m.name) memberName = m.name;
+                }
+            }
+            if (!memberId && req.user?.email) {
+                const m = await Member.findOne({ email: req.user.email }).select('id gymId name');
+                if (m) {
+                    memberId = m._id || m.id;
+                    if (m.gymId) gymId = m.gymId;
+                    if (m.name) memberName = m.name;
+                }
+            }
+        } catch (err) {}
+
+        const AuditLog = require('../models/AuditLog');
+        const Notification = require('../models/Notification');
+
+        let planName = 'Daily Nutrition & Hydration';
+        let trainerId = null;
+
+        if (planId) {
+            const plan = await DietPlan.findOne({ _id: planId, gymId });
+            if (plan) {
+                planName = plan.name || planName;
+                trainerId = plan.trainerId || null;
+            }
+        }
+
+        const detailsText = `Member ${memberName || 'Athlete'} logged daily nutrition target: "${planName}" (${calories || 0} kcal, ${protein || 0}g protein, ${waterCups || 0}/12 water glasses). ${notes ? 'Notes: ' + notes : ''}`;
+
+        // Create Audit Log entry for Coach & Admin
+        await AuditLog.create({
+            gymId: gymId || '327d37e7-f978-43a9-82ef-e6c4a4dc3c5d',
+            userId: req.user?.id || req.user?._id || null,
+            userName: memberName || req.user?.name || 'Member',
+            userEmail: req.user?.email || '',
+            userRole: 'member',
+            action: 'NUTRITION_COMPLETED',
+            entity: 'DietPlan',
+            entityId: planId || '',
+            entityName: planName,
+            details: detailsText
+        }).catch(() => null);
+
+        if (trainerId) {
+            await Notification.create({
+                recipientId: trainerId,
+                gymId: gymId || '327d37e7-f978-43a9-82ef-e6c4a4dc3c5d',
+                type: 'NUTRITION_LOGGED',
+                message: `${memberName || 'Your member'} hit their nutrition & hydration goal for "${planName}"!`,
+                read: false
+            }).catch(() => null);
+        }
+
+        res.status(200).json({
+            success: true,
+            message: '🎉 Daily nutrition & hydration goals logged! Admin & Coach notified.',
+            completedAt: new Date().toISOString()
+        });
+    } catch (error) { next(error); }
+});
+
 module.exports = {
     createPlan,
     getPlans,
     getPlanById,
     updatePlan,
-    deletePlan
+    deletePlan,
+    logCompletedNutrition
 };

@@ -42,42 +42,66 @@ export const colors = {
   },
 };
 
+import { Platform } from 'react-native';
+
+export const fontFamilies = {
+  header: Platform.select({
+    web: "'Oswald', sans-serif",
+    ios: 'Oswald-Bold',
+    android: 'Oswald-Bold',
+    default: 'sans-serif',
+  }) as string,
+  body: Platform.select({
+    web: "'Google Sans Flex', 'Google Sans', 'Inter', sans-serif",
+    ios: 'System',
+    android: 'sans-serif',
+    default: 'sans-serif',
+  }) as string,
+};
+
 export const typography = {
   display: {
+    fontFamily: fontFamilies.header,
     fontSize: 34,
     fontWeight: '900' as const,
     lineHeight: 40,
-    letterSpacing: -0.8,
+    letterSpacing: -0.5,
   },
   h1: {
+    fontFamily: fontFamilies.header,
     fontSize: 26,
     fontWeight: '900' as const,
     lineHeight: 32,
-    letterSpacing: -0.5,
+    letterSpacing: -0.3,
   },
   h2: {
+    fontFamily: fontFamilies.header,
     fontSize: 20,
     fontWeight: '800' as const,
     lineHeight: 26,
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
   },
   h3: {
+    fontFamily: fontFamilies.header,
     fontSize: 17,
     fontWeight: '700' as const,
     lineHeight: 23,
-    letterSpacing: -0.2,
+    letterSpacing: 0,
   },
   body: {
+    fontFamily: fontFamilies.body,
     fontSize: 15,
     fontWeight: '500' as const,
     lineHeight: 22,
   },
   bodySm: {
+    fontFamily: fontFamilies.body,
     fontSize: 13,
     fontWeight: '500' as const,
     lineHeight: 19,
   },
   caption: {
+    fontFamily: fontFamilies.body,
     fontSize: 11,
     fontWeight: '600' as const,
     lineHeight: 15,

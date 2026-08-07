@@ -1,6 +1,6 @@
 const express = require('express');
 const helmet = require('helmet');
-// Nodemon schema reload trigger comment.
+// Nodemon schema reload trigger comment - Updated for diet completion logging endpoint.
 const env = require('./config/env');
 const dotenv = require('dotenv');
 const cors = require('cors');

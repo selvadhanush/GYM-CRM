@@ -23,9 +23,13 @@ const webStorage = {
   }
 };
 
+// In-memory cache to avoid repeated slow bridge reads from SecureStore/localStorage
+const cache = new Map<string, string | null>();
+
 export const storage = {
   async setToken(token: string): Promise<void> {
     try {
+      cache.set('token', token);
       if (isWeb) {
         webStorage.setItem('token', token);
       } else {
@@ -38,10 +42,17 @@ export const storage = {
 
   async getToken(): Promise<string | null> {
     try {
-      if (isWeb) {
-        return webStorage.getItem('token');
+      if (cache.has('token')) {
+        return cache.get('token') || null;
       }
-      return await SecureStore.getItemAsync('token');
+      let val: string | null = null;
+      if (isWeb) {
+        val = webStorage.getItem('token');
+      } else {
+        val = await SecureStore.getItemAsync('token');
+      }
+      cache.set('token', val);
+      return val;
     } catch (error) {
       console.error('Failed to get secure token', error);
       return null;
@@ -50,6 +61,7 @@ export const storage = {
 
   async removeToken(): Promise<void> {
     try {
+      cache.delete('token');
       if (isWeb) {
         webStorage.removeItem('token');
       } else {
@@ -62,6 +74,7 @@ export const storage = {
 
   async setItem(key: string, value: string): Promise<void> {
     try {
+      cache.set(key, value);
       if (isWeb) {
         webStorage.setItem(key, value);
       } else {
@@ -74,10 +87,17 @@ export const storage = {
 
   async getItem(key: string): Promise<string | null> {
     try {
-      if (isWeb) {
-        return webStorage.getItem(key);
+      if (cache.has(key)) {
+        return cache.get(key) || null;
       }
-      return await SecureStore.getItemAsync(key);
+      let val: string | null = null;
+      if (isWeb) {
+        val = webStorage.getItem(key);
+      } else {
+        val = await SecureStore.getItemAsync(key);
+      }
+      cache.set(key, val);
+      return val;
     } catch (error) {
       console.error(`Failed to get item ${key}`, error);
       return null;
@@ -86,6 +106,7 @@ export const storage = {
 
   async removeItem(key: string): Promise<void> {
     try {
+      cache.delete(key);
       if (isWeb) {
         webStorage.removeItem(key);
       } else {
@@ -96,3 +117,4 @@ export const storage = {
     }
   },
 };
+

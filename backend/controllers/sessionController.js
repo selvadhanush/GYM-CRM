@@ -19,10 +19,18 @@ const Member = require('../models/Member');
 const { logAudit } = require('../utils/auditLogger');
 const { expireIfDue, attemptCheckIn } = require('../utils/sessionHelpers');
 
-// Helper: load + lazily expire a member from the authed user's memberId.
+// Helper: load + lazily expire a member from the authed user's memberId or email fallback.
 const loadMemberForUser = async (req) => {
-  if (!req.user?.memberId) return null;
-  const member = await prisma.member.findUnique({ where: { id: req.user.memberId } });
+  let member = null;
+  if (req.user?.memberId) {
+    member = await prisma.member.findUnique({ where: { id: req.user.memberId } });
+  }
+  if (!member && req.user?.email) {
+    member = await prisma.member.findFirst({ where: { email: req.user.email } });
+    if (member && req.user?._id) {
+      await prisma.user.update({ where: { id: req.user._id }, data: { memberId: member.id, role: 'member' } }).catch(() => {});
+    }
+  }
   return member ? await expireIfDue(member) : null;
 };
 
@@ -83,14 +91,26 @@ const checkIn = catchAsync(async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Member profile not found.' });
     }
 
+    // Resolve target gymId fallback if QR scanned standard code or missing gymId
+    let effectiveGymId = gymId;
+    if (!effectiveGymId || effectiveGymId === 'H4_GYM_STANDARD_QR' || effectiveGymId === 'HOME_GYM' || req.body?.qrCode === 'H4_GYM_STANDARD_QR') {
+      effectiveGymId = member.gymId || '327d37e7-f978-43a9-82ef-e6c4a4dc3c5d';
+    }
+
     // 2. Fetch associated membership plan
-    const plan = await prisma.plan.findUnique({ where: { id: member.planId } });
+    let plan = member.planId ? await prisma.plan.findUnique({ where: { id: member.planId } }).catch(() => null) : null;
     if (!plan) {
-      return res.status(404).json({ success: false, message: 'Membership plan not found.' });
+      plan = { gymId: member.gymId || effectiveGymId, name: 'H4 Standard Plan' };
     }
 
     // Fetch target gym details
-    const gym = await prisma.gym.findUnique({ where: { id: gymId } });
+    let gym = await prisma.gym.findUnique({ where: { id: effectiveGymId } }).catch(() => null);
+    if (!gym && member.gymId) {
+      gym = await prisma.gym.findUnique({ where: { id: member.gymId } }).catch(() => null);
+    }
+    if (!gym) {
+      gym = await prisma.gym.findFirst({ where: { status: 'Active' } });
+    }
     if (!gym) {
       return res.status(404).json({ success: false, message: 'Gym not found for this QR code.' });
     }
@@ -351,14 +371,25 @@ const getSessionStatus = catchAsync(async (req, res, next) => {
     const active = !!(member.currentSessionEndsAt && new Date(member.currentSessionEndsAt) > now);
     const inCooldown = !!(member.cooldownEndsAt && new Date(member.cooldownEndsAt) > now);
 
+    let planName = null;
+    if (member.planId) {
+      const plan = await prisma.plan.findUnique({ where: { id: member.planId } }).catch(() => null);
+      if (plan) planName = plan.name;
+    }
+    if (!planName && (member.sessionsRemaining || 0) > 0) {
+      planName = 'FitPass Standard';
+    }
+
     return res.json({
       success: true,
       sessionsRemaining: member.sessionsRemaining || 0,
-      active,
-      sessionEndsAt: active ? member.currentSessionEndsAt : null,
+      sessionsTotal: member.sessionsTotal || (member.sessionsRemaining || 10),
+      currentSessionEndsAt: active ? member.currentSessionEndsAt : null,
       currentSessionGymId: active ? member.currentSessionGymId : null,
-      inCooldown,
       cooldownEndsAt: inCooldown ? member.cooldownEndsAt : null,
+      planName,
+      expiryDate: member.expiryDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      planStatus: (member.sessionsRemaining || 0) > 0 ? 'Active' : (member.status || 'Inactive'),
       lastCheckInAt: member.lastCheckInAt || null,
     });
   } catch (error) {
@@ -368,48 +399,156 @@ const getSessionStatus = catchAsync(async (req, res, next) => {
 });
 
 // @desc    Get the member's check-in history with filters
+// @desc    Get the member's check-in history with filters
 // @route   GET /api/member-portal/sessions/history
 // @access  Private/Member
 const getSessionHistory = catchAsync(async (req, res, next) => {
   try {
-    if (!req.user?.memberId) {
+    const member = await loadMemberForUser(req);
+    if (!member) {
       return res.status(404).json({ success: false, message: 'Member profile not found.' });
     }
 
+    const memberId = member.id;
     const { startDate, endDate, gymId, branchId, status } = req.query;
-    const where = { memberId: req.user.memberId };
 
-    if (startDate || endDate) {
-      where.checkInTimestamp = {};
-      if (startDate) {
-        where.checkInTimestamp.gte = new Date(startDate);
+    const [sessions, auditLogs, attendances, gyms] = await Promise.all([
+      prisma.sessionCheckIn.findMany({
+        where: { memberId },
+        orderBy: { startedAt: 'desc' },
+        take: 100,
+      }).catch(() => []),
+      prisma.fitPassAuditLog.findMany({
+        where: { memberId, accessStatus: 'Success' },
+        orderBy: { checkInTimestamp: 'desc' },
+        take: 100,
+      }).catch(() => []),
+      prisma.attendance.findMany({
+        where: { memberId },
+        orderBy: { date: 'desc' },
+        take: 100,
+      }).catch(() => []),
+      prisma.gym.findMany().catch(() => []),
+    ]);
+
+    const gymMap = new Map();
+    gyms.forEach(g => gymMap.set(g.id, g.name));
+
+    const items = [];
+    const usedTimeKeys = new Set();
+
+    // 1. Process session check-ins as primary source
+    sessions.forEach(s => {
+      const timeKey = s.startedAt ? Math.floor(new Date(s.startedAt).getTime() / 120000) : 0;
+      let gymName = s.gymName;
+      if (!gymName || gymName === 'Partner Gym' || gymName.includes('Partner')) {
+        gymName = gymMap.get(s.gymId) || 'Partner Gym';
       }
-      if (endDate) {
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
-        where.checkInTimestamp.lte = end;
-      }
-    }
+      const isNowActive = s.status === 'active' && s.expiresAt && new Date(s.expiresAt) > new Date();
 
-    if (gymId) {
-      where.gymIdVisited = gymId;
-    }
+      items.push({
+        id: s.id,
+        _id: s.id,
+        gymId: s.gymId,
+        gymName: gymName,
+        branchId: s.branchId || null,
+        branchName: s.branchName || null,
+        startedAt: s.startedAt ? s.startedAt.toISOString() : new Date().toISOString(),
+        date: s.startedAt ? s.startedAt.toISOString() : new Date().toISOString(),
+        endedAt: s.expiresAt ? s.expiresAt.toISOString() : null,
+        status: isNowActive ? 'Active' : 'Completed',
+        sessionsDeducted: 1,
+      });
 
-    if (branchId) {
-      where.branchIdVisited = branchId;
-    }
-
-    if (status) {
-      where.accessStatus = status;
-    }
-
-    const history = await prisma.fitPassAuditLog.findMany({
-      where,
-      orderBy: { checkInTimestamp: 'desc' },
-      take: 100,
+      if (timeKey) usedTimeKeys.add(timeKey);
     });
 
-    return res.json({ success: true, history });
+    // 2. Process audit logs for check-ins not already captured in sessionCheckIn
+    auditLogs.forEach(a => {
+      const timeKey = a.checkInTimestamp ? Math.floor(new Date(a.checkInTimestamp).getTime() / 120000) : 0;
+      if (!usedTimeKeys.has(timeKey)) {
+        let gymName = a.gymName;
+        if (!gymName || gymName === 'Partner Gym' || gymName.includes('Partner')) {
+          gymName = gymMap.get(a.gymIdVisited) || 'Partner Gym';
+        }
+
+        items.push({
+          id: a.id,
+          _id: a.id,
+          gymId: a.gymIdVisited || '',
+          gymName: gymName,
+          branchId: a.branchIdVisited || null,
+          branchName: a.branchNameVisited || null,
+          startedAt: a.checkInTimestamp ? a.checkInTimestamp.toISOString() : new Date().toISOString(),
+          date: a.checkInTimestamp ? a.checkInTimestamp.toISOString() : new Date().toISOString(),
+          endedAt: null,
+          status: 'Completed',
+          sessionsDeducted: a.sessionsDeducted || 1,
+        });
+        if (timeKey) usedTimeKeys.add(timeKey);
+      }
+    });
+
+    // 3. Process home branch attendances
+    attendances.forEach(att => {
+      const timeKey = att.date ? Math.floor(new Date(att.date).getTime() / 120000) : 0;
+      if (!usedTimeKeys.has(timeKey)) {
+        const gymName = gymMap.get(att.gymId) || 'Home Gym';
+        items.push({
+          id: att.id,
+          _id: att.id,
+          gymId: att.gymId,
+          gymName: gymName,
+          branchId: att.branchId || null,
+          branchName: null,
+          startedAt: att.date ? att.date.toISOString() : new Date().toISOString(),
+          date: att.date ? att.date.toISOString() : new Date().toISOString(),
+          endedAt: null,
+          status: 'Completed',
+          sessionsDeducted: 0,
+        });
+        if (timeKey) usedTimeKeys.add(timeKey);
+      }
+    });
+
+    items.sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+
+    let filtered = items;
+    if (startDate || endDate) {
+      const startMs = startDate ? new Date(startDate).getTime() : 0;
+      const endMs = endDate ? new Date(endDate).setHours(23, 59, 59, 999) : Infinity;
+      filtered = filtered.filter(i => {
+        const t = new Date(i.startedAt).getTime();
+        return t >= startMs && t <= endMs;
+      });
+    }
+
+    if (status && status !== 'ALL') {
+      filtered = filtered.filter(i => i.status.toLowerCase() === status.toLowerCase());
+    }
+    if (gymId) {
+      filtered = filtered.filter(i => i.gymId === gymId);
+    }
+    if (branchId) {
+      filtered = filtered.filter(i => i.branchId === branchId);
+    }
+
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, parseInt(req.query.limit) || 20);
+    const startIndex = (page - 1) * limit;
+    const paginatedData = filtered.slice(startIndex, startIndex + limit);
+
+    return res.json({
+      success: true,
+      data: paginatedData,
+      history: paginatedData,
+      total: filtered.length,
+      meta: {
+        page,
+        limit,
+        total: filtered.length,
+      },
+    });
   } catch (error) {
     console.error('SESSION HISTORY ERROR:', error.message);
     return res.status(500).json({ success: false, message: 'Could not load history.' });

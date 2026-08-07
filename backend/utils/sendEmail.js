@@ -118,13 +118,15 @@ const sendEmail = async (options) => {
 
   const htmlBody = options.html || buildOTPEmailHTML(otpCode, options.subject);
 
-  // In development without real credentials, log to console
-  if (!emailUser || emailUser === 'test@example.com') {
-    console.log('\n==================================================');
-    console.log(`[DEVELOPMENT] Email to: ${options.email}`);
-    console.log(`Subject: ${options.subject}`);
-    console.log(`OTP: ${otpCode}`);
-    console.log('==================================================\n');
+  // ALWAYS log OTP to terminal for developer/testing visibility
+  console.log('\n==================================================');
+  console.log(`📧 [EMAIL / OTP SENT] To: ${options.email}`);
+  console.log(`Subject: ${options.subject}`);
+  console.log(`🔑 OTP Code: ${otpCode}`);
+  console.log('==================================================\n');
+
+  // In development without real credentials, skip actual SMTP send
+  if (!emailUser || emailUser === 'test@example.com' || emailUser.includes('your_email')) {
     return;
   }
 
@@ -132,6 +134,9 @@ const sendEmail = async (options) => {
     host: emailHost,
     port: emailPort,
     secure: emailPort === 465,
+    connectionTimeout: 3000,
+    socketTimeout: 4000,
+    greetingTimeout: 3000,
     auth: {
       user: emailUser,
       pass: emailPass,
@@ -146,7 +151,11 @@ const sendEmail = async (options) => {
     html: htmlBody,
   };
 
-  await transporter.sendMail(mailOptions);
+  try {
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error(`❌ [SMTP Send Error] Failed sending email to ${options.email}:`, error.message);
+  }
 };
 
 module.exports = sendEmail;

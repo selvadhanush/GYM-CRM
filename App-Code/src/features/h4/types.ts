@@ -14,6 +14,7 @@ export interface H4AttendanceRecord {
   date: string;
   checkInTime: string;
   checkOutTime?: string;
+  gymName?: string;
 }
 
 export interface H4PaymentRecord {
@@ -26,8 +27,10 @@ export interface H4PaymentRecord {
 }
 
 export interface H4DashboardData {
-  plan: H4Plan;
   attendanceCount: number;
   recentAttendance: H4AttendanceRecord[];
   recentPayments: H4PaymentRecord[];
+  sessionStatus?: any;
+  lastVisitedGym?: any;
+  member?: any;
 }
