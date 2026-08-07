@@ -2,6 +2,8 @@ import { useState, useEffect, useContext } from 'react';
 import API from '../../services/api';
 import { AuthContext } from '../../context/AuthContext';
 import Modal from '../../components/Modal';
+import { useToast } from '../../components/ui/Toast';
+import EmptyState from '../../components/ui/EmptyState';
 import { 
     Users, 
     User, 
@@ -25,16 +27,24 @@ import {
     Layers, 
     IndianRupee,
     ChevronRight,
-    RefreshCw
+    RefreshCw,
+    Plus
 } from 'lucide-react';
 
 function FitPassMembers() {
+    const toast = useToast();
     const { user } = useContext(AuthContext);
     const [members, setMembers] = useState([]);
+    const [plans, setPlans] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All'); // 'All' | 'Active' | 'Expired'
+
+    // Add Member Modal state
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [formData, setFormData] = useState({ name: '', phone: '', email: '', planId: '', joinDate: new Date().toISOString().split('T')[0], password: '' });
+    const [submitting, setSubmitting] = useState(false);
 
     // Selected member for detail view modal
     const [selectedMember, setSelectedMember] = useState(null);
@@ -50,12 +60,59 @@ function FitPassMembers() {
     const fetchMembers = async () => {
         try {
             setLoading(true);
-            const { data } = await API.get('/superadmin/fitpass/members');
-            setMembers(data.data || []);
-            setLoading(false);
+            const [rosterRes, plansRes] = await Promise.all([
+                API.get('/superadmin/fitpass/members'),
+                API.get('/plans')
+            ]);
+            setMembers(rosterRes.data?.data || []);
+
+            let fetchedPlans = rosterRes.data?.plans || [];
+            if (!fetchedPlans || fetchedPlans.length === 0) {
+                const allPlans = Array.isArray(plansRes.data) ? plansRes.data : [];
+                fetchedPlans = allPlans.filter(p => p.gymId === 'SYSTEM' || !p.gymId);
+            }
+            setPlans(fetchedPlans);
+            if (fetchedPlans.length > 0) {
+                const firstId = fetchedPlans[0].id || fetchedPlans[0]._id;
+                setFormData(prev => ({ ...prev, planId: prev.planId || firstId }));
+            }
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to fetch FitPass members roster');
+            console.error('Failed to fetch members directory:', err);
+            setError(err.response?.data?.message || 'Failed to load FitPass subscribers.');
+        } finally {
             setLoading(false);
+        }
+    };
+
+    const handleOpenAddModal = () => {
+        const firstId = plans.length > 0 ? (plans[0].id || plans[0]._id) : '';
+        setFormData({
+            name: '',
+            phone: '',
+            email: '',
+            planId: firstId,
+            joinDate: new Date().toISOString().split('T')[0],
+            password: ''
+        });
+        setIsAddModalOpen(true);
+    };
+
+    const handleAddMemberSubmit = async (e) => {
+        e.preventDefault();
+        setSubmitting(true);
+        try {
+            await API.post('/members', {
+                ...formData,
+                gymId: 'SYSTEM'
+            });
+            setIsAddModalOpen(false);
+            setFormData({ name: '', phone: '', email: '', planId: plans[0]?.id || plans[0]?._id || '', joinDate: new Date().toISOString().split('T')[0], password: '' });
+            toast.success(`Subscriber ${formData.name} registered successfully!`);
+            fetchMembers();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to register FitPass subscriber');
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -119,14 +176,24 @@ function FitPassMembers() {
                         <p>Complete subscriber registry tracking active memberships, session usage, and partner gym access logs.</p>
                     </div>
                 </div>
-                <button 
-                    className="btn btn-secondary" 
-                    onClick={fetchMembers}
-                    title="Refresh Data"
-                >
-                    <RefreshCw size={18} />
-                    Refresh Roster
-                </button>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    <button 
+                        className="btn btn-secondary" 
+                        onClick={fetchMembers}
+                        title="Refresh Data"
+                    >
+                        <RefreshCw size={18} />
+                        Refresh Roster
+                    </button>
+                    <button 
+                        className="btn btn-primary"
+                        onClick={handleOpenAddModal}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    >
+                        <Plus size={18} />
+                        Add FitPass Member
+                    </button>
+                </div>
             </div>
 
             {/* Notifications */}
@@ -215,15 +282,17 @@ function FitPassMembers() {
 
             {/* Members Directory Grid */}
             {filteredMembers.length === 0 ? (
-                <div className="card" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
-                    <Users size={48} style={{ color: 'var(--text-muted)', marginBottom: '1rem', opacity: 0.5 }} />
-                    <h3 style={{ marginBottom: '0.5rem', color: 'var(--text-primary)' }}>No FitPass Members Found</h3>
-                    <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto' }}>
-                        {searchTerm || statusFilter !== 'All' 
-                            ? 'No member records match your current search criteria or filter.' 
-                            : 'No FitPass subscription members found in database.'}
-                    </p>
-                </div>
+                <EmptyState
+                    icon={Users}
+                    title="No FitPass Members Found"
+                    description={searchTerm || statusFilter !== 'All' 
+                        ? 'No member records match your current search criteria or status filter.' 
+                        : 'No subscribers registered yet. Click "Add Member" to register a subscriber.'}
+                    primaryAction={{
+                        label: '+ Add First Member',
+                        onClick: handleOpenAddModal
+                    }}
+                />
             ) : (
                 <div className="fitpass-members-grid">
                     {filteredMembers.map(member => {
@@ -494,6 +563,104 @@ function FitPassMembers() {
                         </div>
                     </div>
                 )}
+            </Modal>
+
+            {/* Add FitPass Member Modal */}
+            <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Register New FitPass Subscriber">
+                <form onSubmit={handleAddMemberSubmit}>
+                    <div className="form-grid">
+                        <div className="input-group full-width">
+                            <label>Full Name *</label>
+                            <input 
+                                className="input" 
+                                type="text" 
+                                placeholder="Enter subscriber full name"
+                                value={formData.name} 
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
+                                required 
+                            />
+                        </div>
+                        <div className="input-group">
+                            <label>Phone Number *</label>
+                            <input 
+                                className="input" 
+                                type="text" 
+                                placeholder="Subscriber phone number"
+                                value={formData.phone} 
+                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
+                                required 
+                            />
+                        </div>
+                        <div className="input-group">
+                            <label>Email Address (Optional)</label>
+                            <input 
+                                className="input" 
+                                type="email" 
+                                placeholder="Subscriber email"
+                                value={formData.email} 
+                                onChange={(e) => setFormData({ ...formData, email: e.target.value })} 
+                            />
+                        </div>
+                        <div className="input-group">
+                            <label>Password (Optional - Defaults to Phone)</label>
+                            <input 
+                                className="input" 
+                                type="text" 
+                                placeholder="Set password (default is Phone)"
+                                value={formData.password} 
+                                onChange={(e) => setFormData({ ...formData, password: e.target.value })} 
+                            />
+                        </div>
+                        <div className="input-group full-width">
+                            <label>FitPass Network Plan *</label>
+                            <select 
+                                className="input" 
+                                value={formData.planId} 
+                                onChange={(e) => setFormData({ ...formData, planId: e.target.value })} 
+                                required
+                            >
+                                <option value="">-- Select a FitPass plan --</option>
+                                {plans.map(p => {
+                                    const pId = p.id || p._id;
+                                    return (
+                                        <option key={pId} value={pId}>
+                                            {p.name} — ₹{p.price} ({p.sessions ? `${p.sessions} Sessions` : (p.duration ? `${p.duration} Days` : 'Standard Plan')})
+                                        </option>
+                                    );
+                                })}
+                            </select>
+                        </div>
+                        <div className="input-group">
+                            <label>Join Date *</label>
+                            <input 
+                                className="input" 
+                                type="date" 
+                                value={formData.joinDate} 
+                                onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })} 
+                                required 
+                            />
+                        </div>
+                        <div className="input-group">
+                            <label>Password (Optional, default: Phone)</label>
+                            <input 
+                                className="input" 
+                                type="password" 
+                                placeholder="Set login password" 
+                                value={formData.password} 
+                                onChange={(e) => setFormData({ ...formData, password: e.target.value })} 
+                            />
+                        </div>
+                    </div>
+
+                    <button 
+                        type="submit" 
+                        className="btn btn-primary" 
+                        style={{ width: '100%', marginTop: '1.5rem' }} 
+                        disabled={submitting}
+                    >
+                        {submitting ? 'Registering Subscriber...' : 'Register FitPass Subscriber'}
+                    </button>
+                </form>
             </Modal>
         </div>
     );

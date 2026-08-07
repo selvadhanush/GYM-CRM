@@ -1,5 +1,5 @@
 // FitPass API layer — TanStack Query hooks
-// Consumes existing backend: /api/member-portal/*
+// Consumes existing backend: /api/member-portal/* and /api/discovery/*
 // AGENTS.md §4, §12 — server data via TanStack Query, never duplicated
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -11,6 +11,8 @@ import type {
   FitPassPlan,
   FitPassDashboardData,
   GymReview,
+  DiscoveryGymItem,
+  GymPost,
 } from '../types';
 
 // ─── Query Keys ─────────────────────────────────────────────────────────────
@@ -22,6 +24,9 @@ export const FITPASS_KEYS = {
   partnerGymDetail: (id: string) => ['fitpass', 'partnerGym', id] as const,
   gymReviews: (id: string) => ['fitpass', 'gymReviews', id] as const,
   plans: ['fitpass', 'plans'] as const,
+  discoveryGyms: (params: Record<string, any>) => ['fitpass', 'discovery', 'gyms', params] as const,
+  discoveryGymDetails: (gymId: string) => ['fitpass', 'discovery', 'gym', gymId] as const,
+  postsFeed: ['fitpass', 'discovery', 'posts'] as const,
 };
 
 // ─── Hooks ───────────────────────────────────────────────────────────────────
@@ -43,7 +48,7 @@ export const useSessionStatus = () =>
       return data;
     },
     staleTime: 15_000,
-    refetchInterval: 30_000, // poll every 30s for live session countdown
+    refetchInterval: 30_000,
   });
 
 export const useSessionHistory = (page = 1) =>
@@ -98,6 +103,37 @@ export const useFitPassPlans = () =>
       return Array.isArray(data) ? data : data?.data ?? [];
     },
     staleTime: 10 * 60_000,
+  });
+
+export const useDiscoveryGyms = (params: Record<string, any> = {}) =>
+  useQuery<DiscoveryGymItem[]>({
+    queryKey: FITPASS_KEYS.discoveryGyms(params),
+    queryFn: async () => {
+      const { data } = await API_CLIENT.get('/discovery/gyms', { params });
+      return data.data || [];
+    },
+    staleTime: 30_000,
+  });
+
+export const useDiscoveryGymDetails = (gymId: string, params: Record<string, any> = {}) =>
+  useQuery<DiscoveryGymItem>({
+    queryKey: FITPASS_KEYS.discoveryGymDetails(gymId),
+    queryFn: async () => {
+      const { data } = await API_CLIENT.get(`/discovery/gyms/${gymId}`, { params });
+      return data.data;
+    },
+    enabled: !!gymId,
+    staleTime: 30_000,
+  });
+
+export const usePublicPostsFeed = () =>
+  useQuery<GymPost[]>({
+    queryKey: FITPASS_KEYS.postsFeed,
+    queryFn: async () => {
+      const { data } = await API_CLIENT.get('/discovery/posts');
+      return data.data || [];
+    },
+    staleTime: 60_000,
   });
 
 // ─── Mutations ───────────────────────────────────────────────────────────────

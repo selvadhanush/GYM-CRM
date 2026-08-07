@@ -22,6 +22,8 @@ model Gym {
   createdAt                     DateTime @default(now())
   updatedAt                     DateTime @updatedAt
   settings                      GymSettings?
+  discoveryProfile              GymProfile?
+  posts                         GymPost[]
 
   @@index([status])
 }
@@ -571,4 +573,106 @@ model Review {
   @@index([gymId])
   @@index([memberId])
   @@index([gymId, memberId])
+}
+
+model GymProfile {
+  id                    String   @id @default(uuid())
+  gymId                 String   @unique
+  gym                   Gym      @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  
+  // Basic info & branding
+  shortDescription      String?  @default("")
+  description           String?  @default("")
+  coverImageUrl         String?  @default("")
+  logoUrl               String?  @default("")
+  ownerName             String?  @default("")
+  contactNumber         String?  @default("")
+  email                 String?  @default("")
+  website               String?  @default("")
+  
+  // Location & Geo
+  address               String?  @default("")
+  city                  String   @default("Chennai")
+  googleMapsUrl         String?  @default("")
+  latitude              Float?   @default(13.0827)
+  longitude             Float?   @default(80.2707)
+  landmarks             String[] @default([])
+  
+  // Working Hours & Schedule
+  openingTime           String   @default("06:00 AM")
+  closingTime           String   @default("10:00 PM")
+  workingDays           String[] @default(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"])
+  
+  // Facilities & Badges (Booleans)
+  hasParking            Boolean  @default(true)
+  hasLockers            Boolean  @default(true)
+  hasShowers            Boolean  @default(true)
+  hasPersonalTraining   Boolean  @default(true)
+  hasGroupClasses       Boolean  @default(true)
+  isWomenFriendly       Boolean  @default(true)
+  isAc                  Boolean  @default(true)
+  
+  // Extra Amenities & Equipment list
+  amenities             String[] @default(["Free WiFi", "Locker Room", "Air Conditioned", "Showers", "Steam Bath"])
+  equipments            String[] @default(["Treadmills", "Dumbbells", "Power Racks", "Cable Crossover", "Leg Press"])
+  
+  // Social links
+  instagram             String?  @default("")
+  facebook              String?  @default("")
+  youtube               String?  @default("")
+  
+  // Verification & Status Workflow
+  status                String   @default("Approved") // "Draft" | "Pending Review" | "Approved" | "Rejected" | "Archived"
+  rejectionReason       String?  @default("")
+  isVerified            Boolean  @default(true)
+  
+  // Rating & Real-time Metrics
+  rating                Float    @default(4.8)
+  reviewCount           Int      @default(24)
+  viewCount             Int      @default(0)
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([city])
+  @@index([status])
+  @@index([gymId])
+}
+
+model GymPost {
+  id                    String   @id @default(uuid())
+  gymId                 String
+  gym                   Gym      @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  title                 String
+  caption               String?  @default("")
+  description           String?  @default("")
+  images                String[] @default([])
+  videoUrl              String?  @default("")
+  
+  // Workflow Status
+  status                String   @default("Approved") // "Draft" | "Pending Review" | "Approved" | "Rejected" | "Archived"
+  rejectionReason       String?  @default("")
+  
+  // Stats
+  viewsCount            Int      @default(0)
+  
+  // Author metadata
+  createdById           String?
+  createdByName         String   @default("Gym Admin")
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([gymId, status])
+  @@index([createdAt(sort: Desc)])
+}
+
+model GymProfileViewLog {
+  id                    String   @id @default(uuid())
+  gymId                 String
+  memberId              String?
+  source                String   @default("explore")
+  viewedAt              DateTime @default(now())
+
+  @@index([gymId, viewedAt])
 }

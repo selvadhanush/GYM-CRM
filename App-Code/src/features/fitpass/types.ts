@@ -72,6 +72,83 @@ export interface PartnerGym {
   branches?: PartnerGymBranch[];
 }
 
+export interface GymDiscoveryProfile {
+  id: string;
+  gymId: string;
+  shortDescription?: string;
+  description?: string;
+  coverImageUrl?: string;
+  logoUrl?: string;
+  ownerName?: string;
+  contactNumber?: string;
+  email?: string;
+  website?: string;
+  address?: string;
+  city?: string;
+  googleMapsUrl?: string;
+  latitude?: number;
+  longitude?: number;
+  landmarks?: string[];
+  openingTime?: string;
+  closingTime?: string;
+  workingDays?: string[];
+  hasParking?: boolean;
+  hasLockers?: boolean;
+  hasShowers?: boolean;
+  hasPersonalTraining?: boolean;
+  hasGroupClasses?: boolean;
+  isWomenFriendly?: boolean;
+  isAc?: boolean;
+  amenities?: string[];
+  equipments?: string[];
+  instagram?: string;
+  facebook?: string;
+  youtube?: string;
+  status?: string;
+  rejectionReason?: string;
+  isVerified?: boolean;
+  rating?: number;
+  reviewCount?: number;
+  viewCount?: number;
+  isOpenNow?: boolean;
+  distanceKm?: number | null;
+  totalVisits?: number;
+}
+
+export interface GymPost {
+  id: string;
+  gymId: string;
+  title: string;
+  caption?: string;
+  description?: string;
+  images?: string[];
+  videoUrl?: string;
+  status?: string;
+  viewsCount?: number;
+  createdByName?: string;
+  createdAt: string;
+  gym?: {
+    id: string;
+    name: string;
+    discoveryProfile?: {
+      logoUrl?: string;
+      coverImageUrl?: string;
+      city?: string;
+      isVerified?: boolean;
+    };
+  };
+}
+
+export interface DiscoveryGymItem {
+  id: string;
+  name: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  status?: string;
+  discoveryProfile: GymDiscoveryProfile;
+}
+
 export interface FitPassPlan {
   id: string;
   _id?: string;

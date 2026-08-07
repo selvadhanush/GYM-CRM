@@ -20,7 +20,15 @@ const ProtectedRoute = ({ children, roles }) => {
     const isH4Gym = normalizedGym === 'H4' || userGymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
     const isPartnerAdmin = user.role === 'partner' || (user.role === 'admin' && !isH4Gym);
 
-    if (isPartnerAdmin && !['/partner/visit-log', '/partner/fitpass-leads'].includes(window.location.pathname)) {
+    const partnerAllowedPaths = [
+        '/partner/visit-log',
+        '/partner/fitpass-leads',
+        '/gym-social-profile',
+        '/explore-gyms',
+        '/settings'
+    ];
+
+    if (isPartnerAdmin && !partnerAllowedPaths.includes(window.location.pathname)) {
         return <Navigate to="/partner/visit-log" replace />;
     }
 
