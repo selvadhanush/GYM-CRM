@@ -1,17 +1,53 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Switch, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Switch,
+  Alert,
+  TouchableOpacity,
+} from 'react-native';
 import { theme, useThemeStore } from '@/design-system/theme';
-import { Typography, Card, Badge, Input, Modal, Button } from '@/components/ui';
+import { Badge, Input, Modal, Button } from '@/components/ui';
 import { useAuth } from '@/features/auth';
-import { useH4Plan } from '../api/h4.api';
-import { Mail, Phone, Moon, Sun, Edit2 } from 'lucide-react-native';
+import { useH4Plan, useH4Payments } from '../api/h4.api';
+import {
+  Mail, Phone, Moon, Sun, Edit2, CreditCard, ChevronRight, LogOut, Shield,
+} from 'lucide-react-native';
 import { API_CLIENT } from '@/lib/api-client';
+import { H4TopHeader } from './H4TopHeader';
 
+// ─── Section Block helper ─────────────────────────────────────────────────────
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <View style={styles.sectionCard}>{children}</View>
+    </View>
+  );
+}
+
+function Row({ label, value, last }: { label: string; value: React.ReactNode; last?: boolean }) {
+  return (
+    <View style={[styles.row, !last && styles.rowBorder]}>
+      <Text style={styles.rowLabel}>{label}</Text>
+      {typeof value === 'string' ? <Text style={styles.rowValue}>{value}</Text> : value}
+    </View>
+  );
+}
+
+import { useToast } from '@/hooks/useToast';
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export function H4Profile() {
   const user = useAuth((s) => s.user);
+  const logout = useAuth((s) => s.logout);
   const updateUserLocal = useAuth((s) => s.updateUserLocal);
   const { data: plan } = useH4Plan();
+  const { data: paymentsData } = useH4Payments();
   const { toggleTheme } = useThemeStore();
+  const toast = useToast();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [profileName, setProfileName] = useState(user?.name ?? '');
@@ -29,175 +65,205 @@ export function H4Profile() {
   };
 
   const handleSaveProfile = async () => {
-    if (!profileName.trim()) {
-      Alert.alert('Error', 'Name is required');
+    if (!profileName.trim()) { toast.show('Name is required', 'error'); return; }
+    if (profilePassword && profilePassword.trim().length < 6) {
+      toast.show('New password must be at least 6 characters', 'error');
       return;
     }
     setUpdating(true);
     try {
-      await API_CLIENT.put('/member-portal/profile', {
+      const res = await API_CLIENT.put('/member-portal/profile', {
         name: profileName,
         email: profileEmail,
         phone: profilePhone,
         password: profilePassword || undefined,
       });
-      await updateUserLocal({
-        name: profileName,
-        email: profileEmail,
-        phone: profilePhone,
-      });
-      Alert.alert('Success', 'Profile updated successfully!');
+      await updateUserLocal({ name: profileName, email: profileEmail, phone: profilePhone });
+      setProfilePassword('');
+      toast.show(res.data?.message || 'Profile and password updated successfully!', 'success');
       setIsModalOpen(false);
     } catch (error: any) {
-      console.error('Profile update error:', error);
-      Alert.alert(
-        'Error',
-        error.response?.data?.message || 'Failed to update profile.'
-      );
+      toast.show(error.response?.data?.message || 'Failed to update profile.', 'error');
     } finally {
       setUpdating(false);
     }
   };
 
+  const payments = paymentsData?.data ?? [];
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Typography variant="h1" style={styles.title}>Profile</Typography>
+    <View style={{ flex: 1, backgroundColor: '#FAFAFC' }}>
+      <H4TopHeader title="Athlete Profile" />
+      <ScrollView style={styles.root} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
-      <Card style={styles.card}>
-        <View style={styles.avatarRow}>
-          <View style={styles.avatar}>
-            <Typography variant="h1" style={{ color: theme.colors.success }}>
-              {(user?.name?.[0] ?? 'H').toUpperCase()}
-            </Typography>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Typography variant="h2">{user?.name ?? '—'}</Typography>
-            <Badge label="H4 Member" variant="success" />
+        {/* ── Avatar + Name ── */}
+      <View style={styles.profileHead}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{(user?.name?.[0] ?? 'H').toUpperCase()}</Text>
+        </View>
+        <View style={styles.profileHeadInfo}>
+          <Text style={styles.profileName}>{user?.name ?? '—'}</Text>
+          <View style={styles.memberBadge}>
+            <Shield size={11} color={theme.colors.primary} />
+            <Text style={styles.memberBadgeText}>H4 Member</Text>
           </View>
         </View>
-        <View style={{ gap: theme.spacing.sm, marginTop: theme.spacing.sm }}>
-          <View style={styles.infoRow}>
-            <Mail size={14} color={theme.colors.textSecondary} />
-            <Typography variant="bodySm" color="secondary">{user?.email ?? '—'}</Typography>
+        <TouchableOpacity style={styles.editBtn} onPress={handleOpenEdit} activeOpacity={0.7}>
+          <Edit2 size={16} color={theme.colors.primary} />
+        </TouchableOpacity>
+      </View>
+
+      {/* ── Contact Info ── */}
+      <Section title="Contact">
+        <Row label="Email" value={
+          <View style={styles.iconVal}>
+            <Mail size={13} color={theme.colors.textMuted} />
+            <Text style={styles.rowValue}>{user?.email ?? '—'}</Text>
           </View>
-          {user?.phone && (
-            <View style={styles.infoRow}>
-              <Phone size={14} color={theme.colors.textSecondary} />
-              <Typography variant="bodySm" color="secondary">{user.phone}</Typography>
-            </View>
-          )}
-        </View>
+        } />
+        <Row label="Phone" last value={
+          <View style={styles.iconVal}>
+            <Phone size={13} color={theme.colors.textMuted} />
+            <Text style={styles.rowValue}>{user?.phone ?? '—'}</Text>
+          </View>
+        } />
+      </Section>
 
-        <Button
-          title="Edit Profile"
-          onPress={handleOpenEdit}
-          variant="secondary"
-          icon={<Edit2 size={16} color={theme.colors.text} />}
-          style={{ marginTop: theme.spacing.sm }}
-        />
-      </Card>
-
-      <Card style={styles.card}>
-        <Typography variant="h3" style={styles.cardTitle}>Membership</Typography>
-        <View style={styles.planRow}>
-          <Typography variant="caption" color="secondary">Plan</Typography>
-          <Typography variant="bodySm">{plan?.planName ?? '—'}</Typography>
-        </View>
-        <View style={styles.planRow}>
-          <Typography variant="caption" color="secondary">Status</Typography>
+      {/* ── Membership ── */}
+      <Section title="Membership">
+        <Row label="Plan" value={plan?.planName ?? '—'} />
+        <Row label="Status" value={
           <Badge
             label={plan?.status ?? 'Unknown'}
             variant={plan?.status === 'Active' ? 'active' : 'expired'}
           />
-        </View>
-        {plan?.expiryDate && (
-          <View style={styles.planRow}>
-            <Typography variant="caption" color="secondary">Expires</Typography>
-            <Typography variant="bodySm">
-              {new Date(plan.expiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
-            </Typography>
+        } />
+        <Row label="Valid Until" last value={
+          plan?.expiryDate
+            ? new Date(plan.expiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+            : '—'
+        } />
+      </Section>
+
+      {/* ── Payment History ── */}
+      <Section title="Payment History">
+        {payments.length === 0 ? (
+          <View style={styles.emptyRow}>
+            <CreditCard size={20} color={theme.colors.textMuted} />
+            <Text style={styles.emptyText}>No payment records found.</Text>
           </View>
+        ) : (
+          payments.slice(0, 5).map((p: any, i: number) => (
+            <View key={p.id ?? i} style={[styles.row, i < payments.length - 1 && i < 4 && styles.rowBorder]}>
+              <View>
+                <Text style={styles.payDate}>
+                  {p.date
+                    ? new Date(p.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : '—'}
+                </Text>
+                <Text style={styles.rowLabel}>{p.description ?? 'Membership Payment'}</Text>
+              </View>
+              <View style={styles.payRight}>
+                <Text style={styles.payAmt}>₹{p.amount}</Text>
+                <View style={[styles.payStatus, { backgroundColor: p.status === 'Paid' ? 'rgba(46,125,50,0.1)' : 'rgba(198,40,40,0.1)' }]}>
+                  <Text style={[styles.payStatusText, { color: p.status === 'Paid' ? '#2E7D32' : '#C62828' }]}>
+                    {p.status ?? 'Paid'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          ))
         )}
-      </Card>
+      </Section>
 
-      {/* Settings / Theme Mode */}
-      <Card style={styles.card}>
-        <Typography variant="h3" style={styles.cardTitle}>App Settings</Typography>
-        <View style={styles.settingsRow}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}>
-            {theme.dark ? (
-              <Moon size={18} color={theme.colors.primary} />
-            ) : (
-              <Sun size={18} color={theme.colors.primary} />
-            )}
-            <Typography variant="bodySm">Dark Theme</Typography>
+      {/* ── App Settings ── */}
+      <Section title="Settings">
+        <TouchableOpacity
+          style={styles.row}
+          onPress={() => Alert.alert('Logout', 'Are you sure?', [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Logout', style: 'destructive', onPress: logout },
+          ])}
+          activeOpacity={0.7}
+        >
+          <View style={styles.iconVal}>
+            <LogOut size={16} color={theme.colors.error} />
+            <Text style={[styles.rowValue, { color: theme.colors.error }]}>Logout</Text>
           </View>
-          <Switch
-            value={theme.dark}
-            onValueChange={toggleTheme}
-            trackColor={{ false: '#767577', true: theme.colors.primary }}
-            thumbColor={theme.dark ? '#ffffff' : '#f4f3f4'}
-          />
-        </View>
-      </Card>
+          <ChevronRight size={16} color={theme.colors.error} />
+        </TouchableOpacity>
+      </Section>
 
+      {/* ── Edit Profile Modal ── */}
       <Modal visible={isModalOpen} onClose={() => setIsModalOpen(false)} title="Edit Profile">
-        <View style={{ gap: theme.spacing.sm }}>
-          <Input
-            label="Name"
-            value={profileName}
-            onChangeText={setProfileName}
-            placeholder="Enter your name"
-          />
-          <Input
-            label="Email"
-            value={profileEmail}
-            onChangeText={setProfileEmail}
-            placeholder="Enter your email address"
-            keyboardType="email-address"
-          />
-          <Input
-            label="Phone"
-            value={profilePhone}
-            onChangeText={setProfilePhone}
-            placeholder="Enter your phone number"
-            keyboardType="phone-pad"
-          />
-          <Input
-            label="New Password (optional)"
-            value={profilePassword}
-            onChangeText={setProfilePassword}
-            placeholder="Leave blank to keep current"
-            secureTextEntry
-          />
-          <Button
-            title="Save Profile"
-            onPress={handleSaveProfile}
-            loading={updating}
-            style={{ marginTop: theme.spacing.md }}
-          />
+        <View style={{ gap: 12 }}>
+          <Input label="Name" value={profileName} onChangeText={setProfileName} placeholder="Your name" />
+          <Input label="Email" value={profileEmail} onChangeText={setProfileEmail} placeholder="Email address" keyboardType="email-address" />
+          <Input label="Phone" value={profilePhone} onChangeText={setProfilePhone} placeholder="Phone number" keyboardType="phone-pad" />
+          <Input label="New Password (optional)" value={profilePassword} onChangeText={setProfilePassword} placeholder="Leave blank to keep current" secureTextEntry />
+          <Button title="Save Profile" onPress={handleSaveProfile} loading={updating} style={{ marginTop: 4 }} />
         </View>
       </Modal>
     </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  content: { padding: theme.spacing.md, paddingBottom: theme.spacing['2xl'] },
-  title: { color: theme.colors.text, marginBottom: theme.spacing.md },
-  card: { padding: theme.spacing.md, marginBottom: theme.spacing.md, gap: theme.spacing.sm },
-  cardTitle: { color: theme.colors.text, marginBottom: theme.spacing.sm },
-  avatarRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: theme.radii.full,
-    backgroundColor: 'rgba(46, 125, 50, 0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  root: { flex: 1, backgroundColor: '#FAFAFC' },
+  content: { padding: 18, paddingBottom: 100, gap: 20 },
+
+  // Profile head
+  profileHead: {
+    flexDirection: 'row', alignItems: 'center', gap: 16,
+    paddingBottom: 4,
   },
-  infoRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
-  planRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: theme.spacing.xs },
-  settingsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: theme.spacing.xs },
+  avatar: {
+    width: 56, height: 56, borderRadius: 28,
+    backgroundColor: 'rgba(240,160,32,0.12)',
+    borderWidth: 2, borderColor: 'rgba(240,160,32,0.3)',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  avatarText: { fontSize: 22, fontWeight: '800', color: '#F0A020' },
+  profileHeadInfo: { flex: 1, gap: 4 },
+  profileName: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
+  memberBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start',
+    backgroundColor: 'rgba(240,160,32,0.1)',
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20,
+    borderWidth: 1, borderColor: 'rgba(240,160,32,0.25)',
+  },
+  memberBadgeText: { fontSize: 11, fontWeight: '700', color: '#F0A020' },
+  editBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    borderWidth: 1, borderColor: '#E2E8F0',
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center', alignItems: 'center',
+  },
+
+  // Section
+  section: { gap: 8 },
+  sectionTitle: { fontSize: 12, fontWeight: '700', color: '#64748B', letterSpacing: 0.8, textTransform: 'uppercase' },
+  sectionCard: { borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', backgroundColor: '#FFFFFF', overflow: 'hidden' },
+
+  // Row
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
+  rowBorder: { borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  rowLabel: { fontSize: 13, color: '#64748B' },
+  rowValue: { fontSize: 14, fontWeight: '600', color: '#0F172A' },
+  iconVal: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+
+  // Payment
+  payDate: { fontSize: 14, fontWeight: '700', color: '#0F172A' },
+  payRight: { alignItems: 'flex-end', gap: 4 },
+  payAmt: { fontSize: 15, fontWeight: '800', color: '#0F172A' },
+  payStatus: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  payStatusText: { fontSize: 11, fontWeight: '700' },
+
+  // Empty
+  emptyRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    padding: 20, justifyContent: 'center',
+  },
+  emptyText: { fontSize: 13, color: '#64748B' },
 });

@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import API from '../services/api';
 import { AuthContext } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { 
     Apple, Calendar, User, Plus, Trash2, Edit3, Search, 
     Flame, Cookie, Zap, Droplet, Sparkles, CheckCircle2, Circle
@@ -8,6 +9,7 @@ import {
 
 const DietPlans = () => {
     const { user } = useContext(AuthContext);
+    const toast = useToast();
     const [plans, setPlans] = useState([]);
     const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -115,14 +117,18 @@ const DietPlans = () => {
         try {
             if (editingId) {
                 await API.put(`/diet-plans/${editingId}`, payload);
+                toast.success('Diet plan modified successfully! 🥗');
             } else {
                 await API.post('/diet-plans', payload);
+                toast.success('Diet plan assigned successfully! 🥗');
             }
             setShowModal(false);
             resetForm();
             fetchPlans();
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to save diet plan');
+            const errMsg = err.response?.data?.message || 'Failed to save diet plan';
+            setError(errMsg);
+            toast.error(errMsg);
         }
     };
 
@@ -140,9 +146,12 @@ const DietPlans = () => {
         if (!window.confirm('Are you sure you want to delete this plan?')) return;
         try {
             await API.delete(`/diet-plans/${id}`);
+            toast.success('Diet plan deleted successfully! 🗑️');
             fetchPlans();
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to delete plan');
+            const errMsg = err.response?.data?.message || 'Failed to delete plan';
+            setError(errMsg);
+            toast.error(errMsg);
         }
     };
 
@@ -193,12 +202,18 @@ const DietPlans = () => {
         const next = { ...consumedMeals, [index]: !consumedMeals[index] };
         setConsumedMeals(next);
         localStorage.setItem(`consumed_${user.id}`, JSON.stringify(next));
+        toast.info(next[index] ? 'Meal marked as consumed! 🥗' : 'Meal unmarked 🥣');
     };
 
     const changeWaterIntake = (amount) => {
         const next = Math.max(0, waterIntake + amount);
         setWaterIntake(next);
         localStorage.setItem(`water_${user.id}`, next.toString());
+        if (amount > 0) {
+            toast.success('Water intake logged! 💧');
+        } else if (amount < 0) {
+            toast.info('Water log updated 💧');
+        }
     };
 
     const filteredPlans = safePlans.filter(p => 

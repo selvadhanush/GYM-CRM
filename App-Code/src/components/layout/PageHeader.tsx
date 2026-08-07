@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { ChevronLeft } from 'lucide-react-native';
 import { theme } from '@/design-system/theme';
+import { fontFamilies } from '@/design-system/tokens';
 
 interface PageHeaderProps {
   title: string;
@@ -20,8 +21,8 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
     <View style={styles.headerContainer}>
       <View style={styles.leftRow}>
         {onBack && (
-          <TouchableOpacity onPress={onBack} style={styles.backButton} activeOpacity={0.7}>
-            <ChevronLeft color={theme.colors.text} size={24} />
+          <TouchableOpacity onPress={onBack} style={styles.backButton} activeOpacity={0.75}>
+            <ChevronLeft color={theme.colors.text} size={22} />
           </TouchableOpacity>
         )}
         <View style={styles.titleColumn}>
@@ -41,6 +42,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: theme.spacing.lg,
     width: '100%',
+    paddingVertical: 4,
   },
   leftRow: {
     flexDirection: 'row',
@@ -50,7 +52,7 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: theme.radii.md,
+    borderRadius: 12,
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
@@ -62,11 +64,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    ...theme.typography.h2,
+    fontFamily: fontFamilies.header,
+    fontSize: 22,
+    fontWeight: '800',
     color: theme.colors.text,
+    letterSpacing: -0.2,
   },
   subtitle: {
-    ...theme.typography.caption,
+    fontFamily: fontFamilies.body,
+    fontSize: 12,
     color: theme.colors.textSecondary,
     marginTop: 2,
   },

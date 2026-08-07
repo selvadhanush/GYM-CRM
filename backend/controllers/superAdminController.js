@@ -15,6 +15,8 @@ const { DEFAULT_SESSION_DURATION_MINUTES } = require('../config/constants');
 const createGymSchema = z.object({
     gymName: z.string().min(1, 'Gym name is required').max(120),
     gymAddress: z.string().max(300).optional(),
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
     // Per-gym default session duration for FitPrime check-ins (minutes).
     defaultSessionDurationMinutes: z.number().int().min(15).max(600).optional(),
     adminName: z.string().min(1, 'Admin name is required').max(120),
@@ -28,6 +30,8 @@ const updateGymSchema = z.object({
     phone: z.string().max(40).optional(),
     email: z.string().email().or(z.literal('')).optional(),
     status: z.enum(['Active', 'Inactive']).optional(),
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
     defaultSessionDurationMinutes: z.number().int().min(15).max(600).optional(),
     adminPassword: z.string().min(6, 'Admin password must be at least 6 characters').optional(),
 });
@@ -47,7 +51,7 @@ const createPartnerGym = catchAsync(async (req, res, next) => {
         res.status(400);
         throw new Error(parsed.error.issues[0].message);
     }
-    const { gymName, gymAddress, defaultSessionDurationMinutes, adminName, adminEmail, adminPassword } = parsed.data;
+    const { gymName, gymAddress, latitude, longitude, defaultSessionDurationMinutes, adminName, adminEmail, adminPassword } = parsed.data;
 
     if (gymName && (gymName.toLowerCase() === 'h4' || gymName.toLowerCase().includes('h4'))) {
         res.status(400);
@@ -64,6 +68,8 @@ const createPartnerGym = catchAsync(async (req, res, next) => {
     const gym = await Gym.create({
         name: gymName,
         address: gymAddress || '',
+        latitude: latitude !== undefined ? latitude : null,
+        longitude: longitude !== undefined ? longitude : null,
         defaultSessionDurationMinutes: defaultSessionDurationMinutes || DEFAULT_SESSION_DURATION_MINUTES,
     });
 
@@ -82,6 +88,8 @@ const createPartnerGym = catchAsync(async (req, res, next) => {
                 _id: gym._id,
                 name: gym.name,
                 address: gym.address,
+                latitude: gym.latitude,
+                longitude: gym.longitude,
                 defaultSessionDurationMinutes: gym.defaultSessionDurationMinutes,
             },
             admin: {
@@ -145,6 +153,8 @@ const updatePartnerGym = catchAsync(async (req, res, next) => {
     if (updates.phone !== undefined) gym.phone = updates.phone;
     if (updates.email !== undefined) gym.email = updates.email;
     if (updates.status !== undefined) gym.status = updates.status;
+    if (updates.latitude !== undefined) gym.latitude = updates.latitude;
+    if (updates.longitude !== undefined) gym.longitude = updates.longitude;
     if (updates.defaultSessionDurationMinutes !== undefined) {
         gym.defaultSessionDurationMinutes = updates.defaultSessionDurationMinutes;
     }
@@ -167,6 +177,8 @@ const updatePartnerGym = catchAsync(async (req, res, next) => {
         phone: gym.phone,
         email: gym.email,
         status: gym.status,
+        latitude: gym.latitude,
+        longitude: gym.longitude,
         defaultSessionDurationMinutes: gym.defaultSessionDurationMinutes,
     });
 });
@@ -206,6 +218,8 @@ const getPartnerGyms = catchAsync(async (req, res, next) => {
                 phone: branch.phone,
                 email: branch.email,
                 status: branch.isActive ? 'Active' : 'Inactive',
+                latitude: branch.latitude,
+                longitude: branch.longitude,
                 admins: []
             };
         });

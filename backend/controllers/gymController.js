@@ -28,9 +28,9 @@ const uploadGymImages = catchAsync(async (req, res, next) => {
         const existingImagesCount = gym.images ? gym.images.length : 0;
         const newImagesCount = req.files.length;
 
-        if (existingImagesCount + newImagesCount > 5) {
+        if (existingImagesCount + newImagesCount > 4) {
             return res.status(400).json({ 
-                message: `Cannot upload more than 5 images. You currently have ${existingImagesCount} images.` 
+                message: `Cannot upload more than 4 images. You currently have ${existingImagesCount} images.` 
             });
         }
 
@@ -52,13 +52,31 @@ const uploadGymImages = catchAsync(async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
+// @desc    Get gym by ID
+// @route   GET /api/gyms/:id
+// @access  Public
+const getGymById = catchAsync(async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const prisma = require('../config/prisma');
+        const gym = await prisma.gym.findUnique({
+            where: { id },
+            include: { settings: true }
+        });
+        if (!gym) {
+            return res.status(404).json({ message: 'Gym not found' });
+        }
+        res.status(200).json(gym);
+    } catch (error) { next(error); }
+});
+
 // @desc    Get all partnered gyms with their images
 // @route   GET /api/gyms/partnered
 // @access  Public
 const getPartneredGyms = catchAsync(async (req, res, next) => {
     try {
         // Find all gyms. In this system, all non-system gyms can be considered partnered.
-        const gyms = await Gym.find({ id: { $ne: 'SYSTEM' } }).select('id name address phone email status images');
+        const gyms = await Gym.find({ id: { $ne: 'SYSTEM' } }).select('id name address phone email status images defaultSessionDurationMinutes');
         res.status(200).json(gyms);
     } catch (error) { next(error); }
 });
@@ -73,8 +91,8 @@ const updateGymImages = catchAsync(async (req, res, next) => {
         return res.status(400).json({ message: 'Images must be an array of URLs' });
     }
 
-    if (images.length > 5) {
-        return res.status(400).json({ message: 'Cannot have more than 5 images.' });
+    if (images.length > 4) {
+        return res.status(400).json({ message: 'Cannot have more than 4 images.' });
     }
 
     const gymId = req.user.gymId;
@@ -165,6 +183,7 @@ const getGyms = catchAsync(async (req, res, next) => {
 
 module.exports = {
     getGyms,
+    getGymById,
     uploadGymImages,
     getPartneredGyms,
     updateGymImages,

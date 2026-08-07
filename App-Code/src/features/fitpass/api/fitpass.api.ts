@@ -8,7 +8,9 @@ import type {
   SessionStatus,
   CheckInHistoryItem,
   PartnerGym,
+  FitPassPlan,
   FitPassDashboardData,
+  GymReview,
   DiscoveryGymItem,
   GymPost,
 } from '../types';
@@ -19,6 +21,9 @@ export const FITPASS_KEYS = {
   sessionStatus: ['fitpass', 'sessionStatus'] as const,
   history: (page = 1) => ['fitpass', 'history', page] as const,
   partnerGyms: ['fitpass', 'partnerGyms'] as const,
+  partnerGymDetail: (id: string) => ['fitpass', 'partnerGym', id] as const,
+  gymReviews: (id: string) => ['fitpass', 'gymReviews', id] as const,
+  plans: ['fitpass', 'plans'] as const,
   discoveryGyms: (params: Record<string, any>) => ['fitpass', 'discovery', 'gyms', params] as const,
   discoveryGymDetails: (gymId: string) => ['fitpass', 'discovery', 'gym', gymId] as const,
   postsFeed: ['fitpass', 'discovery', 'posts'] as const,
@@ -66,6 +71,40 @@ export const usePartnerGyms = () =>
     staleTime: 5 * 60_000,
   });
 
+export const usePartnerGymDetail = (gymId?: string) =>
+  useQuery<PartnerGym>({
+    queryKey: FITPASS_KEYS.partnerGymDetail(gymId || ''),
+    queryFn: async () => {
+      if (!gymId) throw new Error('Gym ID is required');
+      const { data } = await API_CLIENT.get(`/member-portal/gyms/${gymId}`);
+      return data;
+    },
+    enabled: Boolean(gymId),
+    staleTime: 3 * 60_000,
+  });
+
+export const useGymReviews = (gymId?: string) =>
+  useQuery<{ reviews: GymReview[]; averageRating: number; totalReviews: number; myReview?: GymReview | null }>({
+    queryKey: FITPASS_KEYS.gymReviews(gymId || ''),
+    queryFn: async () => {
+      if (!gymId) throw new Error('Gym ID is required');
+      const { data } = await API_CLIENT.get(`/member-portal/gyms/${gymId}/reviews`);
+      return data;
+    },
+    enabled: Boolean(gymId),
+    staleTime: 2 * 60_000,
+  });
+
+export const useFitPassPlans = () =>
+  useQuery<FitPassPlan[]>({
+    queryKey: FITPASS_KEYS.plans,
+    queryFn: async () => {
+      const { data } = await API_CLIENT.get('/member-portal/fitprime-plans');
+      return Array.isArray(data) ? data : data?.data ?? [];
+    },
+    staleTime: 10 * 60_000,
+  });
+
 export const useDiscoveryGyms = (params: Record<string, any> = {}) =>
   useQuery<DiscoveryGymItem[]>({
     queryKey: FITPASS_KEYS.discoveryGyms(params),
@@ -109,6 +148,47 @@ export const useCheckIn = () => {
       qc.invalidateQueries({ queryKey: FITPASS_KEYS.sessionStatus });
       qc.invalidateQueries({ queryKey: FITPASS_KEYS.dashboard });
       qc.invalidateQueries({ queryKey: ['fitpass', 'history'] });
+    },
+  });
+};
+
+export const useAddGymReview = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { gymId: string; rating: number; comment: string }) => {
+      const { data } = await API_CLIENT.post(`/member-portal/gyms/${payload.gymId}/reviews`, {
+        rating: payload.rating,
+        comment: payload.comment,
+      });
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: FITPASS_KEYS.gymReviews(variables.gymId) });
+      qc.invalidateQueries({ queryKey: FITPASS_KEYS.partnerGymDetail(variables.gymId) });
+      qc.invalidateQueries({ queryKey: FITPASS_KEYS.partnerGyms });
+    },
+  });
+};
+
+export const usePurchasePlan = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (planId: string) => {
+      // 1. Create order
+      const { data: order } = await API_CLIENT.post('/member-portal/purchase-plan/create-order', { planId });
+      // 2. Verify payment (supports mock / auto-verify in test environments)
+      const { data: verifyResult } = await API_CLIENT.post('/member-portal/purchase-plan/verify', {
+        razorpay_order_id: order.id,
+        razorpay_payment_id: `pay_test_${Date.now()}`,
+        razorpay_signature: 'mock_test_signature',
+        planId,
+      });
+      return verifyResult;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: FITPASS_KEYS.sessionStatus });
+      qc.invalidateQueries({ queryKey: FITPASS_KEYS.dashboard });
+      qc.invalidateQueries({ queryKey: FITPASS_KEYS.plans });
     },
   });
 };

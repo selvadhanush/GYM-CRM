@@ -14,14 +14,36 @@ export interface SessionStatus {
 
 export interface CheckInHistoryItem {
   id: string;
+  _id?: string;
   gymId: string;
   gymName: string;
-  branchId: string | null;
-  branchName: string | null;
+  branchId?: string | null;
+  branchName?: string | null;
   startedAt: string;
-  endedAt: string | null;
+  endedAt?: string | null;
   status: 'Active' | 'Completed' | 'Expired';
-  sessionsDeducted: number;
+  sessionsDeducted?: number;
+  date?: string;
+  checkInTime?: string;
+}
+
+export interface PartnerGymBranch {
+  id: string;
+  _id?: string;
+  name: string;
+  address?: string;
+  phone?: string;
+  fitPassEnabled?: boolean;
+}
+
+export interface GymReview {
+  id: string;
+  gymId: string;
+  memberId: string;
+  memberName: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
 }
 
 export interface PartnerGym {
@@ -31,6 +53,22 @@ export interface PartnerGym {
   address?: string;
   city?: string;
   phone?: string;
+  email?: string;
+  images?: string[];
+  rating?: number;
+  averageRating?: number;
+  totalReviews?: number;
+  reviews?: GymReview[];
+  amenities?: string[];
+  operatingHours?: string;
+  description?: string;
+  activeSessions?: number;
+  defaultSessionDurationMinutes?: number;
+  status?: string;
+  isBranch?: boolean;
+  branchId?: string;
+  gymId?: string;
+  parentGymName?: string;
   branches?: PartnerGymBranch[];
 }
 
@@ -111,11 +149,15 @@ export interface DiscoveryGymItem {
   discoveryProfile: GymDiscoveryProfile;
 }
 
-export interface PartnerGymBranch {
+export interface FitPassPlan {
   id: string;
+  _id?: string;
   name: string;
-  address?: string;
-  fitPassEnabled: boolean;
+  duration: number;
+  durationUnit: string;
+  sessions: number;
+  price: number;
+  gymId: string;
 }
 
 export interface FitPassDashboardData {

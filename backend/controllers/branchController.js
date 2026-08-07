@@ -43,7 +43,7 @@ const createBranch = catchAsync(async (req, res, next) => {
         if (!isHQAdmin && req.user.userBranchId) {
             return res.status(403).json({ message: 'Branch administrators cannot create branches' });
         }
-        const { name, address, phone, email, managerName, fitPassEnabled } = req.body;
+        const { name, address, phone, email, managerName, fitPassEnabled, latitude, longitude } = req.body;
         if (!name) return res.status(400).json({ message: 'Branch name is required' });
 
         const branch = await Branch.create({
@@ -53,7 +53,9 @@ const createBranch = catchAsync(async (req, res, next) => {
             email,
             managerName,
             gymId: req.user.gymId,
-            fitPassEnabled: fitPassEnabled !== undefined ? fitPassEnabled : true
+            fitPassEnabled: fitPassEnabled !== undefined ? fitPassEnabled : true,
+            latitude: latitude !== undefined ? Number(latitude) : null,
+            longitude: longitude !== undefined ? Number(longitude) : null
         });
 
         // Automatically provision Branch Admin login credentials using email & mobile number

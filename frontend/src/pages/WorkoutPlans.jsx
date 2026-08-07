@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import API from '../services/api';
 import { AuthContext } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { 
     Dumbbell, Calendar, User, Plus, Trash2, Edit3, Search, 
     CheckCircle2, FolderHeart, ArrowRight, PlayCircle, Award, Sparkles, CheckSquare, Square
@@ -8,6 +9,7 @@ import {
 
 const WorkoutPlans = () => {
     const { user } = useContext(AuthContext);
+    const toast = useToast();
     const [activeTab, setActiveTab] = useState('plans'); // 'plans' | 'templates' | 'my-workout'
     const [plans, setPlans] = useState([]);
     const [templates, setTemplates] = useState([]);
@@ -148,14 +150,18 @@ const WorkoutPlans = () => {
         try {
             if (editingPlanId) {
                 await API.put(`/workout-plans/${editingPlanId}`, payload);
+                toast.success('Workout plan modified successfully! 💪');
             } else {
                 await API.post('/workout-plans', payload);
+                toast.success('Workout plan assigned successfully! 💪');
             }
             setShowPlanModal(false);
             resetPlanForm();
             fetchData();
         } catch (err) {
-            setError(err.response?.data?.message || 'Error processing plan');
+            const errMsg = err.response?.data?.message || 'Error processing plan';
+            setError(errMsg);
+            toast.error(errMsg);
         }
     };
 
@@ -173,9 +179,12 @@ const WorkoutPlans = () => {
         if (!window.confirm('Delete this assigned plan?')) return;
         try {
             await API.delete(`/workout-plans/${id}`);
+            toast.success('Workout plan deleted successfully! 🗑️');
             fetchData();
         } catch (err) {
-            setError('Error deleting plan');
+            const errMsg = err.response?.data?.message || 'Error deleting plan';
+            setError(errMsg);
+            toast.error(errMsg);
         }
     };
 
@@ -202,14 +211,18 @@ const WorkoutPlans = () => {
         try {
             if (editingTemplateId) {
                 await API.put(`/workout-templates/${editingTemplateId}`, payload);
+                toast.success('Workout template modified! 📋');
             } else {
                 await API.post('/workout-templates', payload);
+                toast.success('Workout template created! 📋');
             }
             setShowTemplateModal(false);
             resetTemplateForm();
             fetchData();
         } catch (err) {
-            setError(err.response?.data?.message || 'Error processing template');
+            const errMsg = err.response?.data?.message || 'Error processing template';
+            setError(errMsg);
+            toast.error(errMsg);
         }
     };
 
@@ -225,9 +238,12 @@ const WorkoutPlans = () => {
         if (!window.confirm('Delete this workout template?')) return;
         try {
             await API.delete(`/workout-templates/${id}`);
+            toast.success('Workout template deleted! 🗑️');
             fetchData();
         } catch (err) {
-            setError('Error deleting template');
+            const errMsg = err.response?.data?.message || 'Error deleting template';
+            setError(errMsg);
+            toast.error(errMsg);
         }
     };
 
@@ -248,10 +264,12 @@ const WorkoutPlans = () => {
     };
 
     const toggleExerciseComplete = (index) => {
+        const next = !completedExercises[index];
         setCompletedExercises(prev => ({
             ...prev,
-            [index]: !prev[index]
+            [index]: next
         }));
+        toast.info(next ? 'Exercise completed! 💪' : 'Exercise unmarked 🏋️');
     };
 
     const handleCompleteWorkout = () => {
@@ -274,7 +292,7 @@ const WorkoutPlans = () => {
         localStorage.setItem(`streak_${user.id}`, nextStreak.toString());
 
         setCompletedExercises({});
-        alert('🎉 Awesome job! Today\'s training session has been logged to your streak profile.');
+        toast.success('🎉 Awesome job! Today\'s training session has been logged to your streak profile.');
     };
 
     const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
