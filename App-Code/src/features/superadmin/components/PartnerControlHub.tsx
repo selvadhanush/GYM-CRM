@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, ScrollView, TouchableOpacity, Modal, Alert, ActivityIndicator } from 'react-native';
-import { Search, Building2, MapPin, Phone, Mail, Shield, CheckCircle, XCircle, Settings, Power, Trash2 } from 'lucide-react-native';
+import { Building2, MapPin, Phone, XCircle } from 'lucide-react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { API_CLIENT } from '@/lib/api-client';
 import { Card, Typography, Input, Button, Badge } from '@/components/ui';

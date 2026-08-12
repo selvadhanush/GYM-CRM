@@ -8,7 +8,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Dimensions,
   ScrollView,
   Image,
   SafeAreaView,
@@ -18,10 +17,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
-import { theme } from '@/design-system/theme';
 
 const H4_LOGO = require('../../../../assets/h4.jpeg');
-const { width, height } = Dimensions.get('window');
 
 export const LoginForm: React.FC = () => {
   const router = useRouter();
@@ -57,8 +54,10 @@ export const LoginForm: React.FC = () => {
 
     try {
       const response = await checkUser(trimmedEmail);
-      console.log('[H4 Portal] CheckUser Response:', response);
-      
+      if (__DEV__) {
+        console.log('[H4 Portal] CheckUser Response:', response);
+      }
+
       if (response.status === 'new') {
         toast.show('New user detected. Redirecting to registration...', 'info');
         router.push({

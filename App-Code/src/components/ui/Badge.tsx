@@ -1,6 +1,5 @@
 import React from 'react';
 import { StyleSheet, Text, View, ViewStyle } from 'react-native';
-import { theme } from '@/design-system/theme';
 
 export type BadgeVariant = 'active' | 'expired' | 'frozen' | 'success' | 'warning' | 'error' | 'info';
 

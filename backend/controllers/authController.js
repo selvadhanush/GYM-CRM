@@ -1,5 +1,7 @@
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
+const logger = require('../lib/logger');
+const env = require('../config/env');
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 const { logAudit } = require('../utils/auditLogger');
@@ -137,9 +139,11 @@ const registerUser = catchAsync(async (req, res, next) => {
 
         // Issue + email the OTP.
         const otpString = await issueOtp(email);
-        console.log(`\n==================================================`);
-        console.log(`[DEV ONLY] Generated Registration OTP for ${email}: ${otpString}`);
-        console.log(`==================================================\n`);
+        // Never log OTP codes in production — dev-only convenience so the
+        // flow can be exercised without a real mailbox.
+        if (env.isDevelopment) {
+            logger.debug({ email }, `[DEV ONLY] Registration OTP: ${otpString}`);
+        }
         try {
             await sendEmail({
                 email: user.email,
@@ -147,7 +151,7 @@ const registerUser = catchAsync(async (req, res, next) => {
                 message: `Your OTP for registration is: ${otpString}. It is valid for ${OTP_TTL_MINUTES} minutes.`,
             });
         } catch (error) {
-            console.error('Email sending failed:', error.message);
+            logger.error({ err: error, email }, 'Registration OTP email sending failed');
         }
 
         res.status(201).json({
@@ -440,9 +444,9 @@ const checkUserAndSendOTP = catchAsync(async (req, res, next) => {
 
     // Issue a fresh OTP (also resets the failed-attempt counter).
     const otpString = await issueOtp(email);
-    console.log(`\n==================================================`);
-    console.log(`[DEV ONLY] Generated Login OTP for ${email}: ${otpString}`);
-    console.log(`==================================================\n`);
+    if (env.isDevelopment) {
+        logger.debug({ email }, `[DEV ONLY] Login OTP: ${otpString}`);
+    }
     try {
         await sendEmail({
             email: user.email,
@@ -450,7 +454,7 @@ const checkUserAndSendOTP = catchAsync(async (req, res, next) => {
             message: `Your login OTP is: ${otpString}. It is valid for ${OTP_TTL_MINUTES} minutes.`,
         });
     } catch (error) {
-        console.error('Email sending failed:', error.message);
+        logger.error({ err: error, email }, 'Login OTP email sending failed');
     }
 
     res.json({

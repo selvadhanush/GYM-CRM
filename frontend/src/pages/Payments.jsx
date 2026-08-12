@@ -38,7 +38,7 @@ const Payments = () => {
             fetchData();
             setIsModalOpen(false);
             setFormData({ memberId: '', amount: '', method: 'Cash' });
-        } catch (error) {
+        } catch {
             alert('Error recording payment');
         }
     };
@@ -48,7 +48,7 @@ const Payments = () => {
             const history = await getMemberPayments(memberId);
             const member = members.find(m => m._id === memberId);
             setSelectedMemberPayments({ memberName: member.name, history });
-        } catch (error) {
+        } catch {
             alert('Error fetching payment history');
         }
     };

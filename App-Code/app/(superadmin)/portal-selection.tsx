@@ -2,7 +2,6 @@ import React from 'react';
 import { StyleSheet, View, TouchableOpacity, ScrollView, Image, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Globe, ArrowRight, ShieldCheck, Lock } from 'lucide-react-native';
-import { theme } from '@/design-system/theme';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { Typography } from '@/components/ui';
 

@@ -162,7 +162,7 @@ const MemberDashboard = () => {
                         toast.success('Payment successful! Your dues are fully cleared.');
                     }
                     fetchMemberData(); // Refresh UI
-                } catch (err) {
+                } catch {
                     toast.error('Mock payment verification failed.');
                 }
                 return;
@@ -192,7 +192,7 @@ const MemberDashboard = () => {
                             toast.success('Payment successful! Your dues are fully cleared.');
                         }
                         fetchMemberData(); // Refresh UI
-                    } catch (err) {
+                    } catch {
                         toast.error('Payment verification failed.');
                     }
                 },

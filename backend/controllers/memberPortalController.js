@@ -1,5 +1,7 @@
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
+const logger = require('../lib/logger');
+const env = require('../config/env');
 const Member = require('../models/Member');
 const Attendance = require('../models/Attendance');
 const Payment = require('../models/Payment');
@@ -8,7 +10,6 @@ const Gym = require('../models/Gym');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const { expireIfDue } = require('../utils/sessionHelpers');
-const env = require('../config/env');
 
 // @desc    Get logged in member profile/plan
 // @route   GET /api/member-portal/plan
@@ -99,7 +100,7 @@ const getPartnerGyms = catchAsync(async (req, res, next) => {
 
         res.json([...gymsWithOccupancy, ...branchGyms]);
     } catch (err) {
-        console.error('Error fetching partner gyms occupancy:', err);
+        logger.error({ err }, 'Error fetching partner gyms occupancy');
         res.json(gyms);
     }
 });
@@ -197,7 +198,7 @@ const createRazorpayOrder = catchAsync(async (req, res, next) => {
                                 keySecret !== 'null' && keySecret !== 'undefined' && keySecret.trim() !== '';
 
         if (!hasRazorpayKeys) {
-            console.log('Razorpay keys missing or invalid in .env. Returning a mock order for testing.');
+            logger.warn('Razorpay keys missing or invalid in .env. Returning a mock order for testing.');
             const mockOrder = {
                 id: `order_mock_${crypto.randomBytes(8).toString('hex')}`,
                 amount: amountInPaise,
@@ -224,7 +225,7 @@ const createRazorpayOrder = catchAsync(async (req, res, next) => {
         const order = await instance.orders.create(options);
         res.status(201).json(order);
     } catch (error) {
-        console.error('RAZORPAY CREATE-ORDER ERROR:', error);
+        logger.error({ err: error }, 'Razorpay create-order failed');
         res.status(500).json({
             message: 'Razorpay order creation failed',
             error: error.message || String(error),
@@ -323,7 +324,7 @@ const purchasePlanOrder = catchAsync(async (req, res, next) => {
                       !process.env.RAZORPAY_KEY_SECRET ||
                       process.env.RAZORPAY_KEY_ID === 'your_razorpay_key_id';
     if (isMockEnv && env.isProduction) {
-        console.error('Razorpay keys missing in production; refusing to create a mock order.');
+        logger.error('Razorpay keys missing in production; refusing to create a mock order.');
         return res.status(503).json({ message: 'Payments are not configured.' });
     }
 

@@ -1,5 +1,6 @@
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
+const logger = require('../lib/logger');
 const prisma = require('../config/prisma');
 const { logAudit } = require('../utils/auditLogger');
 
@@ -73,13 +74,14 @@ async function ensureGymProfilesExist() {
             }
         });
 
-        for (const gym of gymsWithoutProfile) {
-            if (gym.id === 'SYSTEM') continue;
-            const defaultImages = gym.images && gym.images.length > 0 
-                ? gym.images 
+        // Independent per-gym upserts (each targets a distinct gymId) — fire
+        // them concurrently instead of awaiting one at a time.
+        await Promise.all(gymsWithoutProfile.filter(gym => gym.id !== 'SYSTEM').map(gym => {
+            const defaultImages = gym.images && gym.images.length > 0
+                ? gym.images
                 : ["https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&auto=format&fit=crop&q=80"];
 
-            await prisma.gymProfile.upsert({
+            return prisma.gymProfile.upsert({
                 where: { gymId: gym.id },
                 update: {},
                 create: {
@@ -117,9 +119,9 @@ async function ensureGymProfilesExist() {
                     viewCount: 120 + Math.floor(Math.random() * 200)
                 }
             });
-        }
+        }));
     } catch (err) {
-        console.error("Error in ensureGymProfilesExist:", err);
+        logger.error({ err }, 'Error in ensureGymProfilesExist');
     }
 }
 
@@ -198,7 +200,7 @@ const getPublicGyms = catchAsync(async (req, res, next) => {
             if (c.gymId) checkInMap[c.gymId] = c._count.id;
         });
     } catch (err) {
-        console.error("Error fetching checkInCounts:", err);
+        logger.error({ err }, 'Error fetching checkInCounts');
     }
 
     const gyms = await prisma.gym.findMany({

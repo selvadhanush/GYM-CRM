@@ -84,13 +84,13 @@ const Leads = () => {
         try {
             await API.put(`/leads/${lead._id}`, { status: newStatus });
             fetchAll();
-        } catch (err) { alert('Failed to update status'); }
+        } catch { alert('Failed to update status'); }
     };
 
     const deleteLead = async (id) => {
         if (!window.confirm('Delete this lead?')) return;
         try { await API.delete(`/leads/${id}`); fetchAll(); }
-        catch (err) { alert('Failed to delete'); }
+        catch { alert('Failed to delete'); }
     };
 
     const safeLeads = Array.isArray(leads) ? leads : [];

@@ -139,7 +139,7 @@ const BodyAssessments = () => {
             try {
                 await deleteBodyAssessment(id);
                 fetchAssessments(selectedMemberId);
-            } catch (error) {
+            } catch {
                 alert('Error deleting assessment');
             }
         }

@@ -90,7 +90,7 @@ const PayrollPage = () => {
                 commissionPt: structure.commissionPt
             });
             setIsConfigModalOpen(true);
-        } catch (error) {
+        } catch {
             alert('Error loading salary structure');
         }
     };
@@ -106,7 +106,7 @@ const PayrollPage = () => {
             alert('Salary structure updated successfully');
             setIsConfigModalOpen(false);
             if (activeTab === 'salary') fetchPayrollsData();
-        } catch (error) {
+        } catch {
             alert('Failed to update salary config');
         }
     };
@@ -139,7 +139,7 @@ const PayrollPage = () => {
             alert('PT Commission logged successfully');
             setIsCommissionModalOpen(false);
             fetchPayrollsData();
-        } catch (error) {
+        } catch {
             alert('Failed to add commission');
         }
     };
@@ -150,7 +150,7 @@ const PayrollPage = () => {
                 await updatePayroll(payrollId, { status: 'Paid' });
                 alert('Payroll marked as Paid');
                 fetchPayrollsData();
-            } catch (error) {
+            } catch {
                 alert('Error updating status');
             }
         }

@@ -1,5 +1,6 @@
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
+const logger = require('../lib/logger');
 const Member = require('../models/Member');
 const Attendance = require('../models/Attendance');
 const Payment = require('../models/Payment');
@@ -103,7 +104,7 @@ const getDashboardStats = catchAsync(async (req, res, next) => {
                     .sort((a, b) => new Date(b.date) - new Date(a.date))
                     .slice(0, 50);
             } catch (err) {
-                console.error("Prisma error for history:", err);
+                logger.error({ err }, 'Prisma error building recent check-in history');
             }
 
                 const activeLiveSessions = activeLiveSessionsRaw.map(s => ({
@@ -277,7 +278,7 @@ const getDashboardStats = catchAsync(async (req, res, next) => {
                 .sort((a, b) => new Date(b.date) - new Date(a.date))
                 .slice(0, 50);
         } catch (err) {
-            console.error("Prisma error for history:", err);
+            logger.error({ err }, 'Prisma error building recent check-in history');
         }
 
         res.json({

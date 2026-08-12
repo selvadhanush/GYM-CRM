@@ -1,11 +1,12 @@
 const cron = require('node-cron');
 const Member = require('../models/Member');
 const { sendEmail, sendWhatsApp } = require('./notificationService');
+const logger = require('../lib/logger');
 
 const startCronJobs = () => {
     // Run every day at midnight (00:00)
     cron.schedule('0 0 * * *', async () => {
-        console.log('--- Running Daily Gym CRM Maintenance Job ---');
+        logger.info('--- Running Daily Gym CRM Maintenance Job ---');
 
         try {
             const today = new Date();
@@ -16,7 +17,7 @@ const startCronJobs = () => {
                 { status: 'Active', expiryDate: { $lt: today } },
                 { status: 'Expired' }
             );
-            console.log(`Auto-Status Update: ${expiredResult.modifiedCount} members shifted to Expired.`);
+            logger.info(`Auto-Status Update: ${expiredResult.modifiedCount} members shifted to Expired.`);
 
             // 2. Expiry Reminders (7 Days & 1 Day)
             const reminderDates = [7, 1];
@@ -32,7 +33,7 @@ const startCronJobs = () => {
                     expiryDate: { $gte: targetDateStart, $lt: targetDateEnd }
                 });
 
-                console.log(`Found ${membersToExpire.length} members expiring in ${days} days.`);
+                logger.info(`Found ${membersToExpire.length} members expiring in ${days} days.`);
 
                 for (const member of membersToExpire) {
                     const subject = `Gym Membership Expiry Reminder - ${days} day(s) left!`;
@@ -57,7 +58,7 @@ const startCronJobs = () => {
                                 html: htmlContent
                             });
                         } catch (err) {
-                            console.error(`Failed to send email to ${member.name}:`, err.message);
+                            logger.error({ err }, `Failed to send expiry reminder email to ${member.name}`);
                         }
                     }
 
@@ -69,9 +70,9 @@ const startCronJobs = () => {
                 }
             }
 
-            console.log('--- Maintenance Job Completed ---');
+            logger.info('--- Maintenance Job Completed ---');
         } catch (error) {
-            console.error('Error in cron job:', error);
+            logger.error({ err: error }, 'Error in daily maintenance cron job');
         }
     });
 
@@ -90,7 +91,7 @@ const startCronJobs = () => {
                     return await fn();
                 } catch (err) {
                     if (i === retries) throw err;
-                    console.warn(`[SessionExpiry] Database query attempt ${i} failed. Retrying in ${delay / 1000}s... Error: ${err.message}`);
+                    logger.warn({ err, attempt: i }, `[SessionExpiry] Database query attempt failed. Retrying in ${delay / 1000}s...`);
                     await new Promise(resolve => setTimeout(resolve, delay));
                 }
             }
@@ -126,14 +127,14 @@ const startCronJobs = () => {
                         data: { currentSessionEndsAt: null, currentSessionGymId: null },
                     }).catch(() => {});
                 }
-                console.log(`[SessionExpiry] Expired ${expiredRows.count} session(s).`);
+                logger.info(`[SessionExpiry] Expired ${expiredRows.count} session(s).`);
             }
         } catch (error) {
-            console.error('[SessionExpiry] cron error:', error.message);
+            logger.error({ err: error }, '[SessionExpiry] cron error');
         }
     });
 
-    console.log('Cron jobs scheduled logic initialized.');
+    logger.info('Cron jobs scheduled logic initialized.');
 };
 
 module.exports = startCronJobs;

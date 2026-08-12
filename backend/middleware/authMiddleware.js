@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const logger = require('../lib/logger');
 const User = require('../models/User');
 const Branch = require('../models/Branch');
 const Gym = require('../models/Gym');
@@ -107,7 +108,7 @@ const protect = async (req, res, next) => {
 
             next();
         } catch (error) {
-            console.error(error);
+            logger.error({ err: error }, 'Auth middleware failed to authorize request');
             if (res.statusCode === 200) {
                 res.status(401);
             }

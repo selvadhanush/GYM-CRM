@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, ScrollView, TouchableOpacity, Modal, Alert, ActivityIndicator } from 'react-native';
-import { Users, Search, CreditCard, Ticket, Calendar, ShieldAlert, Plus, Minus, Lock, Unlock, XCircle, Clock, MapPin } from 'lucide-react-native';
+import { Users, XCircle } from 'lucide-react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { API_CLIENT } from '@/lib/api-client';
 import { Card, Typography, Input, Button, Badge } from '@/components/ui';

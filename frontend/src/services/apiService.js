@@ -179,4 +179,100 @@ export const addCommission = async (commissionData) => {
     return data;
 };
 
+export const updatePayrollStatus = async (id, statusData) => {
+    const { data } = await API.put(`/payroll/${id}`, statusData);
+    return data;
+};
+
+// PT Packages
+export const getPTPackages = async () => {
+    const { data } = await API.get('/pt-packages');
+    return data;
+};
+
+export const createPTPackage = async (packageData) => {
+    const { data } = await API.post('/pt-packages', packageData);
+    return data;
+};
+
+export const updatePTPackage = async (id, packageData) => {
+    const { data } = await API.put(`/pt-packages/${id}`, packageData);
+    return data;
+};
+
+export const deletePTPackage = async (id) => {
+    const { data } = await API.delete(`/pt-packages/${id}`);
+    return data;
+};
+
+// PT Sessions
+export const getPTSessions = async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const { data } = await API.get(`/pt-sessions${query ? `?${query}` : ''}`);
+    return data;
+};
+
+export const createPTSession = async (sessionData) => {
+    const { data } = await API.post('/pt-sessions', sessionData);
+    return data;
+};
+
+export const updatePTSession = async (id, sessionData) => {
+    const { data } = await API.put(`/pt-sessions/${id}`, sessionData);
+    return data;
+};
+
+export const deletePTSession = async (id) => {
+    const { data } = await API.delete(`/pt-sessions/${id}`);
+    return data;
+};
+
+// Trainer <-> Member assignments
+export const getTrainerAssignments = async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const { data } = await API.get(`/trainer-assignments${query ? `?${query}` : ''}`);
+    return data;
+};
+
+export const assignTrainerToMember = async (assignmentData) => {
+    const { data } = await API.post('/trainer-assignments', assignmentData);
+    return data;
+};
+
+export const removeTrainerAssignment = async (id) => {
+    const { data } = await API.delete(`/trainer-assignments/${id}`);
+    return data;
+};
+
+// Equipment
+export const getEquipments = async () => {
+    const { data } = await API.get('/equipments');
+    return data;
+};
+
+export const createEquipment = async (equipmentData) => {
+    const { data } = await API.post('/equipments', equipmentData);
+    return data;
+};
+
+export const updateEquipment = async (id, equipmentData) => {
+    const { data } = await API.put(`/equipments/${id}`, equipmentData);
+    return data;
+};
+
+export const deleteEquipment = async (id) => {
+    const { data } = await API.delete(`/equipments/${id}`);
+    return data;
+};
+
+export const getMaintenanceLogs = async () => {
+    const { data } = await API.get('/equipments/maintenance/logs');
+    return data;
+};
+
+export const createMaintenanceLog = async (logData) => {
+    const { data } = await API.post('/equipments/maintenance/logs', logData);
+    return data;
+};
+
 

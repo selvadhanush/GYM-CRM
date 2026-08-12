@@ -1,5 +1,6 @@
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
+const prisma = require('../config/prisma');
 const TrainerSalary = require('../models/TrainerSalary');
 const PtCommission = require('../models/PtCommission');
 const Payroll = require('../models/Payroll');
@@ -138,15 +139,18 @@ const generateMonthlyPayroll = catchAsync(async (req, res, next) => {
             const completedSessions = await PtSession.find(sessQuery);
             finalCommissions = completedSessions.length * commissionRate;
 
-            // Log these auto-calculated commissions so they persist
-            for (const s of completedSessions) {
-                await PtCommission.create({
-                    trainerId,
-                    sessionId: s._id,
-                    amount: commissionRate,
-                    date: s.sessionDate,
-                    gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
-                    branchId: req.user.branchId || null
+            // Log these auto-calculated commissions so they persist. Single
+            // batched INSERT instead of one round-trip per session.
+            if (completedSessions.length > 0) {
+                await prisma.ptCommission.createMany({
+                    data: completedSessions.map(s => ({
+                        trainerId,
+                        sessionId: s._id,
+                        amount: commissionRate,
+                        date: s.sessionDate,
+                        gymId: req.user.gymId,
+                        branchId: req.user.branchId || null
+                    }))
                 });
             }
         }

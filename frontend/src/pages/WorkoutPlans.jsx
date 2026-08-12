@@ -73,7 +73,7 @@ const WorkoutPlans = () => {
                 const memData = memRes.data;
                 setMembers(Array.isArray(memData) ? memData : (memData?.data || []));
             }
-        } catch (err) {
+        } catch {
             setError('Failed to sync workout system datasets');
             setPlans([]);
             setTemplates([]);
@@ -174,7 +174,7 @@ const WorkoutPlans = () => {
         try {
             await API.delete(`/workout-plans/${id}`);
             fetchData();
-        } catch (err) {
+        } catch {
             setError('Error deleting plan');
         }
     };
@@ -226,7 +226,7 @@ const WorkoutPlans = () => {
         try {
             await API.delete(`/workout-templates/${id}`);
             fetchData();
-        } catch (err) {
+        } catch {
             setError('Error deleting template');
         }
     };

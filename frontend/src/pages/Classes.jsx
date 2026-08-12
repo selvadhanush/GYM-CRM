@@ -70,7 +70,7 @@ const Classes = () => {
             const { data } = await API.get(`/classes/${gymClass._id}/bookings`);
             setBookingsModal(data);
             fetchMembers();
-        } catch (err) {
+        } catch {
             alert('Failed to fetch bookings');
         }
     };

@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { StyleSheet, View, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, useRouter } from 'expo-router';
-import { 
-  ArrowLeft, TrendingDown, RefreshCw, Award, AlertTriangle, 
-  DollarSign, PieChart, Users, ArrowUpRight, BarChart3, 
-  Layers, Target, ShieldCheck, Wallet, Calendar
+import {
+  ArrowLeft, TrendingDown, RefreshCw, Award, AlertTriangle,
+  DollarSign, Users, ArrowUpRight, BarChart3,
+  Layers, Target, ShieldCheck, Wallet
 } from 'lucide-react-native';
 import { BarChart, LineChart } from 'react-native-chart-kit';
 import { theme } from '@/design-system/theme';

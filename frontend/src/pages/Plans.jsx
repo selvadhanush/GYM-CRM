@@ -68,7 +68,7 @@ const Plans = () => {
             try {
                 await deletePlan(id);
                 fetchPlans();
-            } catch (error) {
+            } catch {
                 alert('Error deleting plan');
             }
         }

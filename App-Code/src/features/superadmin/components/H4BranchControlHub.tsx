@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Modal as RNModal } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import { Building2, MapPin, Phone, Mail, User, QrCode, Edit3, Trash2, Users, DollarSign, Sparkles, XCircle } from 'lucide-react-native';
+import { Building2, MapPin, Phone, Mail, User, QrCode, Edit3, Trash2, Users, DollarSign, Sparkles } from 'lucide-react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { API_CLIENT } from '@/lib/api-client';
 import { Typography, Input, Button, Badge, Modal } from '@/components/ui';

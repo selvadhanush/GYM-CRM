@@ -10,7 +10,7 @@ import {
   useDeleteFitPrimePlan,
   FitPrimePlan
 } from '../api/superadmin.api';
-import { Card, Button, Input, Modal, Skeleton, EmptyState, Badge, Typography } from '@/components/ui';
+import { Button, Input, Modal, Skeleton, EmptyState, Badge, Typography } from '@/components/ui';
 
 export const FitPrimePlansList: React.FC = () => {
   const toast = useToast();

@@ -113,7 +113,7 @@ const AppHeader = ({ onThemeToggle, isDark }) => {
                 );
                 setSearchResults(filtered.slice(0, 6));
                 setSearchOpen(true);
-            } catch (err) {
+            } catch {
                 setSearchResults([]);
             } finally {
                 setSearchLoading(false);
