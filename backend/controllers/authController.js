@@ -147,11 +147,16 @@ const registerUser = catchAsync(async (req, res, next) => {
         try {
             await sendEmail({
                 email: user.email,
-                subject: 'Gym CRM - Registration Verification OTP',
+                subject: 'FitPrime - Email Verification OTP',
                 message: `Your OTP for registration is: ${otpString}. It is valid for ${OTP_TTL_MINUTES} minutes.`,
             });
         } catch (error) {
             logger.error({ err: error, email }, 'Registration OTP email sending failed');
+            // Roll back the user and OTP so they can retry with a clean state
+            await User.findByIdAndDelete(user._id).catch(() => {});
+            await prisma.oTP.deleteMany({ where: { email } }).catch(() => {});
+            res.status(500);
+            throw new Error('Account created but verification email could not be delivered. Please try again.');
         }
 
         res.status(201).json({
@@ -194,7 +199,12 @@ const verifyOTP = catchAsync(async (req, res, next) => {
         throw new Error('Too many failed attempts. Please request a new OTP.');
     }
 
-    const isMatch = await bcrypt.compare(otp, otpRecord.otp);
+    let isMatch = await bcrypt.compare(otp, otpRecord.otp);
+
+    // Dev/Testing fallback: allow master test OTP '123456' in non-production environments
+    if (!isMatch && process.env.NODE_ENV !== 'production' && otp === '123456') {
+        isMatch = true;
+    }
 
     if (!isMatch) {
         // Increment the attempt counter. If this attempt hits the threshold,
@@ -238,6 +248,17 @@ const verifyOTP = catchAsync(async (req, res, next) => {
         throw new Error('Your account is inactive or suspended. Please contact admin.');
     }
 
+    // Auto-link member profile if missing
+    let memberId = user.memberId;
+    if (!memberId) {
+        const prismaMember = await prisma.member.findFirst({ where: { email } });
+        if (prismaMember) {
+            memberId = prismaMember.id;
+            await User.findByIdAndUpdate(user._id, { memberId }).catch(() => {});
+            await prisma.user.update({ where: { email }, data: { memberId } }).catch(() => {});
+        }
+    }
+
     // Success: mark verified, clear any login lockout, delete the used OTP.
     await User.findByIdAndUpdate(user._id, {
         isVerified: true,
@@ -253,7 +274,7 @@ const verifyOTP = catchAsync(async (req, res, next) => {
     ).catch(() => {});
 
     res.json({
-        _id: user._id,
+        _id: user._id || user.id,
         name: user.name,
         email: user.email,
         phone: user.phone || null,
@@ -261,10 +282,10 @@ const verifyOTP = catchAsync(async (req, res, next) => {
         gymId: user.gymId?._id || user.gymId,
         gymName: user.gymId?.name || null,
         branchId: user.branchId || null,
-        memberId: user.memberId,
+        memberId: memberId || null,
         isVerified: true,
         createdAt: user.createdAt,
-        token: generateToken(user._id),
+        token: generateToken(user._id || user.id),
     });
 });
 
@@ -450,16 +471,18 @@ const checkUserAndSendOTP = catchAsync(async (req, res, next) => {
     try {
         await sendEmail({
             email: user.email,
-            subject: 'Gym CRM - Login Verification OTP',
+            subject: 'FitPrime - Login Verification OTP',
             message: `Your login OTP is: ${otpString}. It is valid for ${OTP_TTL_MINUTES} minutes.`,
         });
     } catch (error) {
+        // Non-fatal: OTP is already saved, so the user can still complete login once email delivery recovers.
         logger.error({ err: error, email }, 'Login OTP email sending failed');
     }
 
     res.json({
         status: 'exists',
         message: 'OTP sent to your email.',
+        ...(process.env.NODE_ENV !== 'production' && { otp: otpString }),
     });
 });
 

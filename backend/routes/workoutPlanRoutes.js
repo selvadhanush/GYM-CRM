@@ -5,9 +5,12 @@ const {
     getPlans,
     getPlanById,
     updatePlan,
-    deletePlan
+    deletePlan,
+    logCompletedWorkout
 } = require('../controllers/workoutPlanController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+
+router.post('/log', protect, logCompletedWorkout);
 
 router.route('/')
     .get(protect, authorize('admin', 'receptionist', 'trainer', 'member'), getPlans)

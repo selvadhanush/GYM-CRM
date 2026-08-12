@@ -15,19 +15,19 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   borderRadius = theme.radii.sm,
   style,
 }) => {
-  const [pulseAnim] = useState(() => new Animated.Value(0.12));
+  const [pulseAnim] = useState(() => new Animated.Value(0.18));
 
   useEffect(() => {
     const pulse = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
-          toValue: 0.35,
-          duration: 800,
+          toValue: 0.55,
+          duration: 750,
           useNativeDriver: true,
         }),
         Animated.timing(pulseAnim, {
-          toValue: 0.12,
-          duration: 800,
+          toValue: 0.18,
+          duration: 750,
           useNativeDriver: true,
         }),
       ])
@@ -56,6 +56,6 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 
 const styles = StyleSheet.create({
   skeleton: {
-    backgroundColor: '#fff', // Pulses via opacity mapping
+    backgroundColor: '#94A3B8',
   },
 });

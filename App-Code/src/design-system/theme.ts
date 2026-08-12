@@ -10,6 +10,7 @@ export const lightColors = {
   primary: '#FF5F1F', // Vibrant Electric Orange
   background: '#FFFFFF',
   card: '#FFFFFF',
+  surface: '#FFFFFF',
   text: '#1A1510',
   border: '#EAE7E1',
   notification: '#E04E10',
@@ -32,6 +33,7 @@ export const darkColors = {
   primary: '#FF5F1F', // Vibrant Electric Orange
   background: '#231D14', // Very dark warm brown-black
   card: '#2D251C', // Dark warm brown card/surface
+  surface: '#2D251C',
   text: '#FFFFFF', // White text
   border: '#3A3025', // Warm brown border
   notification: '#E04E10',

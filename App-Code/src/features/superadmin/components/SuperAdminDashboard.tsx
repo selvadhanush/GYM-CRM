@@ -3,7 +3,7 @@ import { StyleSheet, View, Dimensions, ScrollView } from 'react-native';
 import { LineChart, BarChart } from 'react-native-chart-kit';
 import { 
   Users, DollarSign, 
-  ArrowUpRight, ArrowDownRight, Zap, Ticket, Activity, TrendingUp, MapPin, 
+  ArrowUpRight, ArrowDownRight, Activity, Ticket, TrendingUp, MapPin, 
   BarChart3, PieChart as PieIcon, ShieldCheck
 } from 'lucide-react-native';
 import { theme } from '@/design-system/theme';
@@ -119,7 +119,7 @@ export const SuperAdminDashboard: React.FC = () => {
       <View style={styles.bannerContainer}>
         <View style={styles.bannerLeft}>
           <View style={styles.badgePill}>
-            {isFitPass ? <Zap size={12} color={theme.colors.primary} /> : <ShieldCheck size={12} color={theme.colors.primary} />}
+            {isFitPass ? <Activity size={12} color={theme.colors.primary} /> : <ShieldCheck size={12} color={theme.colors.primary} />}
             <Typography variant="caption" style={styles.badgePillText}>
               {isFitPass ? 'FITPASS NETWORK ANALYTICS' : 'H4 EXECUTIVE ANALYTICS'}
             </Typography>

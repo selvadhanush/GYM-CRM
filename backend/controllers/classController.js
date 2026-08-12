@@ -74,16 +74,45 @@ const getClassBookings = catchAsync(async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
+const resolveMemberId = async (req) => {
+    let memberId = req.user?.memberId;
+    let gymId = req.user?.gymId;
+    let memberName = req.user?.name || '';
+    try {
+        if (memberId) {
+            const m = await Member.findById(memberId).select('gymId name');
+            if (m) {
+                if (m.gymId) gymId = m.gymId;
+                if (m.name) memberName = m.name;
+            }
+        }
+        if (!memberId && req.user?.email) {
+            const m = await Member.findOne({ email: req.user.email }).select('id gymId name');
+            if (m) {
+                memberId = m._id || m.id;
+                if (m.gymId) gymId = m.gymId;
+                if (m.name) memberName = m.name;
+            }
+        }
+    } catch (err) {
+        // Fallback for unexpected query errors
+    }
+    return { memberId, gymId, memberName };
+};
+
 // @desc    Member books a class slot
 // @route   POST /api/member-portal/classes/:id/book
 // @access  Private/Member
 const bookClass = catchAsync(async (req, res, next) => {
     try {
+        const { memberId, memberName } = await resolveMemberId(req);
+        if (!memberId) return res.status(404).json({ message: 'Member profile not found' });
+
         const gymClass = await GymClass.findById(req.params.id);
         if (!gymClass) return res.status(404).json({ message: 'Class not found' });
 
         const alreadyBooked = gymClass.bookings.some(
-            b => b && (b.memberId || b).toString() === req.user.memberId.toString()
+            b => b && (b.memberId || b).toString() === memberId.toString()
         );
         if (alreadyBooked) return res.status(400).json({ message: 'Already booked this class' });
 
@@ -91,10 +120,9 @@ const bookClass = catchAsync(async (req, res, next) => {
             return res.status(400).json({ message: 'Class is full' });
         }
 
-        const member = await Member.findById(req.user.memberId).select('name');
         gymClass.bookings.push({ 
-            memberId: req.user.memberId, 
-            memberName: member?.name || '',
+            memberId: memberId, 
+            memberName: memberName || '',
             bookedAt: new Date()
         });
         await gymClass.save();
@@ -111,11 +139,14 @@ const bookClass = catchAsync(async (req, res, next) => {
 // @access  Private/Member
 const cancelBooking = catchAsync(async (req, res, next) => {
     try {
+        const { memberId } = await resolveMemberId(req);
+        if (!memberId) return res.status(404).json({ message: 'Member profile not found' });
+
         const gymClass = await GymClass.findById(req.params.id);
         if (!gymClass) return res.status(404).json({ message: 'Class not found' });
 
         const bookingIndex = gymClass.bookings.findIndex(
-            b => b && (b.memberId || b).toString() === req.user.memberId.toString()
+            b => b && (b.memberId || b).toString() === memberId.toString()
         );
         if (bookingIndex === -1) return res.status(400).json({ message: 'No booking found for this class' });
 
@@ -129,25 +160,44 @@ const cancelBooking = catchAsync(async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
+const CLASS_IMAGES = {
+    hiit: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=600&auto=format&fit=crop&q=80',
+    yoga: 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=600&auto=format&fit=crop&q=80',
+    strength: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&auto=format&fit=crop&q=80',
+    cardio: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=600&auto=format&fit=crop&q=80',
+    combat: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=600&auto=format&fit=crop&q=80',
+    pilates: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=600&auto=format&fit=crop&q=80',
+    default: 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=600&auto=format&fit=crop&q=80'
+};
+
+const getImageUrl = (type, name) => {
+    const key = (type || name || '').toLowerCase();
+    if (key.includes('hiit')) return CLASS_IMAGES.hiit;
+    if (key.includes('yoga')) return CLASS_IMAGES.yoga;
+    if (key.includes('strength') || key.includes('barbell')) return CLASS_IMAGES.strength;
+    if (key.includes('cardio') || key.includes('zumba')) return CLASS_IMAGES.cardio;
+    if (key.includes('combat') || key.includes('boxing')) return CLASS_IMAGES.combat;
+    if (key.includes('pilates')) return CLASS_IMAGES.pilates;
+    return CLASS_IMAGES.default;
+};
+
 // @desc    Member views available classes
 // @route   GET /api/member-portal/classes
 // @access  Private/Member
 const getMemberClasses = catchAsync(async (req, res, next) => {
     try {
-        const member = await Member.findById(req.user.memberId).select('gymId');
-        if (!member) return res.status(404).json({ message: 'Member not found' });
+        const { memberId } = await resolveMemberId(req);
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const classes = await GymClass.find({ gymId: member.gymId, scheduleDate: { $gte: today } })
-            .sort({ scheduleDate: 1 })
+        let classes = await GymClass.find({})
+            .sort({ createdAt: -1 })
             .lean();
 
         const result = classes.map(c => ({
             ...c,
-            seatsAvailable: c.maxSeats - (c.bookings?.length || 0),
-            isBooked: c.bookings?.some(b => b && (b.memberId || b).toString() === req.user.memberId.toString()) || false
+            id: c._id ? c._id.toString() : c.id,
+            imageUrl: c.imageUrl || getImageUrl(c.type, c.name),
+            seatsAvailable: Math.max(0, (c.maxSeats || 10) - (c.bookings?.length || 0)),
+            isBooked: memberId ? (c.bookings?.some(b => b && (b.memberId || b).toString() === memberId.toString()) || false) : false
         }));
         res.json(result);
     } catch (error) { next(error); }

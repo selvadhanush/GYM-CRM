@@ -1,115 +1,166 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, Animated, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, Animated, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CheckCircle, AlertTriangle, AlertCircle, Info, X } from 'lucide-react-native';
-import { theme } from '@/design-system/theme';
+import { CheckCircle2, AlertCircle, AlertTriangle, Info } from 'lucide-react-native';
+import { fontFamilies } from '@/design-system/tokens';
 import { useToast } from '@/hooks/useToast';
 
 export const Toast: React.FC = () => {
   const insets = useSafeAreaInsets();
   const { message, type, visible, hide } = useToast();
-  const [slideAnim] = useState(() => new Animated.Value(-100));
+  const [animValue] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     if (visible) {
-      Animated.spring(slideAnim, {
-        toValue: insets.top + 10,
+      Animated.spring(animValue, {
+        toValue: 1,
         useNativeDriver: true,
-        bounciness: 8,
+        tension: 90,
+        friction: 12,
       }).start();
     } else {
-      Animated.timing(slideAnim, {
-        toValue: -150,
-        duration: 250,
+      Animated.timing(animValue, {
+        toValue: 0,
+        duration: 180,
         useNativeDriver: true,
       }).start();
     }
-  }, [visible, insets.top, slideAnim]);
+  }, [visible, animValue]);
 
   if (!message) return null;
 
-  const getToastStyle = () => {
+  const getToastConfig = () => {
     switch (type) {
       case 'success':
-        return { border: theme.colors.success, bg: '#10b98115', icon: <CheckCircle color={theme.colors.success} size={18} /> };
+        return {
+          icon: <CheckCircle2 color="#16A34A" size={22} />,
+          bgIcon: '#DCFCE7',
+          btnBg: '#16A34A',
+        };
       case 'error':
-        return { border: theme.colors.error, bg: '#ef444415', icon: <AlertCircle color={theme.colors.error} size={18} /> };
+        return {
+          icon: <AlertCircle color="#DC2626" size={22} />,
+          bgIcon: '#FEE2E2',
+          btnBg: '#DC2626',
+        };
       case 'warning':
-        return { border: theme.colors.warning, bg: '#f59e0b15', icon: <AlertTriangle color={theme.colors.warning} size={18} /> };
+        return {
+          icon: <AlertTriangle color="#D97706" size={22} />,
+          bgIcon: '#FEF3C7',
+          btnBg: '#D97706',
+        };
       case 'info':
       default:
-        return { border: theme.colors.info, bg: '#3b82f615', icon: <Info color={theme.colors.info} size={18} /> };
+        return {
+          icon: <Info color="#2563EB" size={22} />,
+          bgIcon: '#DBEAFE',
+          btnBg: '#2563EB',
+        };
     }
   };
 
-  const toastStyle = getToastStyle();
+  const config = getToastConfig();
+
+  const translateY = animValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [60, 0],
+  });
+
+  const scale = animValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.94, 1],
+  });
+
+  const bottomOffset = Math.max(insets.bottom + 80, 95);
 
   return (
     <Animated.View
+      pointerEvents={visible ? 'auto' : 'none'}
       style={[
-        styles.toast,
+        styles.popupWrapper,
         {
-          transform: [{ translateY: slideAnim }],
-          backgroundColor: theme.colors.card,
-          borderColor: toastStyle.border,
+          bottom: bottomOffset,
+          opacity: animValue,
+          transform: [{ translateY }, { scale }],
         },
       ]}
     >
-      <TouchableOpacity
-        style={styles.inner}
-        activeOpacity={0.9}
-        onPress={hide}
-      >
-        <Animated.View style={[styles.glow, { backgroundColor: toastStyle.bg }]} />
-        {toastStyle.icon}
-        <Text style={styles.message} numberOfLines={2}>
+      <View style={styles.popupCard}>
+        {/* Green Tick Icon Circle */}
+        <View style={[styles.iconCircle, { backgroundColor: config.bgIcon }]}>
+          {config.icon}
+        </View>
+
+        {/* Message */}
+        <Text style={styles.messageText} numberOfLines={2}>
           {message}
         </Text>
-        <TouchableOpacity onPress={hide} style={styles.closeBtn} activeOpacity={0.7}>
-          <X color={theme.colors.textSecondary} size={16} />
+
+        {/* One Simple OK Button */}
+        <TouchableOpacity
+          style={[styles.okBtn, { backgroundColor: config.btnBg }]}
+          onPress={hide}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.okBtnText}>OK</Text>
         </TouchableOpacity>
-      </TouchableOpacity>
+      </View>
     </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
-  toast: {
+  popupWrapper: {
     position: 'absolute',
-    left: theme.spacing.md,
-    right: theme.spacing.md,
-    zIndex: 9999,
-    borderRadius: theme.radii.md,
-    borderWidth: 1,
+    left: 20,
+    right: 20,
+    alignSelf: 'center',
+    maxWidth: 420,
+    zIndex: 99999,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.4,
-    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
     elevation: 8,
-    overflow: 'hidden',
   },
-  inner: {
+  popupCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.md,
-    minHeight: 52,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 12,
   },
-  glow: {
-    ...StyleSheet.absoluteFill,
-    opacity: 0.15,
-  },
-  message: {
-    ...theme.typography.bodySm,
-    color: theme.colors.text,
-    flex: 1,
-    marginLeft: theme.spacing.sm,
-    marginRight: theme.spacing.xs,
-    fontWeight: '500',
-  },
-  closeBtn: {
-    padding: theme.spacing.xs,
+  iconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  messageText: {
+    flex: 1,
+    fontFamily: fontFamilies.body,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0F172A',
+    lineHeight: 20,
+  },
+  okBtn: {
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  okBtnText: {
+    fontFamily: fontFamilies.header,
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
 });

@@ -189,10 +189,89 @@ const deletePlan = catchAsync(async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
+// @desc    Log a completed workout for a member (notifies coach/trainer)
+// @route   POST /api/workout-plans/log
+// @access  Private/Member/Trainer
+const logCompletedWorkout = catchAsync(async (req, res, next) => {
+    try {
+        const { planId, exercises, notes } = req.body;
+        let memberId = req.user?.memberId;
+        let gymId = req.user?.gymId;
+        let memberName = req.user?.name || '';
+
+        try {
+            if (memberId) {
+                const m = await Member.findById(memberId).select('gymId name');
+                if (m) {
+                    if (m.gymId) gymId = m.gymId;
+                    if (m.name) memberName = m.name;
+                }
+            }
+            if (!memberId && req.user?.email) {
+                const m = await Member.findOne({ email: req.user.email }).select('id gymId name');
+                if (m) {
+                    memberId = m._id || m.id;
+                    if (m.gymId) gymId = m.gymId;
+                    if (m.name) memberName = m.name;
+                }
+            }
+        } catch (err) {}
+
+        const AuditLog = require('../models/AuditLog');
+        const Notification = require('../models/Notification');
+
+        let planName = 'Daily Fitness Workout';
+        let trainerId = null;
+
+        if (planId) {
+            const plan = await WorkoutPlan.findOne({ _id: planId, gymId });
+            if (plan) {
+                planName = plan.name || planName;
+                trainerId = plan.trainerId || null;
+            }
+        }
+
+        const exerciseCount = Array.isArray(exercises) ? exercises.length : 0;
+        const detailsText = `Member ${memberName || 'Athlete'} completed workout: "${planName}" (${exerciseCount} exercises completed). ${notes ? 'Notes: ' + notes : ''}`;
+
+        // Create Audit Log entry for Coach / Admin to view
+        await AuditLog.create({
+            gymId: gymId || '327d37e7-f978-43a9-82ef-e6c4a4dc3c5d',
+            userId: req.user?.id || req.user?._id || null,
+            userName: memberName || req.user?.name || 'Member',
+            userEmail: req.user?.email || '',
+            userRole: 'member',
+            action: 'WORKOUT_COMPLETED',
+            entity: 'WorkoutPlan',
+            entityId: planId || '',
+            entityName: planName,
+            details: detailsText
+        }).catch(() => null);
+
+        // If trainer assigned, notify trainer
+        if (trainerId) {
+            await Notification.create({
+                recipientId: trainerId,
+                gymId: gymId || '327d37e7-f978-43a9-82ef-e6c4a4dc3c5d',
+                type: 'WORKOUT_LOGGED',
+                message: `${memberName || 'Your member'} completed workout: "${planName}"!`,
+                read: false
+            }).catch(() => null);
+        }
+
+        res.status(200).json({
+            success: true,
+            message: '🎉 Workout session logged successfully! Your coach has been notified.',
+            completedAt: new Date().toISOString()
+        });
+    } catch (error) { next(error); }
+});
+
 module.exports = {
     createPlan,
     getPlans,
     getPlanById,
     updatePlan,
-    deletePlan
+    deletePlan,
+    logCompletedWorkout
 };

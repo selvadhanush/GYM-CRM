@@ -52,10 +52,10 @@ function NavigationGuard() {
       }
     } else if (isMember && activeDivision === 'h4') {
       // H4 member portal
-      if (!inH4) router.replace('/(h4)/dashboard');
+      if (!inH4 && !segmentsList.includes('scan')) router.replace('/(h4)/dashboard');
     } else if (isMember && activeDivision === 'fitpass') {
       // FitPass member portal
-      if (!inFitpass) router.replace('/(fitpass)/dashboard');
+      if (!inFitpass && !segmentsList.includes('scan')) router.replace('/(fitpass)/dashboard');
     } else if (isMember && activeDivision === null) {
       // Member logged in but division not yet set — go to login page
       if (!inAuthGroup) router.replace('/(auth)/login');
@@ -68,11 +68,25 @@ function NavigationGuard() {
 
 
 
+import { Platform } from 'react-native';
+
 export default function RootLayout() {
   const { themeMode, initTheme } = useThemeStore();
 
   useEffect(() => {
     initTheme();
+
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      const fontId = 'google-fonts-oswald-sans';
+      if (!document.getElementById(fontId)) {
+        const link = document.createElement('link');
+        link.id = fontId;
+        link.rel = 'stylesheet';
+        link.href =
+          'https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700;800;900&family=Google+Sans+Flex:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap';
+        document.head.appendChild(link);
+      }
+    }
   }, [initTheme]);
 
   return (

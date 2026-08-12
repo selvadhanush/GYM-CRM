@@ -10,6 +10,8 @@ export interface Gym {
   id: string;
   name: string;
   address: string;
+  latitude?: number;
+  longitude?: number;
   defaultSessionDurationMinutes: number;
   admins?: {
     name: string;
@@ -116,7 +118,7 @@ export const useCreatePartnerGym = () => {
 
 export const useUpdatePartnerGym = () => {
   return useMutation({
-    mutationFn: async ({ id, ...payload }: { id: string; name?: string; address?: string; defaultSessionDurationMinutes?: number }) => {
+    mutationFn: async ({ id, ...payload }: { id: string; name?: string; address?: string; latitude?: number; longitude?: number; defaultSessionDurationMinutes?: number }) => {
       const { data } = await API_CLIENT.put(`/superadmin/gyms/${id}`, payload);
       return data;
     },
@@ -221,6 +223,8 @@ export interface Branch {
   email?: string;
   managerName?: string;
   fitPassEnabled?: boolean;
+  latitude?: number;
+  longitude?: number;
   memberCount?: number;
   totalRevenue?: number;
 }

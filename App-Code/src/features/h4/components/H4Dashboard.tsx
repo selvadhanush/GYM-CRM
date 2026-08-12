@@ -1,315 +1,274 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Dimensions,
+  Image,
+} from 'react-native';
+import { theme } from '@/design-system/theme';
 import { useRouter } from 'expo-router';
-import { 
-  CalendarCheck, 
-  CreditCard, 
-  Dumbbell, 
-  Utensils, 
-  Crown, 
-  ChevronRight, 
+import {
+  CalendarCheck,
+  CreditCard,
+  Dumbbell,
+  Utensils,
+  ChevronRight,
   Activity,
+  Flame,
+  Users,
+  UserCheck,
+  Scale,
+  LifeBuoy,
+  ShieldCheck,
   Clock,
   Sparkles,
-  User
+  CheckCircle2,
+  Apple,
+  Droplets,
+  Plus,
+  Minus,
+  Play,
 } from 'lucide-react-native';
-import { theme } from '@/design-system/theme';
-import { Typography, Badge, Skeleton } from '@/components/ui';
-import { useH4Dashboard, useH4Plan } from '../api/h4.api';
+import { Skeleton } from '@/components/ui';
+import { useH4Dashboard, useH4Plan, useH4Classes, useH4BookClass, useH4CancelClass, useH4WorkoutPlans, useH4DietPlans } from '../api/h4.api';
 import { useAuth } from '@/features/auth';
+import { storage } from '@/lib/storage';
+import { H4TopHeader } from './H4TopHeader';
+import { Alert, ActivityIndicator } from 'react-native';
 
-// ─── Header Section ────────────────────────────────────────────────────────────
-function DashboardHeader() {
-  const user = useAuth((s) => s.user);
+const { width } = Dimensions.get('window');
 
-  return (
-    <View style={styles.headerContainer}>
-      <View style={styles.headerLeft}>
-        <View style={styles.avatarCircle}>
-          {user?.name ? (
-            <Typography variant="h3" style={styles.avatarText}>
-              {user.name.charAt(0).toUpperCase()}
-            </Typography>
-          ) : (
-            <User size={20} color={theme.colors.primary} />
-          )}
-        </View>
-        <View style={styles.headerTextGroup}>
-          <Typography variant="caption" color="secondary" style={styles.subGreeting}>
-            WELCOME BACK
-          </Typography>
-          <Typography variant="h2" style={styles.userName}>
-            {user?.name ?? 'Member'}
-          </Typography>
-        </View>
-      </View>
-      <View style={styles.vipBadgeContainer}>
-        <Crown size={14} color={theme.colors.primary} />
-        <Typography variant="caption" style={styles.vipText}>
-          H4 CLUB
-        </Typography>
-      </View>
-    </View>
-  );
-}
-
-// ─── Luxury H4 Membership Pass ───────────────────────────────────────────────
-function MembershipCard() {
-  const { data: plan, isLoading } = useH4Plan();
-  const user = useAuth((s) => s.user);
-
-  if (isLoading) return <Skeleton style={styles.skeletonCard} />;
+// ─── Member Hero Banner ─────────────────────────────────────────────────────
+// Replaces the old MembershipPassCard + ActivityStats split into one premium hero.
+function MemberHeroBanner() {
+  const { data: plan } = useH4Plan();
+  const { data } = useH4Dashboard();
+  const router = useRouter();
 
   const isActive = plan?.status === 'Active';
-  const expiryFormatted = plan?.expiryDate
+  const expiry = plan?.expiryDate
     ? new Date(plan.expiryDate).toLocaleDateString('en-IN', {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
       })
-    : 'No Expiry';
+    : null;
+
+  const visits = data?.attendanceCount ?? 0;
+  const lastPaid = data?.recentPayments?.[0]?.amount ?? (data?.member as any)?.paidAmount;
+  const memberName = (data?.member as any)?.name;
+  const firstName = memberName ? memberName.split(' ')[0] : null;
 
   return (
-    <View style={styles.cardContainer}>
-      <View style={styles.cardHeaderRow}>
-        <View style={styles.cardBrandRow}>
-          <Sparkles size={16} color={theme.colors.primary} />
-          <Typography variant="caption" style={styles.cardBrandTitle}>
-            H4 FITNESS PASS
-          </Typography>
-        </View>
-        <Badge
-          label={plan?.status ?? 'Active'}
-          variant={isActive ? 'active' : 'expired'}
-        />
-      </View>
-
-      <View style={styles.cardBody}>
-        <Typography variant="h1" style={styles.cardMemberName}>
-          {user?.name ?? 'Valued Member'}
-        </Typography>
-
-        <View style={styles.cardDetailsGrid}>
-          <View style={styles.cardDetailCol}>
-            <Typography variant="caption" color="secondary" style={styles.detailLabel}>
-              CURRENT PLAN
-            </Typography>
-            <Typography variant="bodySm" style={styles.detailValue}>
-              {plan?.planName ?? 'Standard H4 Membership'}
-            </Typography>
-          </View>
-
-          <View style={styles.cardDetailColRight}>
-            <Typography variant="caption" color="secondary" style={styles.detailLabel}>
-              VALID UNTIL
-            </Typography>
-            <Typography variant="bodySm" style={styles.detailValue}>
-              {expiryFormatted}
-            </Typography>
+    <TouchableOpacity
+      activeOpacity={0.97}
+      onPress={() => router.push('/(h4)/membership')}
+      style={styles.heroCard}
+    >
+      <View style={styles.heroInner}>
+        {/* Top row: eyebrow + status pill */}
+        <View style={styles.heroTopRow}>
+          <Text style={styles.heroEyebrow}>MEMBERSHIP</Text>
+          <View style={[styles.heroStatusPill, { backgroundColor: isActive ? '#F0FDF4' : '#FEF2F2' }]}>
+            <View style={[styles.heroStatusDot, { backgroundColor: isActive ? '#16A34A' : '#DC2626' }]} />
+            <Text style={[styles.heroStatusLabel, { color: isActive ? '#16A34A' : '#DC2626' }]}>
+              {isActive ? 'Active' : 'Inactive'}
+            </Text>
           </View>
         </View>
-      </View>
 
-      <View style={styles.cardFooter}>
-        <Typography variant="caption" color="muted" style={styles.memberIdText}>
-          ID: {user?.id ? `H4-${user.id.slice(-6).toUpperCase()}` : 'H4-MEMBER'}
-        </Typography>
-        <View style={styles.accessIndicator}>
-          <View style={[styles.statusDot, { backgroundColor: isActive ? theme.colors.success : theme.colors.error }]} />
-          <Typography variant="caption" style={{ color: isActive ? theme.colors.success : theme.colors.textMuted, fontWeight: '600', fontSize: 11 }}>
-            {isActive ? 'PASS VERIFIED' : 'PASS INACTIVE'}
-          </Typography>
+        {/* Plan name — the dominant element */}
+        <Text style={styles.heroPlanName} numberOfLines={1}>
+          {plan?.planName ?? 'H4 Elite Access'}
+        </Text>
+
+        {/* Greeting + expiry row */}
+        <View style={styles.heroMetaRow}>
+          {firstName
+            ? <Text style={styles.heroMeta}>Welcome back, <Text style={{ color: theme.colors.text, fontWeight: '700' }}>{firstName}</Text></Text>
+            : <Text style={styles.heroMeta}>H4 Fitness Member</Text>
+          }
+          {expiry && <Text style={styles.heroMeta}>Exp {expiry}</Text>}
+        </View>
+
+        {/* Divider */}
+        <View style={styles.heroDivider} />
+
+        {/* Stats row */}
+        <View style={styles.heroStatRow}>
+          <View style={styles.heroStat}>
+            <Text style={styles.heroStatNum}>{visits}</Text>
+            <Text style={styles.heroStatLabel}>Check-ins</Text>
+          </View>
+          <View style={styles.heroStatRule} />
+          <View style={styles.heroStat}>
+            <Text style={styles.heroStatNum}>{visits > 0 ? `${visits}d` : '—'}</Text>
+            <Text style={styles.heroStatLabel}>Streak</Text>
+          </View>
+          <View style={styles.heroStatRule} />
+          <View style={styles.heroStat}>
+            <Text style={styles.heroStatNum}>{lastPaid ? `₹${lastPaid}` : '—'}</Text>
+            <Text style={styles.heroStatLabel}>Last Paid</Text>
+          </View>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
-// ─── Quick Shortcuts Navigation ──────────────────────────────────────────────
-function QuickActions() {
+
+
+// ─── Upcoming Studio Classes ───────────────────────────────────────────────
+function HomeStudioClassesSection() {
+  const { data: classes, isLoading } = useH4Classes();
+  const bookMutation = useH4BookClass();
+  const cancelMutation = useH4CancelClass();
+  const [actionId, setActionId] = React.useState<string | null>(null);
   const router = useRouter();
 
-  const actions = [
-    {
-      id: 'workouts',
-      title: 'Workouts',
-      subtitle: 'Daily Routines',
-      icon: Dumbbell,
-      route: '/(h4)/workouts',
-      iconBg: 'rgba(240, 160, 32, 0.12)',
-      iconColor: theme.colors.primary,
-    },
-    {
-      id: 'diets',
-      title: 'Diet Plan',
-      subtitle: 'Nutrition Guide',
-      icon: Utensils,
-      route: '/(h4)/diets',
-      iconBg: 'rgba(46, 125, 50, 0.12)',
-      iconColor: theme.colors.success,
-    },
-    {
-      id: 'attendance',
-      title: 'Attendance',
-      subtitle: 'Check-in Logs',
-      icon: CalendarCheck,
-      route: '/(h4)/attendance',
-      iconBg: 'rgba(25, 118, 210, 0.12)',
-      iconColor: theme.colors.info,
-    },
-    {
-      id: 'payments',
-      title: 'Payments',
-      subtitle: 'Invoices & History',
-      icon: CreditCard,
-      route: '/(h4)/payments',
-      iconBg: 'rgba(156, 39, 176, 0.12)',
-      iconColor: '#ab47bc',
-    },
-  ];
+  if (isLoading) return <Skeleton style={{ height: 120, borderRadius: 0, marginBottom: 16 }} />;
+
+  const list = Array.isArray(classes) ? classes : [];
+
+  const handleBook = async (cls: any) => {
+    const classId = cls._id || cls.id;
+    try {
+      setActionId(classId);
+      await bookMutation.mutateAsync(classId);
+      Alert.alert('✅ Seat Reserved!', `You are booked for ${cls.name}.`);
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Could not book class';
+      Alert.alert('Booking Error', msg);
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const handleCancel = async (cls: any) => {
+    const classId = cls._id || cls.id;
+    try {
+      setActionId(classId);
+      await cancelMutation.mutateAsync(classId);
+      Alert.alert('Booking Cancelled', `Reservation for ${cls.name} has been cancelled.`);
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Could not cancel booking';
+      Alert.alert('Error', msg);
+    } finally {
+      setActionId(null);
+    }
+  };
 
   return (
-    <View style={styles.quickActionsContainer}>
-      <Typography variant="h3" style={styles.sectionHeaderTitle}>
-        Quick Access
-      </Typography>
-      <View style={styles.actionsGrid}>
-        {actions.map((item) => {
-          const IconComp = item.icon;
-          return (
-            <TouchableOpacity
-              key={item.id}
-              style={styles.actionTile}
-              activeOpacity={0.7}
-              onPress={() => router.push(item.route as any)}
-            >
-              <View style={[styles.actionIconWrapper, { backgroundColor: item.iconBg }]}>
-                <IconComp size={20} color={item.iconColor} />
-              </View>
-              <View style={styles.actionTileContent}>
-                <Typography variant="bodySm" style={styles.actionTitle}>
-                  {item.title}
-                </Typography>
-                <Typography variant="caption" color="secondary" style={styles.actionSubtitle}>
-                  {item.subtitle}
-                </Typography>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
-
-// ─── Stats Overview Cards ───────────────────────────────────────────────────
-function StatsRow() {
-  const { data, isLoading } = useH4Dashboard();
-
-  if (isLoading) {
-    return (
-      <View style={styles.statsRow}>
-        <Skeleton style={styles.statCardSkeleton} />
-        <Skeleton style={styles.statCardSkeleton} />
-      </View>
-    );
-  }
-
-  const attendanceThisMonth = data?.attendanceCount ?? 0;
-  const recentPayment = data?.recentPayments?.[0];
-
-  return (
-    <View style={styles.statsRow}>
-      <View style={styles.statTile}>
-        <View style={styles.statHeaderRow}>
-          <Activity size={18} color={theme.colors.success} />
-          <Badge label="This Month" variant="info" />
-        </View>
-        <Typography variant="h1" style={styles.statValue}>
-          {attendanceThisMonth}
-        </Typography>
-        <Typography variant="caption" color="secondary">
-          Gym Visits Completed
-        </Typography>
-      </View>
-
-      <View style={styles.statTile}>
-        <View style={styles.statHeaderRow}>
-          <CreditCard size={18} color={theme.colors.primary} />
-          <Typography variant="caption" color="muted">Last Paid</Typography>
-        </View>
-        <Typography variant="h1" style={styles.statValue}>
-          {recentPayment ? `₹${recentPayment.amount}` : '—'}
-        </Typography>
-        <Typography variant="caption" color="secondary">
-          Latest Payment
-        </Typography>
-      </View>
-    </View>
-  );
-}
-
-// ─── Recent Attendance Activity ──────────────────────────────────────────────
-function RecentAttendance() {
-  const { data, isLoading } = useH4Dashboard();
-  const router = useRouter();
-
-  if (isLoading) return <Skeleton style={styles.skeletonCard} />;
-
-  const records = data?.recentAttendance ?? [];
-
-  return (
-    <View style={styles.activitySection}>
-      <View style={styles.activityHeader}>
-        <View style={styles.activityTitleGroup}>
-          <Clock size={16} color={theme.colors.primary} />
-          <Typography variant="h3" style={styles.activityTitle}>
-            Recent Attendance
-          </Typography>
-        </View>
+    <View style={styles.section}>
+      <View style={styles.sectionRow}>
+        <Text style={styles.sectionTitle}>CLASSES TODAY</Text>
         <TouchableOpacity
-          onPress={() => router.push('/(h4)/attendance')}
-          style={styles.viewAllBtn}
+          onPress={() => router.push('/(h4)/classes')}
           activeOpacity={0.7}
         >
-          <Typography variant="caption" style={{ color: theme.colors.primary, fontWeight: '600' }}>
-            View All
-          </Typography>
-          <ChevronRight size={14} color={theme.colors.primary} />
+          <Text style={styles.textLink}>All ({list.length})</Text>
+        </TouchableOpacity>
+      </View>
+
+      {list.length === 0 ? (
+        <Text style={styles.emptyText}>No classes scheduled today.</Text>
+      ) : (
+        <View style={[styles.card, { gap: 12, paddingVertical: 8 }]}>
+          {list.slice(0, 2).map((cls, idx) => {
+            const classId = cls._id || cls.id || '';
+            const isFull = cls.seatsAvailable <= 0 && !cls.isBooked;
+            const isPending = actionId === classId;
+
+            return (
+              <React.Fragment key={classId}>
+                {idx > 0 && <View style={styles.dividerThin} />}
+                <View style={styles.classRow}>
+                  {cls.imageUrl ? (
+                    <Image source={{ uri: cls.imageUrl }} style={styles.classThumbnail} resizeMode="cover" />
+                  ) : (
+                    <View style={styles.classThumbnailFallback}>
+                      <Dumbbell size={16} color={theme.colors.primary} />
+                    </View>
+                  )}
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.classNameText}>{cls.name}</Text>
+                    <Text style={styles.classMetaText}>
+                      {cls.startTime} • Coach: {cls.trainerName || 'H4 Trainer'}
+                    </Text>
+                  </View>
+
+                  {cls.isBooked ? (
+                    <TouchableOpacity
+                      style={styles.cancelTextBtn}
+                      onPress={() => handleCancel(cls)}
+                      disabled={isPending}
+                    >
+                      <Text style={styles.cancelTextBtnLabel}>Cancel</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      style={[styles.bookTextBtn, isFull && { opacity: 0.5 }]}
+                      onPress={() => handleBook(cls)}
+                      disabled={isFull || isPending}
+                    >
+                      <Text style={styles.bookTextBtnLabel}>
+                        {isFull ? 'Full' : 'Book'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </React.Fragment>
+            );
+          })}
+        </View>
+      )}
+    </View>
+  );
+}
+
+// ─── Recent Check-ins ────────────────────────────────────────────────────────
+function RecentCheckIns() {
+  const { data, isLoading } = useH4Dashboard();
+  const router = useRouter();
+  if (isLoading) return <Skeleton style={{ height: 80, borderRadius: 0 }} />;
+
+  const records = (data?.recentAttendance ?? []).slice(0, 2);
+
+  return (
+    <View style={styles.section}>
+      <View style={styles.sectionRow}>
+        <Text style={styles.sectionTitle}>ACTIVITY LOG</Text>
+        <TouchableOpacity
+          onPress={() => router.push('/(h4)/attendance')}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.textLink}>History</Text>
         </TouchableOpacity>
       </View>
 
       {records.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Typography variant="bodySm" color="secondary">
-            No check-in records logged this month.
-          </Typography>
-        </View>
+        <Text style={styles.emptyText}>No recent activity.</Text>
       ) : (
-        <View style={styles.recordsList}>
-          {records.slice(0, 4).map((rec) => (
-            <View key={rec.id} style={styles.recordRow}>
-              <View style={styles.recordLeft}>
-                <View style={styles.greenPulseDot} />
-                <View>
-                  <Typography variant="bodySm" style={styles.recordDateText}>
-                    {new Date(rec.date).toLocaleDateString('en-IN', {
-                      weekday: 'short',
-                      day: 'numeric',
-                      month: 'short',
-                    })}
-                  </Typography>
-                  <Typography variant="caption" color="secondary">
-                    H4 Main Center
-                  </Typography>
-                </View>
+        <View style={[styles.card, { gap: 10, paddingVertical: 8 }]}>
+          {records.map((rec, idx) => (
+            <React.Fragment key={rec.id}>
+              {idx > 0 && <View style={styles.dividerThin} />}
+              <View style={styles.logRow}>
+                <Text style={styles.logDate}>
+                  {new Date(rec.date).toLocaleDateString('en-IN', {
+                    day: 'numeric',
+                    month: 'short',
+                  })}
+                </Text>
+                <Text style={styles.logGym} numberOfLines={1}>
+                  {!rec.gymName || rec.gymName === 'Partner Gym' || rec.gymName.includes('Partner') ? 'H4 Gym' : rec.gymName}
+                </Text>
+                <Text style={styles.logTime}>{rec.checkInTime}</Text>
               </View>
-              <View style={styles.timeBadge}>
-                <Typography variant="caption" style={styles.timeText}>
-                  {rec.checkInTime}
-                </Typography>
-              </View>
-            </View>
+            </React.Fragment>
           ))}
         </View>
       )}
@@ -317,322 +276,696 @@ function RecentAttendance() {
   );
 }
 
-// ─── Main H4 Dashboard Component ─────────────────────────────────────────────
-export function H4Dashboard() {
+function TodayWorkoutSummaryCard() {
+  const { data: plans } = useH4WorkoutPlans();
+  const router = useRouter();
+
+  const activePlan = Array.isArray(plans) && plans.length > 0 ? plans[0] : null;
+  const exercises = activePlan?.exercises || [];
+  const totalSets = exercises.reduce((sum: number, ex: any) => sum + (Number(ex.sets) || 4), 0);
+  const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  const today = dayNames[new Date().getDay()];
+
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
-      <DashboardHeader />
-      <MembershipCard />
-      <QuickActions />
-      <StatsRow />
-      <RecentAttendance />
-    </ScrollView>
+    <View style={styles.section}>
+      <View style={styles.sectionRow}>
+        <Text style={styles.sectionTitle}>TODAY'S WORKOUT</Text>
+        <TouchableOpacity onPress={() => router.push('/(h4)/workouts')} activeOpacity={0.7}>
+          <Text style={styles.textLink}>View Plan</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* ── Ticket Card ── */}
+      <TouchableOpacity
+        activeOpacity={0.96}
+        onPress={() => router.push('/(h4)/workouts')}
+        style={styles.wktTicket}
+      >
+        {/* Orange header band */}
+        <View style={styles.wktHeader}>
+          <View style={styles.wktHeaderLeft}>
+            <Text style={styles.wktDayLabel}>{today}</Text>
+            <Text style={styles.wktPlanName} numberOfLines={2}>
+              {activePlan?.name || 'Chest & Triceps'}
+            </Text>
+          </View>
+          <View style={styles.wktHeaderRight}>
+            <Text style={styles.wktSetsCount}>{totalSets || (exercises.length || 3) * 4}</Text>
+            <Text style={styles.wktSetsLabel}>TOTAL{`\n`}SETS</Text>
+          </View>
+        </View>
+
+        {/* Perforation tear-line */}
+        <View style={styles.wktPerforationRow}>
+          <View style={styles.wktCircleLeft} />
+          <View style={styles.wktDashedLine} />
+          <View style={styles.wktCircleRight} />
+        </View>
+
+        {/* White exercise body */}
+        <View style={styles.wktBody}>
+          {/* Quick-stat strip */}
+          <View style={styles.wktStatStrip}>
+            <View style={styles.wktStat}>
+              <Clock size={13} color="#FF5F1F" strokeWidth={2.5} />
+              <Text style={styles.wktStatValue}>45 min</Text>
+            </View>
+            <View style={styles.wktStatDot} />
+            <View style={styles.wktStat}>
+              <Dumbbell size={13} color="#FF5F1F" strokeWidth={2.5} />
+              <Text style={styles.wktStatValue}>{exercises.length || 0} exercises</Text>
+            </View>
+            <View style={styles.wktStatDot} />
+            <View style={styles.wktStat}>
+              <Flame size={13} color="#FF5F1F" strokeWidth={2.5} />
+              <Text style={styles.wktStatValue}>High</Text>
+            </View>
+          </View>
+
+          {/* Exercise rows */}
+          <View style={styles.wktExList}>
+            {exercises.length === 0 && (
+              <Text style={styles.wktNoEx}>No exercises assigned yet — tap to add.</Text>
+            )}
+            {exercises.slice(0, 4).map((ex: any, idx: number) => (
+              <View key={idx} style={[
+                styles.wktExRow,
+                idx < Math.min(exercises.length, 4) - 1 && styles.wktExRowBorder,
+              ]}>
+                <Text style={styles.wktExNum}>{String(idx + 1).padStart(2, '0')}</Text>
+                <Text style={styles.wktExName} numberOfLines={1}>{ex.name || 'Strength Exercise'}</Text>
+                <Text style={styles.wktExSets}>{ex.sets || 4}×{ex.reps || 10}</Text>
+              </View>
+            ))}
+            {exercises.length > 4 && (
+              <Text style={styles.wktMoreEx}>+{exercises.length - 4} more exercises</Text>
+            )}
+          </View>
+
+          {/* CTA row */}
+          <TouchableOpacity
+            style={styles.wktCta}
+            onPress={() => router.push('/(h4)/workouts')}
+            activeOpacity={0.82}
+          >
+            <Text style={styles.wktCtaText}>Begin Session</Text>
+            <ChevronRight size={15} color="#FF5F1F" strokeWidth={3} />
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+// ─── Today's Nutrition & Water Summary Card ───────────────────────────────
+function TodayNutritionSummaryCard() {
+  const { data: dietPlans, isLoading } = useH4DietPlans();
+  const user = useAuth((s) => s.user);
+  const router = useRouter();
+  const [waterCups, setWaterCups] = React.useState(0);
+
+  const TOTAL_CUPS = 12;
+
+  React.useEffect(() => {
+    if (!user?.id) return;
+    const today = new Date().toISOString().split('T')[0];
+    storage.getItem(`h4_water_${user.id}_${today}`).then((val) => {
+      if (val !== null && val !== undefined) {
+        setWaterCups(Math.min(TOTAL_CUPS, Math.max(0, parseInt(val, 10) || 0)));
+      }
+    });
+  }, [user?.id]);
+
+  const addCup = async () => {
+    const next = Math.min(TOTAL_CUPS, waterCups + 1);
+    setWaterCups(next);
+    if (user?.id) {
+      const today = new Date().toISOString().split('T')[0];
+      await storage.setItem(`h4_water_${user.id}_${today}`, next.toString());
+    }
+  };
+
+  const removeCup = async () => {
+    const next = Math.max(0, waterCups - 1);
+    setWaterCups(next);
+    if (user?.id) {
+      const today = new Date().toISOString().split('T')[0];
+      await storage.setItem(`h4_water_${user.id}_${today}`, next.toString());
+    }
+  };
+
+  if (isLoading) return <Skeleton style={{ height: 120, borderRadius: 0 }} />;
+
+  const activeDiet = Array.isArray(dietPlans) && dietPlans.length > 0 ? dietPlans[0] : null;
+  const meals = activeDiet?.meals || [];
+
+  const targets = meals.reduce(
+    (acc: any, curr: any) => ({
+      calories: acc.calories + (Number(curr.calories) || 0),
+      protein: acc.protein + (Number(curr.protein) || 0),
+      carbs: acc.carbs + (Number(curr.carbs) || 0),
+      fats: acc.fats + (Number(curr.fats) || 0),
+    }),
+    { calories: 0, protein: 0, carbs: 0, fats: 0 }
+  );
+
+  const calGoal = targets.calories > 0 ? targets.calories : 2280;
+  const protGoal = targets.protein > 0 ? targets.protein : 182;
+  const waterProgress = Math.min(100, (waterCups / TOTAL_CUPS) * 100);
+
+  return (
+    <View style={styles.section}>
+      <View style={styles.sectionRow}>
+        <Text style={styles.sectionTitle}>NUTRITION</Text>
+        <TouchableOpacity
+          onPress={() => router.push('/(h4)/diets')}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.textLink}>Meal Plan</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={[styles.card, { gap: 14 }]}>
+        <View style={styles.nutritionRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.macroValue}>{calGoal} kcal</Text>
+            <Text style={styles.macroLabel}>Energy Goal</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.macroValue}>{protGoal}g</Text>
+            <Text style={styles.macroLabel}>Protein</Text>
+          </View>
+          <View style={{ flex: 1.5, alignItems: 'flex-end' }}>
+            <Text style={styles.waterTitle}>{waterCups} / {TOTAL_CUPS} Cups</Text>
+            <Text style={styles.macroLabel}>Hydration</Text>
+          </View>
+        </View>
+
+        <View style={styles.waterProgressRow}>
+          <View style={styles.waterProgressTrack}>
+            <View style={[styles.waterProgressBar, { width: `${waterProgress}%` }]} />
+          </View>
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            <TouchableOpacity style={styles.waterBtn} onPress={addCup}>
+              <Plus size={14} color={theme.colors.text} />
+            </TouchableOpacity>
+            {waterCups > 0 && (
+              <TouchableOpacity style={styles.waterBtn} onPress={removeCup}>
+                <Minus size={14} color={theme.colors.text} />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+// ─── Unified Loading Skeleton ────────────────────────────────────────────────
+function H4DashboardSkeleton() {
+  return (
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <H4TopHeader title="H4 Fitness" />
+      <ScrollView
+        style={styles.root}
+        contentContainerStyle={styles.content}
+        scrollEnabled={false}
+      >
+        <Skeleton style={{ height: 80, borderRadius: 16 }} />
+        <Skeleton style={{ height: 90, borderRadius: 16 }} />
+        <Skeleton style={{ height: 260, borderRadius: 20 }} />
+        <Skeleton style={{ height: 130, borderRadius: 16 }} />
+        <Skeleton style={{ height: 160, borderRadius: 16 }} />
+      </ScrollView>
+    </View>
+  );
+}
+
+// ─── Export Component ────────────────────────────────────────────────────────
+export function H4Dashboard() {
+  const { isLoading: dbLoading } = useH4Dashboard();
+  const { isLoading: planLoading } = useH4Plan();
+  const { isLoading: classesLoading } = useH4Classes();
+  const { isLoading: workoutLoading } = useH4WorkoutPlans();
+  const { isLoading: dietLoading } = useH4DietPlans();
+
+  const isInitialLoading = dbLoading || planLoading || classesLoading || workoutLoading || dietLoading;
+
+  if (isInitialLoading) {
+    return <H4DashboardSkeleton />;
+  }
+
+  return (
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <H4TopHeader title="H4 Fitness" />
+      <ScrollView
+        style={styles.root}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <MemberHeroBanner />
+        <TodayWorkoutSummaryCard />
+        <TodayNutritionSummaryCard />
+        <HomeStudioClassesSection />
+        <RecentCheckIns />
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  content: {
-    paddingHorizontal: 20, // Clean, comfortable horizontal padding on both sides
-    paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing['2xl'],
-    gap: theme.spacing.lg,
+  root: { flex: 1, backgroundColor: theme.colors.background },
+  content: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 100, gap: 32 },
+
+  // Base Premium Card layout
+  card: {
+    backgroundColor: theme.colors.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: theme.dark ? 0.2 : 0.03,
+    shadowRadius: 6,
   },
 
-  // Header styles
-  headerContainer: {
+  // ── Premium Minimalist Hero Card ────────────────────────────────────────────
+  heroCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#EAE7E1',
+    overflow: 'hidden',
+    shadowColor: '#1A1510',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 12,
+    elevation: 3,
+    flexDirection: 'row',
+  },
+  heroAccentBar: {
+    width: 4,
+    backgroundColor: '#FF5F1F',
+  },
+  heroInner: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 18,
+    gap: 0,
+  },
+  heroTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: theme.spacing.xs,
+    marginBottom: 10,
   },
-  headerLeft: {
+  heroEyebrow: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#9B9084',
+    letterSpacing: 2,
+    fontFamily: theme.typography.caption.fontFamily,
+  },
+  heroStatusPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.sm,
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 20,
   },
-  avatarCircle: {
+  heroStatusDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+  },
+  heroStatusLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    fontFamily: theme.typography.caption.fontFamily,
+  },
+  heroPlanName: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#1A1510',
+    fontFamily: theme.typography.h1.fontFamily,
+    lineHeight: 28,
+    letterSpacing: -0.3,
+    marginBottom: 8,
+  },
+  heroMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  heroMeta: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#9B9084',
+    fontFamily: theme.typography.caption.fontFamily,
+  },
+  heroDivider: {
+    height: 1,
+    backgroundColor: '#EAE7E1',
+    marginBottom: 14,
+  },
+  heroStatRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  heroStat: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 3,
+  },
+  heroStatNum: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#1A1510',
+    fontFamily: theme.typography.h2.fontFamily,
+    lineHeight: 22,
+  },
+  heroStatLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#9B9084',
+    letterSpacing: 0.5,
+    fontFamily: theme.typography.caption.fontFamily,
+  },
+  heroStatRule: {
+    width: 1,
+    height: 32,
+    backgroundColor: '#EAE7E1',
+  },
+
+  passSkeleton: { height: 140, borderRadius: 20 },
+
+  // Sections
+  section: { gap: 14 },
+  sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', paddingHorizontal: 4 },
+  sectionTitle: { fontSize: 10, fontWeight: '900', color: theme.colors.textMuted, fontFamily: theme.typography.h1.fontFamily, letterSpacing: 1.5 },
+  textLink: { fontSize: 11, fontWeight: '800', color: theme.colors.primary, fontFamily: theme.typography.h3.fontFamily },
+  emptyText: { fontSize: 12, color: theme.colors.textMuted, fontStyle: 'italic', paddingHorizontal: 4 },
+
+  // Classes (Typographic List)
+  classRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  classThumbnail: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(240, 160, 32, 0.15)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(240, 160, 32, 0.4)',
-    alignItems: 'center',
+    borderRadius: 8,
+    marginRight: 12,
+  },
+  classThumbnailFallback: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    marginRight: 12,
+    backgroundColor: theme.colors.bgTertiary,
     justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
-  avatarText: {
-    color: theme.colors.primary,
-    fontWeight: '700',
+  classNameText: { fontSize: 14, fontWeight: '800', color: theme.colors.text, fontFamily: theme.typography.h2.fontFamily },
+  classMetaText: { fontSize: 11, color: theme.colors.textSecondary, marginTop: 2 },
+  bookTextBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: theme.colors.text,
   },
-  headerTextGroup: {
-    gap: 2,
+  bookTextBtnLabel: { fontSize: 11, fontWeight: '900', color: theme.colors.text, fontFamily: theme.typography.h3.fontFamily },
+  cancelTextBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: theme.colors.error,
   },
-  subGreeting: {
-    letterSpacing: 0.8,
-    fontSize: 11,
-    fontWeight: '600',
+  cancelTextBtnLabel: { fontSize: 11, fontWeight: '900', color: theme.colors.error, fontFamily: theme.typography.h3.fontFamily },
+
+  // Activity logs
+  logRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
   },
-  userName: {
-    color: theme.colors.text,
-    fontSize: 18,
-    fontWeight: '700',
+  logDate: { fontSize: 12, fontWeight: '800', color: theme.colors.text, fontFamily: theme.typography.h3.fontFamily, width: 60 },
+  logGym: { fontSize: 12, color: theme.colors.textSecondary, flex: 1 },
+  logTime: { fontSize: 12, fontWeight: '800', color: theme.colors.textSecondary, width: 60, textAlign: 'right' },
+
+  // Workout Summary
+  workoutContainer: {
+    gap: 8,
   },
-  vipBadgeContainer: {
+  workoutName: { fontSize: 15, fontWeight: '900', color: theme.colors.text, fontFamily: theme.typography.h2.fontFamily, marginBottom: 2 },
+  exerciseRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  exerciseName: { fontSize: 13, fontWeight: '700', color: theme.colors.text, flex: 1 },
+  exerciseSets: { fontSize: 12, fontWeight: '800', color: theme.colors.textSecondary, fontFamily: theme.typography.caption.fontFamily },
+
+  // Nutrition & Water
+  nutritionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  macroValue: { fontSize: 16, fontWeight: '900', color: theme.colors.text, fontFamily: theme.typography.h2.fontFamily },
+  macroLabel: { fontSize: 9, fontWeight: '700', color: theme.colors.textSecondary, marginTop: 1 },
+  waterTitle: { fontSize: 14, fontWeight: '800', color: theme.colors.text, fontFamily: theme.typography.h2.fontFamily },
+  waterProgressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  waterProgressTrack: {
+    flex: 1,
+    height: 4,
+    backgroundColor: theme.colors.bgTertiary,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  waterProgressBar: {
+    height: '100%',
+    backgroundColor: '#3B82F6',
+  },
+  waterBtn: {
+    width: 28,
+    height: 28,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  dividerThin: {
+    height: 1,
+    backgroundColor: theme.colors.border,
+    marginVertical: 4,
+  },
+
+  // ── Sports-Ticket Workout Card ──────────────────────────────────────────
+  wktTicket: {
+    borderRadius: 18,
+    overflow: 'hidden',
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    shadowColor: '#FF5F1F',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.10,
+    shadowRadius: 16,
+    elevation: 5,
+  },
+  // Orange header band
+  wktHeader: {
+    backgroundColor: '#FF5F1F',
+    paddingTop: 20,
+    paddingBottom: 22,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+  },
+  wktHeaderLeft: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  wktDayLabel: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: 'rgba(255,255,255,0.65)',
+    letterSpacing: 2.5,
+    marginBottom: 4,
+    fontFamily: theme.typography.caption.fontFamily,
+  },
+  wktPlanName: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    fontFamily: theme.typography.h1.fontFamily,
+    lineHeight: 30,
+    letterSpacing: -0.5,
+  },
+  wktHeaderRight: {
+    alignItems: 'flex-end',
+    paddingBottom: 2,
+  },
+  wktSetsCount: {
+    fontSize: 40,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    fontFamily: theme.typography.h1.fontFamily,
+    lineHeight: 40,
+    opacity: 0.9,
+  },
+  wktSetsLabel: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: 'rgba(255,255,255,0.60)',
+    letterSpacing: 1.2,
+    textAlign: 'right',
+    marginTop: 2,
+    fontFamily: theme.typography.caption.fontFamily,
+  },
+  // Perforation tear-line
+  wktPerforationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.card,
+    marginTop: -1,
+  },
+  wktCircleLeft: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: theme.colors.background,
+    marginLeft: -10,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  wktDashedLine: {
+    flex: 1,
+    height: 1,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderStyle: 'dashed',
+    marginHorizontal: 4,
+  },
+  wktCircleRight: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: theme.colors.background,
+    marginRight: -10,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  // White body
+  wktBody: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 18,
+    backgroundColor: theme.colors.card,
+  },
+  wktStatStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 6,
+  },
+  wktStat: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(240, 160, 32, 0.12)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(240, 160, 32, 0.25)',
   },
-  vipText: {
-    color: theme.colors.primary,
-    fontWeight: '700',
-    fontSize: 11,
-    letterSpacing: 0.5,
-  },
-
-  // Card styles (No sharp side accent bars or harsh lines)
-  cardContainer: {
-    backgroundColor: theme.colors.card,
-    borderRadius: 20,
-    padding: theme.spacing.lg,
-    gap: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  cardHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  cardBrandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  cardBrandTitle: {
-    color: theme.colors.primary,
-    fontWeight: '800',
+  wktStatValue: {
     fontSize: 12,
-    letterSpacing: 1,
-  },
-  cardBody: {
-    gap: theme.spacing.md,
-  },
-  cardMemberName: {
-    color: theme.colors.text,
-    fontSize: 22,
     fontWeight: '700',
-  },
-  cardDetailsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    backgroundColor: theme.colors.bgTertiary,
-    padding: theme.spacing.md,
-    borderRadius: 14,
-  },
-  cardDetailCol: {
-    gap: 2,
-  },
-  cardDetailColRight: {
-    gap: 2,
-    alignItems: 'flex-end',
-  },
-  detailLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-  },
-  detailValue: {
     color: theme.colors.text,
-    fontWeight: '600',
+    fontFamily: theme.typography.bodySm.fontFamily,
   },
-  cardFooter: {
+  wktStatDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: theme.colors.border,
+  },
+  // Exercise list
+  wktExList: {
+    marginBottom: 18,
+  },
+  wktNoEx: {
+    fontSize: 12,
+    color: theme.colors.textMuted,
+    fontStyle: 'italic',
+    paddingVertical: 8,
+  },
+  wktExRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: theme.spacing.xs,
+    paddingVertical: 11,
+    gap: 10,
   },
-  memberIdText: {
+  wktExRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  wktExNum: {
     fontSize: 11,
+    fontWeight: '900',
+    color: '#FF5F1F',
+    width: 22,
+    fontFamily: theme.typography.h1.fontFamily,
     letterSpacing: 0.5,
   },
-  accessIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-
-  // Quick Actions Grid
-  quickActionsContainer: {
-    gap: theme.spacing.sm,
-  },
-  sectionHeaderTitle: {
-    color: theme.colors.text,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  actionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: theme.spacing.sm,
-  },
-  actionTile: {
-    width: '48%',
-    backgroundColor: theme.colors.card,
-    borderRadius: 16,
-    padding: theme.spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  actionIconWrapper: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionTileContent: {
+  wktExName: {
     flex: 1,
-  },
-  actionTitle: {
-    color: theme.colors.text,
-    fontWeight: '600',
     fontSize: 14,
-  },
-  actionSubtitle: {
-    fontSize: 11,
-  },
-
-  // Stats row
-  statsRow: {
-    flexDirection: 'row',
-    gap: theme.spacing.md,
-  },
-  statTile: {
-    flex: 1,
-    backgroundColor: theme.colors.card,
-    borderRadius: 16,
-    padding: theme.spacing.md,
-    gap: theme.spacing.xs,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  statHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  statValue: {
-    color: theme.colors.text,
-    fontSize: 24,
-    fontWeight: '800',
-  },
-  statCardSkeleton: {
-    flex: 1,
-    height: 100,
-    borderRadius: 16,
-  },
-
-  // Recent attendance
-  activitySection: {
-    gap: theme.spacing.sm,
-  },
-  activityHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  activityTitleGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  activityTitle: {
-    color: theme.colors.text,
-    fontSize: 16,
     fontWeight: '700',
-  },
-  viewAllBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  emptyContainer: {
-    backgroundColor: theme.colors.card,
-    borderRadius: 16,
-    padding: theme.spacing.lg,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  recordsList: {
-    gap: theme.spacing.xs,
-  },
-  recordRow: {
-    backgroundColor: theme.colors.card,
-    borderRadius: 14,
-    padding: theme.spacing.md,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  recordLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-  },
-  greenPulseDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: theme.colors.success,
-  },
-  recordDateText: {
     color: theme.colors.text,
-    fontWeight: '600',
+    fontFamily: theme.typography.body.fontFamily,
   },
-  timeBadge: {
-    backgroundColor: theme.colors.bgTertiary,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  timeText: {
-    color: theme.colors.textSecondary,
-    fontWeight: '600',
+  wktExSets: {
     fontSize: 12,
+    fontWeight: '800',
+    color: theme.colors.textSecondary,
+    fontFamily: theme.typography.caption.fontFamily,
+    letterSpacing: 0.3,
   },
-  skeletonCard: {
-    height: 160,
-    borderRadius: 20,
+  wktMoreEx: {
+    fontSize: 11,
+    color: theme.colors.primary,
+    fontWeight: '700',
+    paddingTop: 8,
+    fontFamily: theme.typography.caption.fontFamily,
+  },
+  // CTA row
+  wktCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: theme.colors.bgTertiary,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    borderRadius: 12,
+  },
+  wktCtaText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FF5F1F',
+    fontFamily: theme.typography.h3.fontFamily,
+    letterSpacing: 0.2,
   },
 });

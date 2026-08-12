@@ -45,6 +45,8 @@ function PartnerGyms() {
     // Form state for Create Gym
     const [gymName, setGymName] = useState('');
     const [gymAddress, setGymAddress] = useState('');
+    const [latitude, setLatitude] = useState('');
+    const [longitude, setLongitude] = useState('');
     const [sessionHours, setSessionHours] = useState(2);
     const [adminName, setAdminName] = useState('');
     const [adminEmail, setAdminEmail] = useState('');
@@ -77,6 +79,8 @@ function PartnerGyms() {
             await API.post('/superadmin/gyms', {
                 gymName: gymName.trim(), 
                 gymAddress: gymAddress.trim(),
+                latitude: latitude ? Number(latitude) : undefined,
+                longitude: longitude ? Number(longitude) : undefined,
                 defaultSessionDurationMinutes: Number(sessionHours) * 60 || 120,
                 adminName: adminName.trim(), 
                 adminEmail: adminEmail.trim(), 
@@ -84,7 +88,7 @@ function PartnerGyms() {
             });
 
             setSuccessMsg(`Partner gym "${gymName}" created successfully with admin account!`);
-            setGymName(''); setGymAddress(''); setSessionHours(2);
+            setGymName(''); setGymAddress(''); setLatitude(''); setLongitude(''); setSessionHours(2);
             setAdminName(''); setAdminEmail(''); setAdminPassword('');
             setIsCreateModalOpen(false);
             fetchGyms();
@@ -134,6 +138,8 @@ function PartnerGyms() {
             await API.put(`/superadmin/gyms/${editingGym._id}`, {
                 name: editingGym.name.trim(),
                 address: editingGym.address.trim(),
+                latitude: editingGym.latitude !== undefined && editingGym.latitude !== null ? Number(editingGym.latitude) : null,
+                longitude: editingGym.longitude !== undefined && editingGym.longitude !== null ? Number(editingGym.longitude) : null,
             });
             setSuccessMsg(`Gym details updated!`);
             setEditingGym(null);
@@ -522,6 +528,31 @@ function PartnerGyms() {
                         />
                     </div>
 
+                    <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                        <div className="input-group">
+                            <label>Latitude</label>
+                            <input 
+                                className="input" 
+                                type="number" 
+                                step="any"
+                                placeholder="e.g. 13.0827" 
+                                value={latitude} 
+                                onChange={(e) => setLatitude(e.target.value)} 
+                            />
+                        </div>
+                        <div className="input-group">
+                            <label>Longitude</label>
+                            <input 
+                                className="input" 
+                                type="number" 
+                                step="any"
+                                placeholder="e.g. 80.2707" 
+                                value={longitude} 
+                                onChange={(e) => setLongitude(e.target.value)} 
+                            />
+                        </div>
+                    </div>
+
                     <div className="input-group">
                         <label>Default Session Timeout</label>
                         <select 
@@ -632,6 +663,30 @@ function PartnerGyms() {
                                 onChange={(e) => setEditingGym({...editingGym, address: e.target.value})} 
                                 required 
                             />
+                        </div>
+                        <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                            <div className="input-group">
+                                <label>Latitude</label>
+                                <input 
+                                    className="input" 
+                                    type="number" 
+                                    step="any"
+                                    value={editingGym.latitude !== undefined && editingGym.latitude !== null ? editingGym.latitude : ''} 
+                                    onChange={(e) => setEditingGym({...editingGym, latitude: e.target.value ? Number(e.target.value) : null})} 
+                                    placeholder="e.g. 13.0827"
+                                />
+                            </div>
+                            <div className="input-group">
+                                <label>Longitude</label>
+                                <input 
+                                    className="input" 
+                                    type="number" 
+                                    step="any"
+                                    value={editingGym.longitude !== undefined && editingGym.longitude !== null ? editingGym.longitude : ''} 
+                                    onChange={(e) => setEditingGym({...editingGym, longitude: e.target.value ? Number(e.target.value) : null})} 
+                                    placeholder="e.g. 80.2707"
+                                />
+                            </div>
                         </div>
                         <div style={{ display: 'flex', gap: '12px', marginTop: '1.5rem' }}>
                             <button 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, ScrollView, TouchableOpacity, Alert, Modal as RNModal } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import { MapPin, User, Settings, Edit3, Trash2, QrCode, Phone, Mail, Users, DollarSign, Plus, Sparkles, Building2 } from 'lucide-react-native';
+import { MapPin, User, Settings, Edit3, Trash2, QrCode, Phone, Mail, Users, DollarSign, Plus, ShieldCheck, Building2, Sparkles } from 'lucide-react-native';
 import { theme } from '@/design-system/theme';
 import { useToast } from '@/hooks/useToast';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -45,6 +45,8 @@ export const PartnerGymsList: React.FC = () => {
   const [sessionHours, setSessionHours] = useState<string | number>('2');
   const [adminName, setAdminName] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
   
   // Modals & Action States
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -68,7 +70,9 @@ export const PartnerGymsList: React.FC = () => {
         phone,
         email,
         managerName,
-        fitPassEnabled: true
+        fitPassEnabled: true,
+        latitude: latitude ? Number(latitude) : undefined,
+        longitude: longitude ? Number(longitude) : undefined
       }, {
         onSuccess: () => {
           toast.show('H4 Branch created successfully!', 'success');
@@ -87,6 +91,8 @@ export const PartnerGymsList: React.FC = () => {
       createGymMutation.mutate({
         gymName: name,
         gymAddress: address,
+        latitude: latitude ? Number(latitude) : undefined,
+        longitude: longitude ? Number(longitude) : undefined,
         defaultSessionDurationMinutes: Number(sessionHours) * 60 || 120,
         adminName,
         adminEmail: email,
@@ -118,6 +124,8 @@ export const PartnerGymsList: React.FC = () => {
         phone: editingBranch.phone,
         email: editingBranch.email,
         managerName: editingBranch.managerName,
+        latitude: editingBranch.latitude ? Number(editingBranch.latitude) : undefined,
+        longitude: editingBranch.longitude ? Number(editingBranch.longitude) : undefined
       }, {
         onSuccess: () => {
           toast.show('H4 Branch details updated!', 'success');
@@ -137,6 +145,8 @@ export const PartnerGymsList: React.FC = () => {
         id: editingGym._id,
         name: editingGym.name,
         address: editingGym.address,
+        latitude: editingGym.latitude ? Number(editingGym.latitude) : undefined,
+        longitude: editingGym.longitude ? Number(editingGym.longitude) : undefined
       }, {
         onSuccess: () => {
           toast.show('Partner gym details updated!', 'success');
@@ -212,6 +222,8 @@ export const PartnerGymsList: React.FC = () => {
     setSessionHours('2');
     setAdminName('');
     setAdminPassword('');
+    setLatitude('');
+    setLongitude('');
   };
 
   if (isLoading) {
@@ -474,6 +486,26 @@ export const PartnerGymsList: React.FC = () => {
           onChangeText={setAddress} 
           placeholder="e.g. 52 Fit Street, Landmark" 
         />
+        <View style={{ flexDirection: 'row', gap: 12, marginBottom: theme.spacing.sm }}>
+          <View style={{ flex: 1 }}>
+            <Input 
+              label="Latitude" 
+              value={latitude} 
+              onChangeText={setLatitude} 
+              placeholder="e.g. 13.0827" 
+              keyboardType="numeric"
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Input 
+              label="Longitude" 
+              value={longitude} 
+              onChangeText={setLongitude} 
+              placeholder="e.g. 80.2707" 
+              keyboardType="numeric"
+            />
+          </View>
+        </View>
         
         {isH4 ? (
           <>
@@ -566,6 +598,26 @@ export const PartnerGymsList: React.FC = () => {
                 value={editingBranch.address || ''}
                 onChangeText={(val) => setEditingBranch({ ...editingBranch, address: val })}
               />
+              <View style={{ flexDirection: 'row', gap: 12, marginBottom: theme.spacing.sm }}>
+                <View style={{ flex: 1 }}>
+                  <Input 
+                    label="Latitude" 
+                    value={editingBranch.latitude !== undefined && editingBranch.latitude !== null ? String(editingBranch.latitude) : ''} 
+                    onChangeText={(val) => setEditingBranch({ ...editingBranch, latitude: val ? Number(val) : undefined })} 
+                    placeholder="e.g. 13.0827" 
+                    keyboardType="numeric"
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Input 
+                    label="Longitude" 
+                    value={editingBranch.longitude !== undefined && editingBranch.longitude !== null ? String(editingBranch.longitude) : ''} 
+                    onChangeText={(val) => setEditingBranch({ ...editingBranch, longitude: val ? Number(val) : undefined })} 
+                    placeholder="e.g. 80.2707" 
+                    keyboardType="numeric"
+                  />
+                </View>
+              </View>
               <Input
                 label="Manager Name"
                 value={editingBranch.managerName || ''}
@@ -610,6 +662,26 @@ export const PartnerGymsList: React.FC = () => {
                 value={editingGym.address}
                 onChangeText={(val) => setEditingGym({ ...editingGym, address: val })}
               />
+              <View style={{ flexDirection: 'row', gap: 12, marginBottom: theme.spacing.sm }}>
+                <View style={{ flex: 1 }}>
+                  <Input 
+                    label="Latitude" 
+                    value={editingGym.latitude !== undefined && editingGym.latitude !== null ? String(editingGym.latitude) : ''} 
+                    onChangeText={(val) => setEditingGym({ ...editingGym, latitude: val ? Number(val) : undefined })} 
+                    placeholder="e.g. 13.0827" 
+                    keyboardType="numeric"
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Input 
+                    label="Longitude" 
+                    value={editingGym.longitude !== undefined && editingGym.longitude !== null ? String(editingGym.longitude) : ''} 
+                    onChangeText={(val) => setEditingGym({ ...editingGym, longitude: val ? Number(val) : undefined })} 
+                    placeholder="e.g. 80.2707" 
+                    keyboardType="numeric"
+                  />
+                </View>
+              </View>
               <Button
                 title="Save Gym Details"
                 loading={updateGymMutation.isPending}

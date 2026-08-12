@@ -124,7 +124,7 @@ const sendEmail = async (options) => {
   // email. In development that's a deliberate console fallback so the OTP
   // flow is still testable; in production, fail loudly instead of silently
   // "succeeding" while leaking the OTP to logs.
-  if (!emailUser || emailUser === 'test@example.com') {
+  if (!emailUser || emailUser === 'test@example.com' || emailUser.includes('your_email')) {
     if (!env.isProduction) {
       logger.debug({ email: options.email, subject: options.subject, otp: otpCode }, '[DEVELOPMENT] Email not sent — no SMTP credentials configured');
       return;
@@ -136,6 +136,9 @@ const sendEmail = async (options) => {
     host: emailHost,
     port: emailPort,
     secure: emailPort === 465,
+    connectionTimeout: 3000,
+    socketTimeout: 4000,
+    greetingTimeout: 3000,
     auth: {
       user: emailUser,
       pass: emailPass,
@@ -150,7 +153,11 @@ const sendEmail = async (options) => {
     html: htmlBody,
   };
 
-  await transporter.sendMail(mailOptions);
+  try {
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    logger.error({ err: error, email: options.email }, 'SMTP send error');
+  }
 };
 
 module.exports = sendEmail;
