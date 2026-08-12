@@ -1,5 +1,6 @@
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
+const logger = require('../lib/logger');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
 const User = require('../models/User');
@@ -226,7 +227,7 @@ const getPartnerGyms = catchAsync(async (req, res, next) => {
 
         res.json([...gymsWithAdmins, ...branchItems]);
     } catch (err) {
-        console.error('Failed to include fitpass branches in partner list:', err);
+        logger.error({ err }, 'Failed to include fitpass branches in partner list');
         res.json(gymsWithAdmins);
     }
 });
@@ -274,7 +275,7 @@ const deletePartnerGym = catchAsync(async (req, res, next) => {
         await prisma.gymProfileViewLog.deleteMany({ where: { gymId: targetId } });
         await prisma.gymProfile.deleteMany({ where: { gymId: targetId } });
     } catch (e) {
-        console.error('Non-critical cleanup error during gym delete:', e.message);
+        logger.warn({ err: e }, 'Non-critical cleanup error during gym delete');
     }
 
     await User.deleteMany({ gymId: gym._id, role: 'admin' });

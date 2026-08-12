@@ -75,7 +75,7 @@ const WorkoutPlans = () => {
                 const memData = memRes.data;
                 setMembers(Array.isArray(memData) ? memData : (memData?.data || []));
             }
-        } catch (err) {
+        } catch {
             setError('Failed to sync workout system datasets');
             setPlans([]);
             setTemplates([]);

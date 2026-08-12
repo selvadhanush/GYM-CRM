@@ -1,5 +1,6 @@
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
+const logger = require('../lib/logger');
 const Notification = require('../models/Notification');
 const Member = require('../models/Member');
 const User = require('../models/User');
@@ -81,12 +82,14 @@ const generateAutomatedAlerts = async (user) => {
             status: 'Active'
         });
 
-        for (const member of expiringMembers) {
-            const msg = `Member ${member.name}'s plan is expiring on ${member.expiryDate.toLocaleDateString()}`;
-            // Create for admin/receptionist (usually the current user if they are admin)
-            if (user.role === 'admin' || user.role === 'receptionist') {
-                await createUniqueNotification(user._id, user.gymId, 'expiry', msg);
-            }
+        // Each notification is an independent dedupe-then-create against a
+        // different message, so these can run concurrently instead of
+        // serially awaiting one member at a time.
+        if (user.role === 'admin' || user.role === 'receptionist') {
+            await Promise.all(expiringMembers.map(member => {
+                const msg = `Member ${member.name}'s plan is expiring on ${member.expiryDate.toLocaleDateString()}`;
+                return createUniqueNotification(user._id, user.gymId, 'expiry', msg);
+            }));
         }
 
         // 2. Check for Dues (only for staff)
@@ -94,13 +97,13 @@ const generateAutomatedAlerts = async (user) => {
             const allMembers = await Member.find({ gymId: user.gymId });
             const membersWithDues = allMembers.filter(member => member.planPrice > member.paidAmount);
 
-            for (const member of membersWithDues) {
+            await Promise.all(membersWithDues.map(member => {
                 const msg = `Member ${member.name} has a pending balance of ₹${member.planPrice - member.paidAmount}`;
-                await createUniqueNotification(user._id, user.gymId, 'payment', msg);
-            }
+                return createUniqueNotification(user._id, user.gymId, 'payment', msg);
+            }));
         }
     } catch (error) {
-        console.error("GENERATE AUTOMATED ALERTS ERROR:", error);
+        logger.error({ err: error }, 'Generate automated alerts failed');
     }
 };
 
@@ -118,7 +121,7 @@ const createUniqueNotification = async (recipientId, gymId, type, message) => {
             await Notification.create({ recipientId, gymId, type, message });
         }
     } catch (error) {
-        console.error("CREATE UNIQUE NOTIFICATION ERROR:", error);
+        logger.error({ err: error }, 'Create unique notification failed');
     }
 };
 

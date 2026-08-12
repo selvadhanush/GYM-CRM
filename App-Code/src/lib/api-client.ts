@@ -1,11 +1,11 @@
 import axios from 'axios';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 import { storage } from './storage';
 
 // Dynamically extract Metro Bundler Host IP for physical devices on Wi-Fi
 const getMetroHostIp = () => {
   try {
-    const Constants = require('expo-constants').default || require('expo-constants');
     const hostUri = Constants?.expoConfig?.hostUri || Constants?.manifest?.debuggerHost || Constants?.manifest2?.extra?.expoGo?.debuggerHost;
     if (hostUri) {
       const ip = String(hostUri).split(':')[0];
@@ -13,7 +13,7 @@ const getMetroHostIp = () => {
         return ip;
       }
     }
-  } catch (e) {
+  } catch {
     // Fallback if Constants module is unlinked or unavailable
   }
   return null;
@@ -28,7 +28,9 @@ const DEV_API_URL = process.env.EXPO_PUBLIC_API_URL || Platform.select({
   default: `http://${hostIp}:5000/api/v1`,
 });
 
-console.log('[API_CLIENT] Configured Base URL:', DEV_API_URL);
+if (__DEV__) {
+  console.log('[API_CLIENT] Configured Base URL:', DEV_API_URL);
+}
 
 export const API_CLIENT = axios.create({
   baseURL: DEV_API_URL,

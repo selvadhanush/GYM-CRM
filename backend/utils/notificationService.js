@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const axios = require('axios');
+const logger = require('../lib/logger');
 
 const sendEmail = async (options) => {
     // Create a transporter using SMTP settings from .env
@@ -20,7 +21,7 @@ const sendEmail = async (options) => {
     };
 
     const info = await transporter.sendMail(message);
-    console.log('Message sent: %s', info.messageId);
+    logger.info({ messageId: info.messageId }, 'Email sent');
 };
 
 const sendWhatsApp = async (options) => {
@@ -37,12 +38,12 @@ const sendWhatsApp = async (options) => {
             }, {
                 headers: { 'Authorization': `Bearer ${WA_ACCESS_TOKEN}` }
             });
-            console.log(`WhatsApp sent successfully to ${options.phone}`);
+            logger.info(`WhatsApp sent successfully to ${options.phone}`);
         } catch (error) {
-            console.error(`WhatsApp Error (${options.phone}):`, error.response?.data || error.message);
+            logger.error({ err: error.response?.data || error.message, phone: options.phone }, 'WhatsApp send failed');
         }
     } else {
-        console.log(`[WhatsApp Simulation] Sending to ${options.phone}: ${options.message}`);
+        logger.debug(`[WhatsApp Simulation] Sending to ${options.phone}: ${options.message}`);
     }
 };
 

@@ -100,6 +100,7 @@ const getMemberAttendance = catchAsync(async (req, res, next) => {
 
     const attendance = await Attendance.find(query)
         .sort({ createdAt: -1 })
+        .limit(500)
         .lean();
     res.json(attendance);
 });

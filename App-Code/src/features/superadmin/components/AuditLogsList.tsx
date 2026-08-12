@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, FlatList, TouchableOpacity } from 'react-native';
-import { 
-  LogIn, LogOut, UserPlus, UserCog, UserMinus, DollarSign, ArrowDown, ArrowUp, 
-  Clipboard, Calendar, Target, Snowflake, Sun, Building, Settings, ShieldAlert, 
-  Scan, MapPin, ChevronLeft, ChevronRight, History
+import {
+  LogIn, LogOut, UserPlus, UserCog, UserMinus, DollarSign, ArrowDown, ArrowUp,
+  Clipboard, Calendar, Target, Snowflake, Sun, Building, Settings, ShieldAlert,
+  Scan, MapPin, ChevronLeft, ChevronRight
 } from 'lucide-react-native';
 import { theme } from '@/design-system/theme';
 import { useAuditLogs, useAuditSummary } from '../api/superadmin.api';
-import { Card, Select, Skeleton, EmptyState, Badge, Typography } from '@/components/ui';
+import { Select, Skeleton, EmptyState, Badge, Typography } from '@/components/ui';
 
 type LogTab = 'timeline' | 'logins' | 'sessions';
 

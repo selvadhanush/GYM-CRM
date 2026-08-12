@@ -14,7 +14,7 @@ const NotificationBell = () => {
         try {
             const { data } = await API.get('/notifications');
             setNotifications(data);
-        } catch (err) {
+        } catch {
             // silently fail - not critical
         }
     };
@@ -40,7 +40,7 @@ const NotificationBell = () => {
             setNotifications(prev =>
                 prev.map(n => n._id === id ? { ...n, read: true } : n)
             );
-        } catch (err) { }
+        } catch { }
     };
 
     const handleMarkAllRead = async () => {

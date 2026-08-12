@@ -10,12 +10,9 @@ import {
   Modal,
   Linking,
   ActivityIndicator,
-  Dimensions,
 } from 'react-native';
 import { useDiscoveryGyms, usePublicPostsFeed } from '../api/fitpass.api';
-import type { DiscoveryGymItem, GymPost } from '../types';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import type { DiscoveryGymItem } from '../types';
 
 // Zippy Digital Solutions Design Tokens — AGENTS.md §5
 const COLORS = {

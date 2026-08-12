@@ -125,7 +125,7 @@ const Members = () => {
         try {
             const data = await getMemberAuditTrail(member._id);
             setAuditData(data);
-        } catch (error) {
+        } catch {
             alert('Failed to load member audit trail');
             setIsAuditModalOpen(false);
         } finally {
@@ -162,7 +162,7 @@ const Members = () => {
             try {
                 await deleteMember(id);
                 fetchData();
-            } catch (error) {
+            } catch {
                 alert('Error deleting member');
             }
         }

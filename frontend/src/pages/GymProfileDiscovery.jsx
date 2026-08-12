@@ -197,7 +197,7 @@ export default function GymProfileDiscovery() {
     try {
       await discoveryService.deleteMyGymPost(postId);
       fetchPostsData();
-    } catch (err) {
+    } catch {
       alert("Failed to delete post");
     }
   };

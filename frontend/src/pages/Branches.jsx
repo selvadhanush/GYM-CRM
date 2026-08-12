@@ -89,7 +89,7 @@ const Branches = () => {
         try {
             const { data } = await API.get(`/branches/${branch._id}/members`);
             setBranchMembers(data);
-        } catch (err) { setBranchMembers([]); }
+        } catch { setBranchMembers([]); }
     };
 
     if (loading) return <div className="spinner"></div>;

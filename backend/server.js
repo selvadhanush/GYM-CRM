@@ -11,15 +11,14 @@ const { PLACEHOLDER_SECRETS } = require('./config/constants');
 const { errorHandler, notFound } = require('./middleware/errorMiddleware');
 const { globalLimiter } = require('./middleware/rateLimiters');
 const startCronJobs = require('./utils/cronJobs');
+const logger = require('./lib/logger');
 
 dotenv.config();
 
 // --- Boot-time security guard (B1): never start with a missing/placeholder JWT secret ---
 const jwtSecret = process.env.JWT_SECRET;
 if (!jwtSecret || PLACEHOLDER_SECRETS.includes(jwtSecret)) {
-    console.error('\n[FATAL] JWT_SECRET is missing or still set to a placeholder value.');
-    console.error('Generate one with:  node scripts/generateSecret.js');
-    console.error('Then put it in your .env as JWT_SECRET=<value>\n');
+    logger.error('[FATAL] JWT_SECRET is missing or still set to a placeholder value. Generate one with: node scripts/generateSecret.js — then put it in your .env as JWT_SECRET=<value>');
     process.exit(1);
 }
 
@@ -154,6 +153,6 @@ app.use(errorHandler);
 const PORT = env.PORT || 5000;
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT} (${env.NODE_ENV || 'development'})`);
+    logger.info(`Server running on port ${PORT} (${env.NODE_ENV || 'development'})`);
 });
 // Nodemon reload triggered for CORS connection fixes

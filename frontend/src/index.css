@@ -8,16 +8,16 @@
 /* ─── CSS Variables (Warm Amber-Gold Core Theme) ─── */
 :root,
 [data-theme="dark"] {
-    /* Brand Colors (Warm Amber-Gold Palette - AGENTS.md §5.2) */
-    --primary: #FF5F1F;
-    --primary-hover: #E04E10;
+    /* Brand Colors (Warm Amber-Gold Palette - CLAUDE.md / AGENTS.md §5.2) */
+    --primary: #F0A020;
+    --primary-hover: #D9860F;
     --primary-dark: #D9860F;
-    --primary-light: #FFECE5;
-    --primary-muted: rgba(255, 95, 31, 0.18);
+    --primary-light: #FCE6B8;
+    --primary-muted: rgba(240, 160, 32, 0.18);
 
-    --accent: #E04E10;
+    --accent: #D9860F;
     --success: #2E7D32;
-    --warning: #FF5F1F;
+    --warning: #F0A020;
     --danger: #C62828;
     --info: #1976D2;
 
@@ -1134,6 +1134,15 @@ tbody tr:hover {
     color: var(--danger);
 }
 
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
 /* ─── Spinner ─── */
 .spinner {
     width: 36px;
@@ -1155,6 +1164,11 @@ tbody tr:hover {
     to {
         transform: rotate(360deg);
     }
+}
+
+/* Utility: spin any icon (e.g. Loader2 inside Button) */
+.spin {
+    animation: spin 0.8s linear infinite;
 }
 
 .loading-center {

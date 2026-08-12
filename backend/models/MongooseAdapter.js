@@ -59,25 +59,31 @@ function translateSort(sortInput) {
   return orderBy;
 }
 
-function applySelect(records, selectFields) {
-  if (!records || !selectFields) return;
-  const isArray = Array.isArray(records);
-  const list = isArray ? records : [records];
-  
+function parseSelectFields(selectFields) {
   let fields = [];
-  let isExclude = false;
-  
+
   if (typeof selectFields === 'string') {
     fields = selectFields.split(/\s+/).filter(Boolean);
   } else if (Array.isArray(selectFields)) {
     fields = selectFields;
   }
-  
+
+  let isExclude = false;
   if (fields.length > 0 && fields[0].startsWith('-')) {
     isExclude = true;
     fields = fields.map(f => f.slice(1));
   }
-  
+
+  return { fields, isExclude };
+}
+
+function applySelect(records, selectFields) {
+  if (!records || !selectFields) return;
+  const isArray = Array.isArray(records);
+  const list = isArray ? records : [records];
+
+  const { fields, isExclude } = parseSelectFields(selectFields);
+
   for (const r of list) {
     if (isExclude) {
       for (const f of fields) {
@@ -149,6 +155,15 @@ async function performPopulate(records, paths) {
       }
     }
   }
+}
+
+// Cheap `_id` shim for read-only records (aggregation output) that will
+// never have .save()/.deleteOne() called on them — avoids allocating those
+// closures for every row when scanning large tables.
+function tagId(record) {
+  if (!record) return record;
+  record._id = record.id;
+  return record;
 }
 
 function wrapRecord(record, modelName) {
@@ -310,7 +325,7 @@ class QueryBuilder {
   
   async exec() {
     const queryArgs = { ...this.args };
-    
+
     if (this.sortInput) {
       queryArgs.orderBy = translateSort(this.sortInput);
     }
@@ -320,7 +335,24 @@ class QueryBuilder {
     if (this.skipVal !== null) {
       queryArgs.skip = this.skipVal;
     }
-    
+
+    // Push field selection down to Prisma/Postgres instead of fetching every
+    // column and deleting the unwanted ones in JS afterwards. Only safe for
+    // plain inclusion lists (no `-field` exclusion, which Prisma can't express
+    // directly) and only when nothing downstream needs the full row (populate
+    // resolves its own id fields separately, save()/matchPassword need the
+    // real row, so skip push-down for operations that later call those).
+    let pushedSelect = null;
+    if (this.selectFields && this.populatePaths.length === 0) {
+      const { fields, isExclude } = parseSelectFields(this.selectFields);
+      if (!isExclude && fields.length > 0) {
+        pushedSelect = {};
+        for (const f of fields) pushedSelect[f] = true;
+        pushedSelect.id = true;
+        queryArgs.select = pushedSelect;
+      }
+    }
+
     let result;
     if (this.operation === 'findMany') {
       result = await prisma[this.modelName].findMany(queryArgs);
@@ -329,21 +361,21 @@ class QueryBuilder {
       result = await prisma[this.modelName].findFirst(queryArgs);
       result = wrapRecord(result, this.modelName);
     } else if (this.operation === 'findById') {
-      result = await prisma[this.modelName].findUnique({ where: { id: this.args.id } });
+      result = await prisma[this.modelName].findUnique({ where: { id: this.args.id }, ...(pushedSelect ? { select: pushedSelect } : {}) });
       result = wrapRecord(result, this.modelName);
     } else if (this.operation === 'count') {
       if (!prisma[this.modelName]) return 0;
       return await prisma[this.modelName].count(queryArgs);
     }
-    
-    if (this.selectFields && result) {
+
+    if (this.selectFields && result && !pushedSelect) {
       applySelect(result, this.selectFields);
     }
-    
+
     if (this.populatePaths.length > 0 && result) {
       await performPopulate(result, this.populatePaths);
     }
-    
+
     return result;
   }
   
@@ -579,8 +611,10 @@ class ModelWrapper {
     }
     
     records = await prisma[this.modelName].findMany({ where: matchQuery });
-    // Map _id and nested values to make them compatible with Mongoose-style fields
-    records = records.map(r => wrapRecord(r, this.modelName));
+    // Aggregation pipelines are read-only and never call .save()/.deleteOne(),
+    // so just stamp `_id` for Mongoose-shape compatibility instead of paying
+    // for a save/deleteOne/matchPassword closure on every row via wrapRecord().
+    records = records.map(r => tagId(r));
     
     const collectionToModel = {
       members: 'member',
@@ -764,7 +798,7 @@ class ModelWrapper {
               const foreignVal = lookupStage.foreignField === '_id' ? tr.id : tr[lookupStage.foreignField];
               return String(foreignVal) === String(localVal);
             });
-            record[lookupStage.as] = matches.map(tr => wrapRecord(tr, targetModel));
+            record[lookupStage.as] = matches.map(tr => tagId(tr));
           }
         }
       }

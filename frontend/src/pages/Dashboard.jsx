@@ -124,7 +124,7 @@ const Dashboard = () => {
             setAnnounceSuccess(true);
             setAnnounceMsg('');
             setTimeout(() => { setShowAnnounce(false); setAnnounceSuccess(false); }, 1500);
-        } catch (err) {
+        } catch {
             alert('Failed to send announcement.');
         } finally {
             setAnnouncing(false);

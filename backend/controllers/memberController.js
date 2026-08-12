@@ -138,12 +138,6 @@ const getMembers = catchAsync(async (req, res, next) => {
                 { phone: { $regex: search, $options: 'i' } }
             ];
         }
-        if (search) {
-            query.$or = [
-                { name: { $regex: search, $options: 'i' } },
-                { phone: { $regex: search, $options: 'i' } }
-            ];
-        }
 
         const skip = (page - 1) * limit;
 

@@ -49,9 +49,13 @@ const addPayment = catchAsync(async (req, res, next) => {
 const getPayments = catchAsync(async (req, res, next) => {
     try {
         const query = { ...req.tenantFilter };
+        // This table only grows over a gym's lifetime and has no date filter
+        // on this route — cap it as a safety net against an unbounded scan/
+        // response once a gym has years of payment history.
         const payments = await Payment.find(query)
             .populate('memberId', 'name phone')
             .sort({ createdAt: -1 })
+            .limit(2000)
             .lean();
         res.json(payments);
     } catch (error) { next(error); }
@@ -70,6 +74,7 @@ const getMemberPayments = catchAsync(async (req, res, next) => {
     }
     const payments = await Payment.find(query)
         .sort({ createdAt: -1 })
+        .limit(500)
         .lean();
     res.json(payments);
 });

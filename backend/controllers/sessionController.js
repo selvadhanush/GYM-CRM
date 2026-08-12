@@ -1,5 +1,6 @@
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
+const logger = require('../lib/logger');
 /**
  * FitPrime / FitPass session-based check-in controller.
  *
@@ -73,7 +74,7 @@ const logFitPassAttempt = async ({
       },
     });
   } catch (err) {
-    console.error('FAILED TO LOG FITPASS ATTEMPT:', err.message);
+    logger.error({ err }, 'Failed to log fitpass attempt');
   }
 };
 
@@ -352,7 +353,7 @@ const checkIn = catchAsync(async (req, res, next) => {
       ...(branch ? { branch: { id: branch.id, name: branch.name } } : {}),
     });
   } catch (error) {
-    console.error('CHECK-IN ERROR:', error.message);
+    logger.error({ err: error }, 'Check-in error');
     return res.status(500).json({ success: false, message: 'Check-in failed.' });
   }
 });
@@ -393,7 +394,7 @@ const getSessionStatus = catchAsync(async (req, res, next) => {
       lastCheckInAt: member.lastCheckInAt || null,
     });
   } catch (error) {
-    console.error('SESSION STATUS ERROR:', error.message);
+    logger.error({ err: error }, 'Session status error');
     return res.status(500).json({ success: false, message: 'Could not load session status.' });
   }
 });
@@ -550,7 +551,7 @@ const getSessionHistory = catchAsync(async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error('SESSION HISTORY ERROR:', error.message);
+    logger.error({ err: error }, 'Session history error');
     return res.status(500).json({ success: false, message: 'Could not load history.' });
   }
 });
@@ -617,7 +618,7 @@ const getMemberFitPassSummary = catchAsync(async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error('MEMBER FITPASS SUMMARY ERROR:', error.message);
+    logger.error({ err: error }, 'Member fitpass summary error');
     return res.status(500).json({ success: false, message: 'Could not load member summary.' });
   }
 });
@@ -746,7 +747,7 @@ const getFitPassAnalytics = catchAsync(async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error('FITPASS ANALYTICS ERROR:', error.message);
+    logger.error({ err: error }, 'Fitpass analytics error');
     return res.status(500).json({ success: false, message: 'Could not load FitPass analytics.' });
   }
 });
@@ -794,7 +795,7 @@ const adminAdjustSessions = catchAsync(async (req, res, next) => {
     if (error?.issues) {
       return res.status(400).json({ success: false, message: error.issues[0].message });
     }
-    console.error('ADMIN SESSION ADJUST ERROR:', error.message);
+    logger.error({ err: error }, 'Admin session adjust error');
     return res.status(500).json({ success: false, message: 'Could not adjust sessions.' });
   }
 });
@@ -851,7 +852,7 @@ const getPartnerVisitLog = catchAsync(async (req, res, next) => {
       meta: { page, pageSize, total },
     });
   } catch (error) {
-    console.error('PARTNER VISIT LOG ERROR:', error.message);
+    logger.error({ err: error }, 'Partner visit log error');
     return res.status(500).json({ success: false, message: 'Could not load visit log.' });
   }
 });

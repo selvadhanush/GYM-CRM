@@ -53,16 +53,16 @@ const Attendance = () => {
         handleMarkAttendance(decodedText);
     }, [handleMarkAttendance]);
 
-    const handleScanError = (error) => {
-        // console.warn(`Code scan error = ${error}`);
-    };
+    // html5-qrcode calls this continuously while it fails to find a code in
+    // frame — intentionally a no-op, not every miss is worth surfacing.
+    const handleScanError = () => {};
 
     const viewHistory = async (memberId) => {
         try {
             const history = await getMemberAttendance(memberId);
             const member = members.find(m => m._id === memberId) || todayList.find(a => a.memberId?._id === memberId)?.memberId;
             setSelectedMemberHistory({ memberName: member?.name, history });
-        } catch (error) {
+        } catch {
             alert('Error fetching attendance history');
         }
     };

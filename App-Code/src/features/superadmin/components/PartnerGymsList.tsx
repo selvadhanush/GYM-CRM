@@ -17,7 +17,7 @@ import {
   useUpdateBranch,
   useDeleteBranch
 } from '../api/superadmin.api';
-import { Button, Input, Select, Modal, Skeleton, EmptyState, Badge, Typography } from '@/components/ui';
+import { Button, Input, Select, Modal, Skeleton, EmptyState, Typography } from '@/components/ui';
 
 export const PartnerGymsList: React.FC = () => {
   const toast = useToast();

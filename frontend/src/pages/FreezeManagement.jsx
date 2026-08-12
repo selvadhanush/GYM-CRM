@@ -51,7 +51,7 @@ const FreezeManagement = () => {
         try {
             const { data } = await API.get(`/members/${member._id}/freeze-history`);
             setHistoryModal(data);
-        } catch (err) {
+        } catch {
             alert('Failed to fetch freeze history');
         }
     };

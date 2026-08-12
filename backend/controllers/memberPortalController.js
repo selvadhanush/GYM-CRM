@@ -1,10 +1,11 @@
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
+const logger = require('../lib/logger');
+const env = require('../config/env');
 const prisma = require('../config/prisma');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const { expireIfDue } = require('../utils/sessionHelpers');
-const env = require('../config/env');
 
 // Helper: resolve member by memberId or email
 const resolveMember = async (req) => {
@@ -114,7 +115,7 @@ const getPartnerGyms = catchAsync(async (req, res, next) => {
 
         res.json([...gymsWithOccupancy, ...branchGyms]);
     } catch (err) {
-        console.error('Error fetching partner gyms occupancy:', err);
+        logger.error({ err }, 'Error fetching partner gyms occupancy');
         res.json(gyms.map(g => ({ ...g, _id: g.id })));
     }
 });
@@ -315,7 +316,7 @@ const createRazorpayOrder = catchAsync(async (req, res, next) => {
                                 keyId !== 'null' && keyId !== 'undefined' && keyId.trim() !== '';
 
         if (!hasRazorpayKeys) {
-            console.log('Razorpay keys missing or invalid in .env. Returning a mock order for testing.');
+            logger.warn('Razorpay keys missing or invalid in .env. Returning a mock order for testing.');
             const mockOrder = {
                 id: `order_mock_${crypto.randomBytes(8).toString('hex')}`,
                 amount: amountInPaise,
@@ -342,7 +343,7 @@ const createRazorpayOrder = catchAsync(async (req, res, next) => {
         const order = await instance.orders.create(options);
         res.status(201).json(order);
     } catch (error) {
-        console.error('RAZORPAY CREATE-ORDER ERROR:', error);
+        logger.error({ err: error }, 'Razorpay create-order failed');
         res.status(500).json({
             message: 'Razorpay order creation failed',
             error: error.message || String(error),
@@ -446,16 +447,41 @@ const purchasePlanOrder = catchAsync(async (req, res, next) => {
     const userIdString = req.user && (req.user._id || req.user.id) ? (req.user._id || req.user.id).toString() : 'mockuser';
     const receiptId = `rcpt_plan_${userIdString.slice(-6)}_${Date.now()}`;
 
-    const mockOrder = {
-        id: `order_mock_${crypto.randomBytes(8).toString('hex')}`,
+    const isMockEnv = !process.env.RAZORPAY_KEY_ID ||
+                      !process.env.RAZORPAY_KEY_SECRET ||
+                      process.env.RAZORPAY_KEY_ID === 'your_razorpay_key_id';
+    if (isMockEnv && env.isProduction) {
+        logger.error('Razorpay keys missing in production; refusing to create a mock order.');
+        return res.status(503).json({ message: 'Payments are not configured.' });
+    }
+
+    if (isMockEnv) {
+        const mockOrder = {
+            id: `order_mock_${crypto.randomBytes(8).toString('hex')}`,
+            amount: amountInPaise,
+            currency: "INR",
+            receipt: receiptId,
+            status: "created",
+            is_mock: true,
+            notes: { newPlanId: plan.id }
+        };
+        return res.status(201).json(mockOrder);
+    }
+
+    const instance = new Razorpay({
+        key_id: process.env.RAZORPAY_KEY_ID,
+        key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+
+    const options = {
         amount: amountInPaise,
         currency: "INR",
         receipt: receiptId,
-        status: "created",
-        is_mock: true,
-        notes: { newPlanId: plan.id }
+        notes: { newPlanId: plan.id },
     };
-    return res.status(201).json(mockOrder);
+
+    const order = await instance.orders.create(options);
+    return res.status(201).json(order);
 });
 
 // @desc    Verify Plan Purchase

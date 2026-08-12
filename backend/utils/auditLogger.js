@@ -1,4 +1,5 @@
 const AuditLog = require('../models/AuditLog');
+const logger = require('../lib/logger');
 
 /**
  * Log an audit event.
@@ -22,7 +23,7 @@ const logAudit = async (req, action, entity = '', entityId = '', details = '', e
         });
     } catch (err) {
         // Never let audit logging crash the main request
-        console.warn('Audit log failed (non-fatal):', err.message);
+        logger.warn({ err }, 'Audit log failed (non-fatal)');
     }
 };
 

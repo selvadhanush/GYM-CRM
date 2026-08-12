@@ -2,12 +2,13 @@ const express = require('express');
 const router = express.Router();
 const Member = require('../models/Member');
 const { sendEmail, sendWhatsApp } = require('../utils/notificationService');
+const logger = require('../lib/logger');
 
 // @desc    Manually trigger the maintenance job (expiry checks) for testing
 // @route   GET /api/test/check-expiry
 // @access  Public (Dev only)
 router.get('/check-expiry', async (req, res) => {
-    console.log('--- Manually Triggering Expiry Checks (TEST) ---');
+    logger.info('--- Manually Triggering Expiry Checks (TEST) ---');
 
     try {
         const today = new Date();
@@ -44,7 +45,7 @@ router.get('/check-expiry', async (req, res) => {
                         email: member.email,
                         subject: subject,
                         html: `<p>${messageText}</p>`
-                    }).catch(e => console.error(e.message));
+                    }).catch(e => logger.error({ err: e }, 'Failed to send expiry reminder email'));
                 }
 
                 // Send WhatsApp
@@ -64,7 +65,7 @@ router.get('/check-expiry', async (req, res) => {
             message: 'Manual check completed. Check console for details.'
         });
     } catch (error) {
-        console.error('Test script error:', error);
+        logger.error({ err: error }, 'Test script error');
         res.status(500).json({ success: false, error: error.message });
     }
 });

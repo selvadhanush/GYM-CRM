@@ -1,4 +1,6 @@
 const nodemailer = require('nodemailer');
+const logger = require('../lib/logger');
+const env = require('../config/env');
 
 const buildOTPEmailHTML = (otpCode, subject) => {
   const isLogin = subject.toLowerCase().includes('login');
@@ -118,16 +120,16 @@ const sendEmail = async (options) => {
 
   const htmlBody = options.html || buildOTPEmailHTML(otpCode, options.subject);
 
-  // ALWAYS log OTP to terminal for developer/testing visibility
-  console.log('\n==================================================');
-  console.log(`📧 [EMAIL / OTP SENT] To: ${options.email}`);
-  console.log(`Subject: ${options.subject}`);
-  console.log(`🔑 OTP Code: ${otpCode}`);
-  console.log('==================================================\n');
-
-  // In development without real credentials, skip actual SMTP send
+  // Without real SMTP credentials there is nowhere to actually deliver the
+  // email. In development that's a deliberate console fallback so the OTP
+  // flow is still testable; in production, fail loudly instead of silently
+  // "succeeding" while leaking the OTP to logs.
   if (!emailUser || emailUser === 'test@example.com' || emailUser.includes('your_email')) {
-    return;
+    if (!env.isProduction) {
+      logger.debug({ email: options.email, subject: options.subject, otp: otpCode }, '[DEVELOPMENT] Email not sent — no SMTP credentials configured');
+      return;
+    }
+    throw new Error('Email is not configured (missing SMTP credentials) in production.');
   }
 
   const transporter = nodemailer.createTransport({
@@ -154,7 +156,7 @@ const sendEmail = async (options) => {
   try {
     await transporter.sendMail(mailOptions);
   } catch (error) {
-    console.error(`❌ [SMTP Send Error] Failed sending email to ${options.email}:`, error.message);
+    logger.error({ err: error, email: options.email }, 'SMTP send error');
   }
 };
 

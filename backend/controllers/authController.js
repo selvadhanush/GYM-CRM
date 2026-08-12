@@ -1,5 +1,7 @@
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
+const logger = require('../lib/logger');
+const env = require('../config/env');
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 const { logAudit } = require('../utils/auditLogger');
@@ -137,14 +139,19 @@ const registerUser = catchAsync(async (req, res, next) => {
 
         // Issue + email the OTP.
         const otpString = await issueOtp(email);
+        // Never log OTP codes in production — dev-only convenience so the
+        // flow can be exercised without a real mailbox.
+        if (env.isDevelopment) {
+            logger.debug({ email }, `[DEV ONLY] Registration OTP: ${otpString}`);
+        }
         try {
             await sendEmail({
                 email: user.email,
                 subject: 'FitPrime - Email Verification OTP',
                 message: `Your OTP for registration is: ${otpString}. It is valid for ${OTP_TTL_MINUTES} minutes.`,
             });
-        } catch (emailError) {
-            console.error(`[OTP] Registration email failed for ${email}:`, emailError.message);
+        } catch (error) {
+            logger.error({ err: error, email }, 'Registration OTP email sending failed');
             // Roll back the user and OTP so they can retry with a clean state
             await User.findByIdAndDelete(user._id).catch(() => {});
             await prisma.oTP.deleteMany({ where: { email } }).catch(() => {});
@@ -458,19 +465,18 @@ const checkUserAndSendOTP = catchAsync(async (req, res, next) => {
 
     // Issue a fresh OTP (also resets the failed-attempt counter).
     const otpString = await issueOtp(email);
-    console.log(`\n==================================================`);
-    console.log(`🔒 LOGIN OTP GENERATED for ${email}: ${otpString}`);
-    console.log(`==================================================\n`);
-
+    if (env.isDevelopment) {
+        logger.debug({ email }, `[DEV ONLY] Login OTP: ${otpString}`);
+    }
     try {
         await sendEmail({
             email: user.email,
             subject: 'FitPrime - Login Verification OTP',
             message: `Your login OTP is: ${otpString}. It is valid for ${OTP_TTL_MINUTES} minutes.`,
         });
-    } catch (emailError) {
-        console.error(`[OTP] Email delivery failed for ${email}:`, emailError.message);
-        // Non-fatal: OTP is saved in database so user can still log in using console OTP
+    } catch (error) {
+        // Non-fatal: OTP is already saved, so the user can still complete login once email delivery recovers.
+        logger.error({ err: error, email }, 'Login OTP email sending failed');
     }
 
     res.json({

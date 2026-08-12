@@ -1,59 +1,66 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useContext } from 'react';
+import { useContext, Suspense, lazy } from 'react';
 import { AuthContext } from './context/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-
-import Plans from './pages/Plans';
-import Members from './pages/Members';
-import Payments from './pages/Payments';
-import Attendance from './pages/Attendance';
-import Expenses from './pages/Expenses';
-import Dues from './pages/Dues';
-import MemberDashboard from './pages/MemberDashboard';
-import Reports from './pages/Reports';
-import FreezeManagement from './pages/FreezeManagement';
-import Classes from './pages/Classes';
-import MemberClasses from './pages/MemberClasses';
-import Leads from './pages/Leads';
-import Analytics from './pages/Analytics';
-import AuditLogs from './pages/AuditLogs';
-import Branches from './pages/Branches';
-import Staff from './pages/Staff';
-import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
-import PartnerGyms from './pages/superadmin/PartnerGyms';
-import FitPrimePlans from './pages/superadmin/FitPrimePlans';
-import FitPassMembers from './pages/superadmin/FitPassMembers';
-import AdminManagement from './pages/superadmin/AdminManagement';
-import BodyAssessments from './pages/BodyAssessments';
-import TrainerAttendancePage from './pages/TrainerAttendancePage';
-import PayrollPage from './pages/PayrollPage';
-import FitPassAnalyticsPage from './pages/FitPassAnalyticsPage';
-import WorkoutPlans from './pages/WorkoutPlans';
-import DietPlans from './pages/DietPlans';
-import Settings from './pages/Settings';
-import FitPassVisitLog from './pages/FitPassVisitLog';
-import FitPassPartnerLeads from './pages/FitPassPartnerLeads';
-import GymProfileDiscovery from './pages/GymProfileDiscovery';
-import DiscoveryApprovalQueue from './pages/superadmin/DiscoveryApprovalQueue';
-import FitPassGymExplore from './pages/FitPassGymExplore';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ToastProvider } from './components/ui/Toast';
 
+// Route-level code splitting: every page below used to be imported eagerly,
+// so the very first paint (any role, any route) downloaded the entire app
+// — every dashboard, chart library, and QR scanner — in one ~1.5MB bundle.
+// Lazy-loading means a route's JS is only fetched when that route is visited.
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Plans = lazy(() => import('./pages/Plans'));
+const Members = lazy(() => import('./pages/Members'));
+const Payments = lazy(() => import('./pages/Payments'));
+const Attendance = lazy(() => import('./pages/Attendance'));
+const Expenses = lazy(() => import('./pages/Expenses'));
+const Dues = lazy(() => import('./pages/Dues'));
+const MemberDashboard = lazy(() => import('./pages/MemberDashboard'));
+const Reports = lazy(() => import('./pages/Reports'));
+const FreezeManagement = lazy(() => import('./pages/FreezeManagement'));
+const Classes = lazy(() => import('./pages/Classes'));
+const MemberClasses = lazy(() => import('./pages/MemberClasses'));
+const Leads = lazy(() => import('./pages/Leads'));
+const Analytics = lazy(() => import('./pages/Analytics'));
+const AuditLogs = lazy(() => import('./pages/AuditLogs'));
+const Branches = lazy(() => import('./pages/Branches'));
+const Staff = lazy(() => import('./pages/Staff'));
+const SuperAdminDashboard = lazy(() => import('./pages/superadmin/SuperAdminDashboard'));
+const PartnerGyms = lazy(() => import('./pages/superadmin/PartnerGyms'));
+const FitPrimePlans = lazy(() => import('./pages/superadmin/FitPrimePlans'));
+const FitPassMembers = lazy(() => import('./pages/superadmin/FitPassMembers'));
+const AdminManagement = lazy(() => import('./pages/superadmin/AdminManagement'));
+const BodyAssessments = lazy(() => import('./pages/BodyAssessments'));
+const TrainerAttendancePage = lazy(() => import('./pages/TrainerAttendancePage'));
+const PayrollPage = lazy(() => import('./pages/PayrollPage'));
+const FitPassAnalyticsPage = lazy(() => import('./pages/FitPassAnalyticsPage'));
+const WorkoutPlans = lazy(() => import('./pages/WorkoutPlans'));
+const DietPlans = lazy(() => import('./pages/DietPlans'));
+const Settings = lazy(() => import('./pages/Settings'));
+const FitPassVisitLog = lazy(() => import('./pages/FitPassVisitLog'));
+const FitPassPartnerLeads = lazy(() => import('./pages/FitPassPartnerLeads'));
+const GymProfileDiscovery = lazy(() => import('./pages/GymProfileDiscovery'));
+const DiscoveryApprovalQueue = lazy(() => import('./pages/superadmin/DiscoveryApprovalQueue'));
+const FitPassGymExplore = lazy(() => import('./pages/FitPassGymExplore'));
+
+const PageLoader = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+    <div className="spinner"></div>
+  </div>
+);
+
 function App() {
   const { user, loading } = useContext(AuthContext);
 
-  if (loading) return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-      <div className="spinner"></div>
-    </div>
-  );
+  if (loading) return <PageLoader />;
 
   return (
     <ToastProvider>
       <Router>
+        <Suspense fallback={<PageLoader />}>
         <Routes>
         <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
         <Route path="/register" element={!user ? <Register /> : <Navigate to="/dashboard" />} />
@@ -364,6 +371,7 @@ function App() {
 
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
+      </Suspense>
     </Router>
   </ToastProvider>
   );

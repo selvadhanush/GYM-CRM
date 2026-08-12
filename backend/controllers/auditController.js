@@ -1,6 +1,8 @@
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const AuditLog = require('../models/AuditLog');
+const prisma = require('../config/prisma');
+const { translateQuery } = require('../models/MongooseAdapter');
 
 // @desc    Get audit logs for a gym
 // @route   GET /api/audit
@@ -57,11 +59,17 @@ const getAuditSummary = catchAsync(async (req, res, next) => {
             }
         }
         
-        const summary = await AuditLog.aggregate([
-            { $match: filter },
-            { $group: { _id: '$action', count: { $sum: 1 } } },
-            { $sort: { count: -1 } }
-        ]);
+        // Group-by-action pushed down to Postgres via Prisma's groupBy instead
+        // of the generic Mongoose-shim aggregate(), which would otherwise pull
+        // every matching row (the audit log grows unbounded) into Node just to
+        // count them in JS.
+        const grouped = await prisma.auditLog.groupBy({
+            by: ['action'],
+            where: translateQuery(filter),
+            _count: { action: true },
+            orderBy: { _count: { action: 'desc' } }
+        });
+        const summary = grouped.map(g => ({ _id: g.action, count: g._count.action }));
 
         // Recent logins
         const recentLogins = await AuditLog.find({ ...filter, action: 'LOGIN' })

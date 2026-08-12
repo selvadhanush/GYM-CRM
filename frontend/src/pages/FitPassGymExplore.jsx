@@ -92,7 +92,7 @@ export default function FitPassGymExplore() {
       if (res.data && res.data.data) {
         setSelectedGym(res.data.data);
       }
-    } catch (err) {
+    } catch {
       alert("Failed to load gym profile details");
     } finally {
       setLoadingDetails(false);
