@@ -110,12 +110,9 @@ const MemberDashboard = () => {
         setUpdatingProfile(true);
         try {
             await API.put('/member-portal/profile', {
-                name: profileName,
-                email: profileEmail,
-                phone: profilePhone,
                 password: profilePassword || undefined
             });
-            toast.success('Profile updated successfully!');
+            toast.success('Password updated successfully!');
             setProfileModal(false);
             fetchMemberData();
         } catch (error) {
@@ -400,22 +397,24 @@ const MemberDashboard = () => {
 
             {/* Quick Action Navigation */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-                <a href="/explore-gyms" style={{ textDecoration: 'none' }}>
-                    <div className="glass" style={{
-                        padding: '1.25rem 1.5rem', borderRadius: '14px',
-                        borderLeft: '5px solid var(--primary)', cursor: 'pointer',
-                        transition: 'transform 0.2s', display: 'flex', alignItems: 'center', gap: '1rem'
-                    }}
-                        onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-                        onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-                    >
-                        <span style={{ fontSize: '2rem' }}>🧭</span>
-                        <div>
-                            <div style={{ fontWeight: '800', fontSize: '0.95rem' }}>Explore Partner Gyms</div>
-                            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Discover &amp; check-in at FitPass gyms</div>
+                {isFitPrimeMember && (
+                    <a href="/explore-gyms" style={{ textDecoration: 'none' }}>
+                        <div className="glass" style={{
+                            padding: '1.25rem 1.5rem', borderRadius: '14px',
+                            borderLeft: '5px solid var(--primary)', cursor: 'pointer',
+                            transition: 'transform 0.2s', display: 'flex', alignItems: 'center', gap: '1rem'
+                        }}
+                            onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                            onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+                        >
+                            <span style={{ fontSize: '2rem' }}>🧭</span>
+                            <div>
+                                <div style={{ fontWeight: '800', fontSize: '0.95rem' }}>Explore Partner Gyms</div>
+                                <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Discover &amp; check-in at FitPass gyms</div>
+                            </div>
                         </div>
-                    </div>
-                </a>
+                    </a>
+                )}
 
                 <a href="/member-classes" style={{ textDecoration: 'none' }}>
                     <div className="glass" style={{
@@ -499,8 +498,8 @@ const MemberDashboard = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {fitPassHistory.map(log => (
-                                            <tr key={log.id}>
+                                        {fitPassHistory.map((log, idx) => (
+                                            <tr key={log.id || log._id || idx}>
                                                 <td>{new Date(log.checkInTimestamp).toLocaleString()}</td>
                                                 <td>
                                                     <span style={{ fontWeight: '600' }}>{log.gymName}</span>
@@ -536,8 +535,8 @@ const MemberDashboard = () => {
                                     <tr><th>Date</th><th>Status</th></tr>
                                 </thead>
                                 <tbody>
-                                    {attendance.slice(0, 5).map(att => (
-                                        <tr key={att._id}>
+                                    {attendance.slice(0, 5).map((att, idx) => (
+                                        <tr key={att.id || att._id || idx}>
                                             <td>{new Date(att.date).toLocaleDateString()}</td>
                                             <td><span className="badge badge-active">Present</span></td>
                                         </tr>
@@ -557,8 +556,8 @@ const MemberDashboard = () => {
                                 <tr><th>Date</th><th>Amount</th><th>Method</th></tr>
                             </thead>
                             <tbody>
-                                {payments.slice(0, 5).map(pay => (
-                                    <tr key={pay._id}>
+                                {payments.slice(0, 5).map((pay, idx) => (
+                                    <tr key={pay.id || pay._id || idx}>
                                         <td>{new Date(pay.date).toLocaleDateString()}</td>
                                         <td style={{ fontWeight: '700' }}>₹{pay.amount}</td>
                                         <td>{pay.method}</td>
@@ -708,7 +707,7 @@ const MemberDashboard = () => {
                     >
                         <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '800' }}>Edit Profile &amp; Credentials</h3>
                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
-                            Update your personal details and account login credentials.
+                            Your name, email, and mobile number are locked. Contact your gym admin to change them.
                         </p>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
@@ -716,10 +715,10 @@ const MemberDashboard = () => {
                             <input
                                 type="text"
                                 className="input"
-                                required
+                                disabled
+                                readOnly
                                 value={profileName}
-                                onChange={e => setProfileName(e.target.value)}
-                                style={{ width: '100%' }}
+                                style={{ width: '100%', opacity: 0.65, cursor: 'not-allowed' }}
                             />
                         </div>
 
@@ -728,10 +727,10 @@ const MemberDashboard = () => {
                             <input
                                 type="email"
                                 className="input"
-                                required
+                                disabled
+                                readOnly
                                 value={profileEmail}
-                                onChange={e => setProfileEmail(e.target.value)}
-                                style={{ width: '100%' }}
+                                style={{ width: '100%', opacity: 0.65, cursor: 'not-allowed' }}
                             />
                         </div>
 
@@ -740,10 +739,10 @@ const MemberDashboard = () => {
                             <input
                                 type="tel"
                                 className="input"
-                                required
+                                disabled
+                                readOnly
                                 value={profilePhone}
-                                onChange={e => setProfilePhone(e.target.value)}
-                                style={{ width: '100%' }}
+                                style={{ width: '100%', opacity: 0.65, cursor: 'not-allowed' }}
                             />
                         </div>
 
@@ -769,7 +768,7 @@ const MemberDashboard = () => {
                                 type="submit"
                                 className="btn btn-primary"
                                 style={{ flex: 1 }}
-                                disabled={updatingProfile || !profileName || !profileEmail || !profilePhone}
+                                disabled={updatingProfile || !profilePassword}
                             >
                                 {updatingProfile ? 'Saving...' : 'Save Changes'}
                             </button>

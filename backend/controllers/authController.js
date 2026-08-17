@@ -312,6 +312,61 @@ const authUser = catchAsync(async (req, res, next) => {
         }).populate('gymId');
     }
 
+    // Dynamic backend lookup: If User table entry does not exist, check Prisma Member table dynamically
+    if (!user) {
+        try {
+            const memberRecord = await prisma.member.findFirst({
+                where: {
+                    OR: [
+                        { email },
+                        ...(inputIdentifier ? [{ phone: inputIdentifier }] : [])
+                    ]
+                }
+            });
+
+            if (memberRecord) {
+                // Dynamically provision and link User account for this Member directly from backend database
+                const defaultHash = await bcrypt.hash(password, 10);
+                const isH4 = memberRecord.gymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd' || memberRecord.gymId === '327d37e7-f978-43a9-82ef-e6c4a4dc3c5d';
+                
+                const newUser = await User.create({
+                    name: memberRecord.name,
+                    email: memberRecord.email,
+                    phone: memberRecord.phone || inputIdentifier || '',
+                    password: defaultHash,
+                    role: 'member',
+                    gymId: isH4 ? memberRecord.gymId : 'public',
+                    isVerified: true,
+                    isActive: true,
+                    status: 'Active',
+                    memberId: memberRecord.id
+                });
+                user = await User.findById(newUser._id || newUser.id).populate('gymId');
+            }
+        } catch (syncErr) {
+            logger.error({ err: syncErr }, 'Error auto-syncing user account for member');
+        }
+    }
+
+    // Ensure existing member users are verified & linked with their memberId from DB
+    if (user && user.role === 'member' && (!user.memberId || !user.isVerified)) {
+        try {
+            const memberRecord = await prisma.member.findFirst({
+                where: { OR: [{ email: user.email }, { phone: user.phone }] }
+            });
+            if (memberRecord) {
+                await User.findByIdAndUpdate(user._id || user.id, {
+                    memberId: memberRecord.id,
+                    isVerified: true,
+                    isActive: true,
+                    status: 'Active'
+                });
+                user.memberId = memberRecord.id;
+                user.isVerified = true;
+            }
+        } catch (e) {}
+    }
+
     // Generic "invalid credentials" for every failure path to avoid enumeration.
     const GENERIC = 'Invalid email/phone or password';
 

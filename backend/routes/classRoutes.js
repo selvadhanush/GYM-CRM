@@ -7,12 +7,15 @@ const validate = require('../middleware/validate');
 const { z } = require('zod');
 
 const createClassSchema = z.object({
-    className: z.string().min(1, 'Class name is required').max(100),
-    trainerName: z.string().min(1, 'Trainer name is required'),
+    name: z.string().min(1, 'Class name is required').max(100),
+    type: z.string().min(1, 'Class type is required'),
+    description: z.string().optional(),
+    trainerName: z.string().optional(),
     scheduleDate: z.string().min(1, 'Schedule date is required'),
     startTime: z.string().min(1, 'Start time is required'),
     endTime: z.string().min(1, 'End time is required'),
-    maxCapacity: z.number().min(1, 'Capacity must be at least 1')
+    maxSeats: z.coerce.number().min(1, 'Capacity must be at least 1'),
+    bookingDeadline: z.string().optional()
 });
 
 const bookClassSchema = z.object({

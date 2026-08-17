@@ -67,13 +67,14 @@ const MemberClasses = () => {
                         const color = typeColors[gymClass.type] || '#6366f1';
                         const isFull = gymClass.seatsAvailable <= 0;
                         const isBooked = gymClass.isBooked;
+                        const isClosed = gymClass.isBookingClosed;
                         const loading = actionLoading[gymClass._id];
 
                         return (
                             <div key={gymClass._id} className="glass" style={{
                                 borderRadius: '16px', padding: '1.5rem',
                                 borderLeft: `6px solid ${color}`,
-                                opacity: isFull && !isBooked ? 0.75 : 1
+                                opacity: (isFull || isClosed) && !isBooked ? 0.75 : 1
                             }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                                     <div>
@@ -97,6 +98,11 @@ const MemberClasses = () => {
                                 <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                                     <span>📆 {new Date(gymClass.scheduleDate).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
                                     <span>⏰ {gymClass.startTime} – {gymClass.endTime}</span>
+                                    {gymClass.bookingDeadline && (
+                                        <span style={{ color: isClosed ? '#ef4444' : 'var(--text-secondary)', fontWeight: isClosed ? 700 : 400 }}>
+                                            🔒 {isClosed ? 'Booking closed' : 'Book before'} {new Date(gymClass.bookingDeadline).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                    )}
                                     {gymClass.description && <span style={{ fontStyle: 'italic' }}>📝 {gymClass.description}</span>}
                                 </div>
 
@@ -131,11 +137,11 @@ const MemberClasses = () => {
                                 ) : (
                                     <button
                                         onClick={() => handleBook(gymClass)}
-                                        disabled={isFull || !!loading}
+                                        disabled={isFull || isClosed || !!loading}
                                         className="btn btn-primary"
-                                        style={{ width: '100%', background: isFull ? 'rgba(100,100,100,0.2)' : color, opacity: isFull ? 0.6 : 1 }}
+                                        style={{ width: '100%', background: (isFull || isClosed) ? 'rgba(100,100,100,0.2)' : color, opacity: (isFull || isClosed) ? 0.6 : 1 }}
                                     >
-                                        {loading === 'booking' ? 'Booking...' : isFull ? '🚫 Class Full' : '🎯 Book Slot'}
+                                        {loading === 'booking' ? 'Booking...' : isClosed ? '🔒 Booking Closed' : isFull ? '🚫 Class Full' : '🎯 Book Slot'}
                                     </button>
                                 )}
                             </div>

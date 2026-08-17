@@ -14,7 +14,7 @@ const Classes = () => {
     const [bookingsModal, setBookingsModal] = useState(null);
     const [formData, setFormData] = useState({
         name: '', type: 'Yoga', description: '', trainerName: '',
-        scheduleDate: '', startTime: '', endTime: '', maxSeats: 10
+        scheduleDate: '', startTime: '', endTime: '', maxSeats: 10, bookingDeadline: ''
     });
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
@@ -48,7 +48,7 @@ const Classes = () => {
         try {
             await API.post('/classes', formData);
             setIsModalOpen(false);
-            setFormData({ name: '', type: 'Yoga', description: '', trainerName: '', scheduleDate: '', startTime: '', endTime: '', maxSeats: 10 });
+            setFormData({ name: '', type: 'Yoga', description: '', trainerName: '', scheduleDate: '', startTime: '', endTime: '', maxSeats: 10, bookingDeadline: '' });
             fetchClasses();
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to create class');
@@ -155,6 +155,11 @@ const Classes = () => {
                             <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
                                 <div>📆 {new Date(gymClass.scheduleDate).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</div>
                                 <div>⏰ {gymClass.startTime} – {gymClass.endTime}</div>
+                                {gymClass.bookingDeadline && (
+                                    <div style={{ color: gymClass.isBookingClosed ? '#ef4444' : 'var(--text-secondary)', fontWeight: gymClass.isBookingClosed ? 700 : 400 }}>
+                                        🔒 {gymClass.isBookingClosed ? 'Booking closed' : 'Booking closes'} {new Date(gymClass.bookingDeadline).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                    </div>
+                                )}
                                 {gymClass.description && <div style={{ marginTop: '0.25rem' }}>📝 {gymClass.description}</div>}
                             </div>
 
@@ -218,6 +223,11 @@ const Classes = () => {
                             <label>End Time *</label>
                             <input className="input" type="time" value={formData.endTime} onChange={e => setFormData({ ...formData, endTime: e.target.value })} required />
                         </div>
+                    </div>
+                    <div className="input-group">
+                        <label>Booking Closes At</label>
+                        <input className="input" type="datetime-local" value={formData.bookingDeadline} onChange={e => setFormData({ ...formData, bookingDeadline: e.target.value })} />
+                        <small style={{ color: 'var(--text-secondary)' }}>Optional. After this date/time, members can no longer book this class.</small>
                     </div>
                     <div className="input-group">
                         <label>Description</label>

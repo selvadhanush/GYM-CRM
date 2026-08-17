@@ -337,7 +337,15 @@ const Sidebar = () => {
         if (isPartnerAdmin) {
             groups = NAV_GROUPS.partner;
         } else {
-            groups = NAV_GROUPS[role] || NAV_GROUPS.member;
+            groups = (NAV_GROUPS[role] || NAV_GROUPS.member).map(group => ({
+                ...group,
+                items: group.items.filter(item => {
+                    if (role === 'member' && isH4Gym && item.path === '/explore-gyms') {
+                        return false;
+                    }
+                    return true;
+                })
+            }));
         }
     }
 
@@ -424,17 +432,20 @@ const Sidebar = () => {
                 {groups.map((group, gIdx) => (
                     <div key={gIdx} className="sidebar-group">
                         {!collapsed && <div className="sidebar-group-label">{group.label}</div>}
-                        {group.items.map((item, iIdx) => (
-                            <Link
-                                key={iIdx}
-                                to={item.path}
-                                className={`nav-link ${isActive(item.path) ? 'active' : ''}`}
-                                onClick={closeMobile}
-                            >
-                                <div className="nav-icon"><item.icon size={20} /></div>
-                                <span className="nav-label">{item.name}</span>
-                            </Link>
-                        ))}
+                        {group.items.map((item, iIdx) => {
+                            const IconComponent = (typeof item.icon === 'function' || (item.icon && item.icon.$$typeof)) ? item.icon : null;
+                            return (
+                                <Link
+                                    key={iIdx}
+                                    to={item.path}
+                                    className={`nav-link ${isActive(item.path) ? 'active' : ''}`}
+                                    onClick={closeMobile}
+                                >
+                                    <div className="nav-icon">{IconComponent ? <IconComponent size={20} /> : null}</div>
+                                    <span className="nav-label">{item.name}</span>
+                                </Link>
+                            );
+                        })}
                     </div>
                 ))}
             </nav>

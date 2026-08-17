@@ -15,7 +15,8 @@ const getClasses = catchAsync(async (req, res, next) => {
         // Add seatsAvailable computed field
         const result = classes.map(c => ({
             ...c,
-            seatsAvailable: c.maxSeats - (c.bookings?.length || 0)
+            seatsAvailable: c.maxSeats - (c.bookings?.length || 0),
+            isBookingClosed: !!(c.bookingDeadline && new Date() > new Date(c.bookingDeadline))
         }));
         res.json(result);
     } catch (error) { next(error); }
@@ -26,7 +27,7 @@ const getClasses = catchAsync(async (req, res, next) => {
 // @access  Private/Admin/Trainer
 const createClass = catchAsync(async (req, res, next) => {
     try {
-        const { name, type, description, trainerName, scheduleDate, startTime, endTime, maxSeats } = req.body;
+        const { name, type, description, trainerName, scheduleDate, startTime, endTime, maxSeats, bookingDeadline } = req.body;
         if (!name || !type || !scheduleDate || !startTime || !endTime || !maxSeats) {
             return res.status(400).json({ message: 'name, type, scheduleDate, startTime, endTime, maxSeats are required' });
         }
@@ -39,6 +40,7 @@ const createClass = catchAsync(async (req, res, next) => {
             startTime,
             endTime,
             maxSeats: Number(maxSeats),
+            bookingDeadline: bookingDeadline ? new Date(bookingDeadline) : null,
             gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
             branchId: req.user.branchId || null,
             bookings: []
@@ -115,6 +117,10 @@ const bookClass = catchAsync(async (req, res, next) => {
             b => b && (b.memberId || b).toString() === memberId.toString()
         );
         if (alreadyBooked) return res.status(400).json({ message: 'Already booked this class' });
+
+        if (gymClass.bookingDeadline && new Date() > new Date(gymClass.bookingDeadline)) {
+            return res.status(400).json({ message: 'Booking for this class has closed' });
+        }
 
         if (gymClass.bookings.length >= gymClass.maxSeats) {
             return res.status(400).json({ message: 'Class is full' });
@@ -197,7 +203,8 @@ const getMemberClasses = catchAsync(async (req, res, next) => {
             id: c._id ? c._id.toString() : c.id,
             imageUrl: c.imageUrl || getImageUrl(c.type, c.name),
             seatsAvailable: Math.max(0, (c.maxSeats || 10) - (c.bookings?.length || 0)),
-            isBooked: memberId ? (c.bookings?.some(b => b && (b.memberId || b).toString() === memberId.toString()) || false) : false
+            isBooked: memberId ? (c.bookings?.some(b => b && (b.memberId || b).toString() === memberId.toString()) || false) : false,
+            isBookingClosed: !!(c.bookingDeadline && new Date() > new Date(c.bookingDeadline))
         }));
         res.json(result);
     } catch (error) { next(error); }
