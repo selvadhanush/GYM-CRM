@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
 import Modal from '../components/Modal';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, UserPlus } from 'lucide-react';
 
 const STATUSES = ['New', 'Contacted', 'Interested', 'Converted', 'Lost'];
 const SOURCES = ['Walk-in', 'Instagram', 'Facebook', 'Referral', 'Google', 'WhatsApp', 'Other'];
@@ -19,6 +20,7 @@ const PIPELINE_EMOJIS = { New: '🆕', Contacted: '📞', Interested: '⭐', Con
 const emptyForm = { name: '', phone: '', email: '', source: 'Walk-in', interestedPlan: '', notes: '', followUpDate: '', assignedTo: '' };
 
 const Leads = () => {
+    const navigate = useNavigate();
     const [leads, setLeads] = useState([]);
     const [summary, setSummary] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -91,6 +93,19 @@ const Leads = () => {
         if (!window.confirm('Delete this lead?')) return;
         try { await API.delete(`/leads/${id}`); fetchAll(); }
         catch { alert('Failed to delete'); }
+    };
+
+    const convertToMember = (lead) => {
+        const params = new URLSearchParams({
+            convertLeadId: lead._id,
+            name: lead.name || '',
+            phone: lead.phone || '',
+            email: lead.email || '',
+            gymId: lead.gymId || '',
+            branchId: lead.branchId || '',
+            interestedPlan: lead.interestedPlan || ''
+        });
+        navigate(`/members?${params.toString()}`);
     };
 
     const safeLeads = Array.isArray(leads) ? leads : [];
@@ -214,7 +229,14 @@ const Leads = () => {
                                         </select>
                                     </td>
                                     <td>
-                                        <div style={{ display: 'flex', gap: '0.4rem' }}>
+                                        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                                            {lead.status === 'Converted' ? (
+                                                <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: '700', whiteSpace: 'nowrap' }}>✅ Converted</span>
+                                            ) : (
+                                                <button onClick={() => convertToMember(lead)} className="btn" style={{ fontSize: '0.75rem', padding: '0.3rem 0.6rem', background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.3rem', whiteSpace: 'nowrap' }}>
+                                                    <UserPlus size={14} /> Convert
+                                                </button>
+                                            )}
                                             <button onClick={() => openEdit(lead)} className="btn" style={{ fontSize: '0.75rem', padding: '0.3rem 0.6rem', border: '1px solid var(--border-color)', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                                                 <Pencil size={14} /> Edit
                                             </button>

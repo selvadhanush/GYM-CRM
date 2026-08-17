@@ -256,6 +256,7 @@ model GymClass {
   gymId        String
   branchId     String?
   bookings     String?  // stored as JSON string
+  bookingDeadline DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

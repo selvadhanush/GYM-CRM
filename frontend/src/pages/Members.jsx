@@ -27,6 +27,9 @@ const Members = () => {
     const [formData, setFormData] = useState({ name: '', phone: '', email: '', planId: '', joinDate: '', branchId: '', gymId: '', password: '' });
     const [highlightId, setHighlightId] = useState(null);
     const highlightRef = useRef(null);
+    const [convertingLeadId, setConvertingLeadId] = useState(null);
+    const appliedConvertLeadRef = useRef(null);
+    const pendingInterestedPlanRef = useRef('');
 
     // Renew & Transfer states
     const [renewMemberData, setRenewMemberData] = useState(null);
@@ -50,6 +53,54 @@ const Members = () => {
         if (searchParam) setSearchTerm(searchParam);
         if (highlightParam) setHighlightId(highlightParam);
     }, [location.search]);
+
+    // Convert a Lead into a Member: open the Add Member modal pre-filled with
+    // whatever the lead already captured (see Leads.jsx -> convertToMember).
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const convertLeadId = params.get('convertLeadId');
+        if (!convertLeadId || appliedConvertLeadRef.current === convertLeadId) return;
+        appliedConvertLeadRef.current = convertLeadId;
+
+        const leadName = params.get('name') || '';
+        const leadPhone = params.get('phone') || '';
+        const leadEmail = params.get('email') || '';
+        const leadGymId = params.get('gymId') || '';
+        const leadBranchId = params.get('branchId') || '';
+        const leadInterestedPlan = params.get('interestedPlan') || '';
+
+        setEditingMember(null);
+        setFormData({
+            name: leadName,
+            phone: leadPhone,
+            email: leadEmail,
+            planId: '',
+            joinDate: new Date().toISOString().split('T')[0],
+            branchId: leadBranchId || user?.branchId || '',
+            gymId: leadGymId || '',
+            password: ''
+        });
+        setConvertingLeadId(convertLeadId);
+        setIsModalOpen(true);
+        // Stash for the plan-matching effect below — `plans` may not be loaded yet.
+        pendingInterestedPlanRef.current = leadInterestedPlan;
+
+        // Clear the query string so a refresh doesn't reopen/reapply the pre-fill.
+        navigate(location.pathname, { replace: true });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [location.search]);
+
+    // Best-effort match of a converting lead's free-text "interested plan" to a
+    // real Plan by name, once the plans list has actually loaded.
+    useEffect(() => {
+        const leadInterestedPlan = pendingInterestedPlanRef.current;
+        if (!leadInterestedPlan || !convertingLeadId || plans.length === 0) return;
+        const matchedPlan = plans.find(p => p.name?.trim().toLowerCase() === leadInterestedPlan.trim().toLowerCase());
+        if (matchedPlan) {
+            setFormData(prev => ({ ...prev, planId: matchedPlan._id }));
+        }
+        pendingInterestedPlanRef.current = '';
+    }, [plans, convertingLeadId]);
 
     // Scroll to highlighted member
     useEffect(() => {
@@ -99,6 +150,7 @@ const Members = () => {
     }, [statusFilter]);
 
     const handleOpenModal = (member = null) => {
+        setConvertingLeadId(null);
         if (member) {
             setEditingMember(member);
             setFormData({
@@ -148,7 +200,18 @@ const Members = () => {
             if (editingMember) {
                 await updateMember(editingMember._id, formData);
             } else {
-                await createMember(formData);
+                const newMember = await createMember(formData);
+                if (convertingLeadId) {
+                    try {
+                        await API.put(`/leads/${convertingLeadId}`, {
+                            status: 'Converted',
+                            convertedMemberId: newMember._id
+                        });
+                    } catch (leadError) {
+                        console.error('Member created, but failed to mark lead as converted:', leadError);
+                    }
+                    setConvertingLeadId(null);
+                }
             }
             fetchData();
             setIsModalOpen(false);
@@ -501,8 +564,13 @@ const Members = () => {
                 </div>
             )}
 
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingMember ? 'Edit Member' : 'Add New Member'}>
+            <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setConvertingLeadId(null); }} title={editingMember ? 'Edit Member' : 'Add New Member'}>
                 <form onSubmit={handleSubmit}>
+                    {convertingLeadId && (
+                        <div style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', padding: '0.6rem 0.85rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.85rem', fontWeight: '600' }}>
+                            🎯 Converting lead to member — details pre-filled below.
+                        </div>
+                    )}
                     <div className="form-grid">
                         <div className="input-group full-width">
                             <label>Name</label>

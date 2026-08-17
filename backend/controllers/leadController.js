@@ -43,7 +43,7 @@ const updateLead = catchAsync(async (req, res, next) => {
         const lead = await Lead.findOne(query);
         if (!lead) return res.status(404).json({ message: 'Lead not found' });
 
-        const { name, phone, email, source, status, interestedPlan, notes, followUpDate, assignedTo } = req.body;
+        const { name, phone, email, source, status, interestedPlan, notes, followUpDate, assignedTo, convertedMemberId } = req.body;
         if (name) lead.name = name;
         if (phone) lead.phone = phone;
         if (email !== undefined) lead.email = email;
@@ -53,6 +53,7 @@ const updateLead = catchAsync(async (req, res, next) => {
         if (notes !== undefined) lead.notes = notes;
         if (followUpDate !== undefined) lead.followUpDate = followUpDate || null;
         if (assignedTo !== undefined) lead.assignedTo = assignedTo;
+        if (convertedMemberId !== undefined) lead.convertedMemberId = convertedMemberId;
 
         await lead.save();
         res.json(lead);

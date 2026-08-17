@@ -739,12 +739,19 @@ const getDashboardData = catchAsync(async (req, res, next) => {
     });
 });
 
-// @desc    Update logged in member profile and credentials
+// @desc    Update logged in member's own credentials (password only).
+//          Identity fields (name, email, phone) are locked for self-service —
+//          only SuperAdmin can change them via the admin Members screen.
 // @route   PUT /api/member-portal/profile
 // @access  Private/Member
 const updateMyProfile = catchAsync(async (req, res, next) => {
     try {
         const { name, email, phone, password } = req.body;
+
+        if ((name && name.trim()) || (email && email.trim()) || (phone && phone.trim())) {
+            res.status(403);
+            throw new Error('Name, email, and mobile number can only be updated by a SuperAdmin. Please contact your gym admin.');
+        }
 
         const userId = req.user._id || req.user.id;
         const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -754,27 +761,11 @@ const updateMyProfile = catchAsync(async (req, res, next) => {
             throw new Error('User account not found');
         }
 
-        // 1. Resolve member profile (if available)
+        // Resolve member profile (kept for response payload only; no longer mutated here)
         let member = await resolveMember(req);
 
-        // 2. Prepare user updates (including password hashing)
+        // Prepare user updates — password only
         const userUpdateData = {};
-        if (name && name.trim()) userUpdateData.name = name.trim();
-        if (phone && phone.trim()) userUpdateData.phone = phone.trim();
-
-        if (email && email.trim()) {
-            const normalized = email.trim().toLowerCase();
-            if (normalized !== user.email) {
-                const emailExists = await prisma.user.findFirst({
-                    where: { email: normalized, NOT: { id: userId } }
-                });
-                if (emailExists) {
-                    res.status(400);
-                    throw new Error('Email is already taken by another user');
-                }
-                userUpdateData.email = normalized;
-            }
-        }
 
         if (password && password.trim()) {
             if (password.trim().length < 6) {
@@ -792,34 +783,13 @@ const updateMyProfile = catchAsync(async (req, res, next) => {
             data: userUpdateData
         });
 
-        // 3. Update Member profile if linked
-        let updatedMember = null;
-        if (member) {
-            updatedMember = await prisma.member.update({
-                where: { id: member.id },
-                data: {
-                    ...(name && { name: name.trim() }),
-                    ...(email && { email: email.trim().toLowerCase() }),
-                    ...(phone && { phone: phone.trim() }),
-                }
-            });
-
-            // Sync updated name to all published reviews by this member
-            if (name && name.trim()) {
-                await prisma.review.updateMany({
-                    where: { memberId: member.id },
-                    data: { memberName: name.trim() }
-                }).catch(() => {});
-            }
-        }
-
         res.status(200).json({
             success: true,
-            message: 'Profile and password updated successfully!',
-            member: updatedMember ? {
-                name: updatedMember.name,
-                email: updatedMember.email,
-                phone: updatedMember.phone
+            message: 'Password updated successfully!',
+            member: member ? {
+                name: member.name,
+                email: member.email,
+                phone: member.phone
             } : null,
             user: {
                 name: updatedUser.name,

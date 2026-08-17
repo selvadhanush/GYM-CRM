@@ -157,13 +157,17 @@ const Dashboard = () => {
         { title: 'Total Check-Ins Today', value: (stats?.todayAttendanceCount || 0) + (stats?.todaySessionsCount || 0), icon: <CheckCircle2 size={22} />, color: 'var(--warning-color)' },
     ];
 
+    const normalizedGym = (user?.gymName || user?.gymId?.name || '').toUpperCase();
+    const userGymId = user?.gymId?._id || user?.gymId || '';
+    const isH4User = user?.role === 'h4_admin' || normalizedGym === 'H4' || userGymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd' || (activeDivision === 'h4' && !['partner'].includes(user?.role));
+
     return (
         <div className="fade-in">
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                 <div className="page-header-left">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                         <h2 style={{ margin: 0 }}>{activeDivision === 'h4' ? 'Gym CRM Dashboard' : 'Partner Dashboard'}</h2>
-                        {['superadmin', 'fitpass_admin', 'h4_admin', 'admin'].includes(user?.role) && (
+                        {['superadmin', 'fitpass_admin', 'h4_admin'].includes(user?.role) && isH4User && (
                             <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
                                 {user?.branchId ? (
                                     <div style={{
@@ -207,10 +211,10 @@ const Dashboard = () => {
                                                 cursor: 'pointer',
                                                 margin: 0
                                             }}
-                                            value={activeDivision === 'h4' || ['h4_admin', 'admin'].includes(user?.role) ? selectedBranchId : selectedGymId}
+                                            value={activeDivision === 'h4' ? selectedBranchId : selectedGymId}
                                             onChange={(e) => {
                                                 const val = e.target.value;
-                                                if (activeDivision === 'h4' || ['h4_admin', 'admin'].includes(user?.role)) {
+                                                if (activeDivision === 'h4') {
                                                     changeSelectedBranch(val);
                                                 } else {
                                                     changeSelectedGym(val);
@@ -218,7 +222,7 @@ const Dashboard = () => {
                                                 }
                                             }}
                                         >
-                                            {activeDivision === 'h4' || ['h4_admin', 'admin'].includes(user?.role) ? (
+                                            {activeDivision === 'h4' ? (
                                                 <>
                                                     <option value="">H4 (All Branches)</option>
                                                     {gymList.map(branch => (

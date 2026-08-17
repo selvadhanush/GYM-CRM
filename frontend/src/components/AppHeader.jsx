@@ -75,6 +75,10 @@ const AppHeader = ({ onThemeToggle, isDark }) => {
         fetchGyms();
     }, [user, activeDivision, selectedGymId]);
 
+    const normalizedGym = (user?.gymName || user?.gymId?.name || '').toUpperCase();
+    const userGymId = user?.gymId?._id || user?.gymId || '';
+    const isH4User = user?.role === 'h4_admin' || normalizedGym === 'H4' || userGymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd' || (activeDivision === 'h4' && !['partner'].includes(user?.role));
+
     // Search state
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
@@ -175,7 +179,7 @@ const AppHeader = ({ onThemeToggle, isDark }) => {
                 </button>
                 <h1 className="page-title">{getPageTitle()}</h1>
 
-                {['superadmin', 'fitpass_admin', 'h4_admin', 'partner', 'admin'].includes(user?.role) && (
+                {['superadmin', 'fitpass_admin', 'h4_admin'].includes(user?.role) && isH4User && (
                     <div style={{ marginLeft: '0.75rem', display: 'flex', alignItems: 'center', position: 'relative' }}>
                         {user?.branchId ? (
                             <div style={{
@@ -220,10 +224,10 @@ const AppHeader = ({ onThemeToggle, isDark }) => {
                                         cursor: 'pointer',
                                         margin: 0
                                     }}
-                                    value={activeDivision === 'h4' || ['partner', 'h4_admin', 'admin'].includes(user?.role) ? selectedBranchId : selectedGymId}
+                                    value={activeDivision === 'h4' ? selectedBranchId : selectedGymId}
                                     onChange={(e) => {
                                         const val = e.target.value;
-                                        if (activeDivision === 'h4' || ['partner', 'h4_admin', 'admin'].includes(user?.role)) {
+                                        if (activeDivision === 'h4') {
                                             changeSelectedBranch(val);
                                         } else {
                                             changeSelectedGym(val);
@@ -232,7 +236,7 @@ const AppHeader = ({ onThemeToggle, isDark }) => {
                                         window.location.reload();
                                     }}
                                 >
-                                    {activeDivision === 'h4' || ['partner', 'h4_admin', 'admin'].includes(user?.role) ? (
+                                    {activeDivision === 'h4' ? (
                                         <>
                                             <option value="">H4 (All Branches)</option>
                                             {gyms.map(branch => (

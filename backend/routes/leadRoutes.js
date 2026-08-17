@@ -12,7 +12,8 @@ const createLeadSchema = z.object({
     email: z.string().email('Please enter a valid email address').optional().or(z.literal('')),
     source: z.string().optional(),
     status: z.string().optional(),
-    notes: z.string().optional()
+    notes: z.string().optional(),
+    convertedMemberId: z.string().optional()
 });
 
 const updateLeadSchema = createLeadSchema.partial();
