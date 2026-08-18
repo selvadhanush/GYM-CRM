@@ -3,6 +3,7 @@ const AppError = require('../utils/appError');
 const DietPlan = require('../models/DietPlan');
 const Member = require('../models/Member');
 const User = require('../models/User');
+const { H4_GYM_IDS } = require('../config/constants');
 
 // @desc    Create a diet plan for a member
 // @route   POST /api/diet-plans
@@ -234,7 +235,7 @@ const logCompletedNutrition = catchAsync(async (req, res, next) => {
 
         // Create Audit Log entry for Coach & Admin
         await AuditLog.create({
-            gymId: gymId || '327d37e7-f978-43a9-82ef-e6c4a4dc3c5d',
+            gymId: gymId || H4_GYM_IDS[1],
             userId: req.user?.id || req.user?._id || null,
             userName: memberName || req.user?.name || 'Member',
             userEmail: req.user?.email || '',
@@ -249,7 +250,7 @@ const logCompletedNutrition = catchAsync(async (req, res, next) => {
         if (trainerId) {
             await Notification.create({
                 recipientId: trainerId,
-                gymId: gymId || '327d37e7-f978-43a9-82ef-e6c4a4dc3c5d',
+                gymId: gymId || H4_GYM_IDS[1],
                 type: 'NUTRITION_LOGGED',
                 message: `${memberName || 'Your member'} hit their nutrition & hydration goal for "${planName}"!`,
                 read: false

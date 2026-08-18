@@ -8,7 +8,7 @@ const Gym = require('../models/Gym');
 const Plan = require('../models/Plan');
 const generateToken = require('../utils/generateToken');
 const { logAudit } = require('../utils/auditLogger');
-const { DEFAULT_SESSION_DURATION_MINUTES } = require('../config/constants');
+const { DEFAULT_SESSION_DURATION_MINUTES, H4_GYM_IDS } = require('../config/constants');
 
 // --- zod schemas (validation lives at the controller boundary; routes apply
 //     them via the shared validate middleware where convenient, but for the
@@ -402,7 +402,7 @@ const createDedicatedAdmin = catchAsync(async (req, res, next) => {
     let gymId = 'SYSTEM';
     if (role === 'h4_admin') {
         const h4Gym = await Gym.findOne({ name: 'H4' });
-        gymId = h4Gym ? h4Gym._id : '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+        gymId = h4Gym ? h4Gym._id : H4_GYM_IDS[0];
     }
 
     const admin = await User.create({
@@ -542,7 +542,7 @@ const getFitPassMemberRoster = catchAsync(async (req, res, next) => {
     const fitPassPlanIds = fitPassPlans.map(p => p.id);
 
     const h4Gym = await prisma.gym.findFirst({ where: { name: 'H4' } });
-    const h4GymId = h4Gym ? h4Gym.id : '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+    const h4GymId = h4Gym ? h4Gym.id : H4_GYM_IDS[0];
 
     const where = { 
         planId: { in: fitPassPlanIds },

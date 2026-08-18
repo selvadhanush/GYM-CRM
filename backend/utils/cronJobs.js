@@ -85,13 +85,12 @@ const startCronJobs = () => {
     // NOTE: intentionally does NOT call logAudit() -- session-expiry volume would
     // flood the admin AuditLogs UI. Operational visibility stays in console logs only.
     cron.schedule('* * * * *', async () => {
-        const runWithRetry = async (fn, retries = 3, delay = 2000) => {
+        const runWithRetry = async (fn, retries = 2, delay = 3000) => {
             for (let i = 1; i <= retries; i++) {
                 try {
                     return await fn();
                 } catch (err) {
                     if (i === retries) throw err;
-                    logger.warn({ err, attempt: i }, `[SessionExpiry] Database query attempt failed. Retrying in ${delay / 1000}s...`);
                     await new Promise(resolve => setTimeout(resolve, delay));
                 }
             }
@@ -109,9 +108,8 @@ const startCronJobs = () => {
                 })
             );
 
-            if (expiredRows.count > 0) {
+            if (expiredRows && expiredRows.count > 0) {
                 // 2. Clear the now-expired active session fields on those members.
-                // We identify them via the rows we just expired in this tick.
                 const justExpired = await runWithRetry(() =>
                     prisma.sessionCheckIn.findMany({
                         where: { status: 'expired', expiresAt: { lte: now } },
@@ -120,8 +118,6 @@ const startCronJobs = () => {
                     })
                 );
                 for (const row of justExpired) {
-                    // Conditional update: only clear if the member's session still
-                    // points at this expiry (avoids clobbering a newer check-in).
                     await prisma.member.updateMany({
                         where: { id: row.memberId, currentSessionEndsAt: row.expiresAt },
                         data: { currentSessionEndsAt: null, currentSessionGymId: null },
@@ -130,7 +126,10 @@ const startCronJobs = () => {
                 logger.info(`[SessionExpiry] Expired ${expiredRows.count} session(s).`);
             }
         } catch (error) {
-            logger.error({ err: error }, '[SessionExpiry] cron error');
+            // Silently handle transient socket timeouts in background cron
+            if (error?.code !== 'P1008') {
+                logger.error({ message: error.message }, '[SessionExpiry] background sync issue');
+            }
         }
     });
 

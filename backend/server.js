@@ -18,7 +18,7 @@ dotenv.config();
 // --- Boot-time security guard (B1): never start with a missing/placeholder JWT secret ---
 const jwtSecret = process.env.JWT_SECRET;
 if (!jwtSecret || PLACEHOLDER_SECRETS.includes(jwtSecret)) {
-    logger.error('[FATAL] JWT_SECRET is missing or still set to a placeholder value. Generate one with: node scripts/generateSecret.js — then put it in your .env as JWT_SECRET=<value>');
+    logger.error('[FATAL] JWT_SECRET is missing or still set to a placeholder value. Generate one with: node scripts/dev/generateSecret.js — then put it in your .env as JWT_SECRET=<value>');
     process.exit(1);
 }
 

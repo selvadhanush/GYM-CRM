@@ -1,6 +1,7 @@
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const logger = require('../lib/logger');
+const { H4_GYM_IDS } = require('../config/constants');
 /**
  * FitPrime / FitPass session-based check-in controller.
  *
@@ -95,7 +96,7 @@ const checkIn = catchAsync(async (req, res, next) => {
     // Resolve target gymId fallback if QR scanned standard code or missing gymId
     let effectiveGymId = gymId;
     if (!effectiveGymId || effectiveGymId === 'H4_GYM_STANDARD_QR' || effectiveGymId === 'HOME_GYM' || req.body?.qrCode === 'H4_GYM_STANDARD_QR') {
-      effectiveGymId = member.gymId || '327d37e7-f978-43a9-82ef-e6c4a4dc3c5d';
+      effectiveGymId = member.gymId || H4_GYM_IDS[1];
     }
 
     // 2. Fetch associated membership plan
