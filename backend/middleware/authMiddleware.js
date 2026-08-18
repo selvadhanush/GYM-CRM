@@ -3,6 +3,7 @@ const logger = require('../lib/logger');
 const User = require('../models/User');
 const Branch = require('../models/Branch');
 const Gym = require('../models/Gym');
+const { H4_GYM_IDS } = require('../config/constants');
 
 const protect = async (req, res, next) => {
     let token;
@@ -63,7 +64,7 @@ const protect = async (req, res, next) => {
             } else if (req.user.role === 'h4_admin') {
                 // H4 admin is locked to the H4 gymId
                 const h4Gym = await Gym.findOne({ name: 'H4' });
-                req.user.gymId = h4Gym ? h4Gym._id.toString() : '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+                req.user.gymId = h4Gym ? h4Gym._id.toString() : H4_GYM_IDS[0];
                 
                 if (req.user.userBranchId) {
                     // Branch-level admin created for a specific location

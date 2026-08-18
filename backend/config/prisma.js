@@ -9,10 +9,10 @@ const pool = new Pool({
     rejectUnauthorized: false
   },
   max: 10,
-  idleTimeoutMillis: 30000, // close idle connections after 30s
-  connectionTimeoutMillis: 30000, // wait up to 30s for connection (helps with Neon cold starts)
+  idleTimeoutMillis: 120000, // keep connection warm across minute cron checks
+  connectionTimeoutMillis: 60000, // 60s timeout for cold starts / network latency
   keepAlive: true,
-  keepAliveInitialDelayMillis: 10000,
+  keepAliveInitialDelayMillis: 5000,
 });
 
 const adapter = new PrismaPg(pool);

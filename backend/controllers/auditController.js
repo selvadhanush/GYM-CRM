@@ -3,6 +3,7 @@ const AppError = require('../utils/appError');
 const AuditLog = require('../models/AuditLog');
 const prisma = require('../config/prisma');
 const { translateQuery } = require('../models/MongooseAdapter');
+const { H4_GYM_IDS } = require('../config/constants');
 
 // @desc    Get audit logs for a gym
 // @route   GET /api/audit
@@ -15,7 +16,7 @@ const getAuditLogs = catchAsync(async (req, res, next) => {
             if (req.user.role === 'fitpass_admin') {
                 const Gym = require('../models/Gym');
                 const h4Gym = await Gym.findOne({ name: 'H4' });
-                const h4GymId = h4Gym ? h4Gym._id.toString() : '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+                const h4GymId = h4Gym ? h4Gym._id.toString() : H4_GYM_IDS[0];
                 filter.gymId = { $ne: h4GymId };
             } else {
                 filter.gymId = req.user.gymId;
@@ -52,7 +53,7 @@ const getAuditSummary = catchAsync(async (req, res, next) => {
             if (req.user.role === 'fitpass_admin') {
                 const Gym = require('../models/Gym');
                 const h4Gym = await Gym.findOne({ name: 'H4' });
-                const h4GymId = h4Gym ? h4Gym._id.toString() : '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+                const h4GymId = h4Gym ? h4Gym._id.toString() : H4_GYM_IDS[0];
                 filter = { gymId: { $ne: h4GymId } };
             } else {
                 filter = { gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }) };

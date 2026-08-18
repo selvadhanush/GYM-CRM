@@ -5,6 +5,7 @@ const Plan = require('../models/Plan');
 const User = require('../models/User');
 const { jsonToCsv } = require('../utils/csvUtils');
 const { logAudit } = require('../utils/auditLogger');
+const { H4_GYM_IDS } = require('../config/constants');
 
 // Helper to dynamically build member query based on role restrictions
 const buildMemberQuery = async (req, memberId) => {
@@ -20,7 +21,7 @@ const buildMemberQuery = async (req, memberId) => {
     if (req.user.role === 'fitpass_admin') {
         const Gym = require('../models/Gym');
         const h4Gym = await Gym.findOne({ name: 'H4' });
-        const h4GymId = h4Gym ? h4Gym._id.toString() : '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+        const h4GymId = h4Gym ? h4Gym._id.toString() : H4_GYM_IDS[0];
         if (req.user.gymId && req.user.gymId !== 'SYSTEM') {
             query.gymId = req.user.gymId;
         } else if (!query.gymId) {
@@ -80,7 +81,7 @@ const createMember = catchAsync(async (req, res, next) => {
         } else {
             const Gym = require('../models/Gym');
             const h4Gym = await Gym.findOne({ name: 'H4' });
-            targetGymId = h4Gym ? h4Gym._id.toString() : '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+            targetGymId = h4Gym ? h4Gym._id.toString() : H4_GYM_IDS[0];
         }
 
         const targetBranchId = req.user.branchId || branchId || null;
@@ -242,7 +243,7 @@ const updateMember = catchAsync(async (req, res, next) => {
             if ((req.user.role === 'superadmin' || req.user.role === 'fitpass_admin') && gymId && gymId !== originalGymId) {
                 const Gym = require('../models/Gym');
                 const h4Gym = await Gym.findOne({ name: 'H4' });
-                const h4GymId = h4Gym ? h4Gym._id.toString() : '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+                const h4GymId = h4Gym ? h4Gym._id.toString() : H4_GYM_IDS[0];
 
                 const wasH4 = originalGymId === h4GymId;
                 const isH4 = gymId === h4GymId;

@@ -15,6 +15,7 @@ const {
     MAX_OTP_ATTEMPTS,
     MAX_LOGIN_ATTEMPTS,
     LOGIN_LOCK_MINUTES,
+    H4_GYM_IDS,
 } = require('../config/constants');
 
 /**
@@ -312,59 +313,33 @@ const authUser = catchAsync(async (req, res, next) => {
         }).populate('gymId');
     }
 
-    // Dynamic backend lookup: If User table entry does not exist, check Prisma Member table dynamically
-    if (!user) {
-        try {
-            const memberRecord = await prisma.member.findFirst({
-                where: {
-                    OR: [
-                        { email },
-                        ...(inputIdentifier ? [{ phone: inputIdentifier }] : [])
-                    ]
-                }
-            });
+    // NOTE: this endpoint is password-based login and must never create an
+    // account as a side effect of an unauthenticated request — doing so
+    // previously allowed anyone who knew a member's email/phone to silently
+    // provision a login with a password of their own choosing and be signed
+    // in immediately (no ownership verification at all). If no User account
+    // exists yet for a Member record, that discovery-and-provisioning now
+    // happens exclusively in checkUserAndSendOTP() below, which is OTP-gated
+    // (see POST /api/auth/check-user + POST /api/auth/verify-otp, already
+    // used by the mobile login flow). A bare "user not found" falls through
+    // to the generic invalid-credentials response a few lines down.
 
-            if (memberRecord) {
-                // Dynamically provision and link User account for this Member directly from backend database
-                const defaultHash = await bcrypt.hash(password, 10);
-                const isH4 = memberRecord.gymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd' || memberRecord.gymId === '327d37e7-f978-43a9-82ef-e6c4a4dc3c5d';
-                
-                const newUser = await User.create({
-                    name: memberRecord.name,
-                    email: memberRecord.email,
-                    phone: memberRecord.phone || inputIdentifier || '',
-                    password: defaultHash,
-                    role: 'member',
-                    gymId: isH4 ? memberRecord.gymId : 'public',
-                    isVerified: true,
-                    isActive: true,
-                    status: 'Active',
-                    memberId: memberRecord.id
-                });
-                user = await User.findById(newUser._id || newUser.id).populate('gymId');
-            }
-        } catch (syncErr) {
-            logger.error({ err: syncErr }, 'Error auto-syncing user account for member');
-        }
-    }
-
-    // Ensure existing member users are verified & linked with their memberId from DB
-    if (user && user.role === 'member' && (!user.memberId || !user.isVerified)) {
+    // Link existing member-role users to their Member record if the link is
+    // missing (e.g. imported data). Deliberately does NOT touch isVerified/
+    // isActive/status here — verification status must only ever change via
+    // the OTP-verified flow, never as a side effect of a login attempt.
+    if (user && user.role === 'member' && !user.memberId) {
         try {
             const memberRecord = await prisma.member.findFirst({
                 where: { OR: [{ email: user.email }, { phone: user.phone }] }
             });
             if (memberRecord) {
-                await User.findByIdAndUpdate(user._id || user.id, {
-                    memberId: memberRecord.id,
-                    isVerified: true,
-                    isActive: true,
-                    status: 'Active'
-                });
+                await User.findByIdAndUpdate(user._id || user.id, { memberId: memberRecord.id });
                 user.memberId = memberRecord.id;
-                user.isVerified = true;
             }
-        } catch (e) {}
+        } catch (e) {
+            logger.error({ err: e }, 'Error auto-linking memberId for existing user');
+        }
     }
 
     // Generic "invalid credentials" for every failure path to avoid enumeration.
@@ -416,7 +391,7 @@ const authUser = catchAsync(async (req, res, next) => {
         const userGymName = user.gymId?.name || '';
         const userGymId = user.gymId?._id || user.gymId || '';
         const normalizedGym = userGymName.toUpperCase();
-        const isH4Gym = normalizedGym === 'H4' || userGymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+        const isH4Gym = normalizedGym === 'H4' || H4_GYM_IDS.includes(userGymId);
 
         if (portalType === 'superadmin') {
             if (userRole !== 'superadmin') {
@@ -500,11 +475,47 @@ const checkUserAndSendOTP = catchAsync(async (req, res, next) => {
         throw new Error('Please provide an email');
     }
 
-    const user = await User.findOne({ email });
+    let user = await User.findOne({ email });
+
+    if (!user) {
+        // No login account yet — but a Member record may already exist for
+        // this email (e.g. added by an admin, imported from a CSV, or a
+        // legacy record predating self-service login). If so, silently
+        // provision an unverified login for them and fall through to the
+        // normal OTP-send flow below, rather than telling the caller to
+        // register a brand-new (possibly duplicate/conflicting) account.
+        // The account is unusable until the OTP is verified, so knowing a
+        // member's email alone grants nothing.
+        try {
+            const memberRecord = await prisma.member.findFirst({ where: { email } });
+            if (memberRecord) {
+                const isH4 = H4_GYM_IDS.includes(memberRecord.gymId);
+                const randomPassword = crypto.randomBytes(32).toString('hex');
+                const passwordHash = await bcrypt.hash(randomPassword, 10);
+                const newUser = await User.create({
+                    name: memberRecord.name,
+                    email: memberRecord.email,
+                    phone: memberRecord.phone || '',
+                    password: passwordHash,
+                    role: 'member',
+                    gymId: isH4 ? memberRecord.gymId : 'public',
+                    isVerified: false,
+                    memberId: memberRecord.id,
+                });
+                user = await User.findById(newUser._id || newUser.id);
+                logAudit(auditReq(req, { name: user.name, email, role: 'member', gymId: user.gymId }),
+                    'ACCOUNT_PROVISION_PENDING_VERIFICATION', 'User', user._id || user.id,
+                    `Login account provisioned for existing member ${email}; awaiting OTP verification`).catch(() => {});
+            }
+        } catch (syncErr) {
+            logger.error({ err: syncErr }, 'Error auto-syncing user account for member during check-user');
+        }
+    }
 
     // Deliberately return the same "new" response shape for non-existent users
-    // so the public endpoint can't be used to enumerate accounts. The mobile
-    // app routes "new" users to registration.
+    // (and members with no matching account either) so the public endpoint
+    // can't be used to enumerate accounts. The mobile app routes "new" users
+    // to registration.
     if (!user) {
         return res.json({ status: 'new', message: 'User not found, redirect to registration' });
     }
