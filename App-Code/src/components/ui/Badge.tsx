@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { fontFamilies } from '@/design-system/tokens';
+import { theme } from '@/design-system/theme';
 
 export type BadgeVariant = 'active' | 'expired' | 'frozen' | 'success' | 'warning' | 'error' | 'info';
 
@@ -12,40 +13,28 @@ interface BadgeProps {
 }
 
 export const Badge: React.FC<BadgeProps> = ({ label, variant = 'info', showDot = true, style }) => {
+  // Derived from `theme.colors.*` status tokens (not a private palette) so
+  // badges stay in sync with Toast/EmptyState/everything else.
   const getBadgeColors = (): { bg: string; text: string; border: string; dot: string } => {
+    const fromStatus = (hex: string) => ({
+      bg: `${hex}24`,
+      text: hex,
+      border: `${hex}4D`,
+      dot: hex,
+    });
     switch (variant) {
       case 'active':
       case 'success':
-        return {
-          bg: 'rgba(46, 125, 50, 0.14)',
-          text: '#4CAF50',
-          border: 'rgba(76, 175, 80, 0.3)',
-          dot: '#4CAF50',
-        };
+        return fromStatus(theme.colors.success);
       case 'expired':
       case 'error':
-        return {
-          bg: 'rgba(198, 40, 40, 0.14)',
-          text: '#EF5350',
-          border: 'rgba(239, 83, 80, 0.3)',
-          dot: '#EF5350',
-        };
+        return fromStatus(theme.colors.error);
       case 'frozen':
       case 'warning':
-        return {
-          bg: 'rgba(240, 160, 32, 0.14)',
-          text: '#FFB74D',
-          border: 'rgba(255, 183, 77, 0.3)',
-          dot: '#FFB74D',
-        };
+        return fromStatus(theme.colors.warning);
       case 'info':
       default:
-        return {
-          bg: 'rgba(25, 118, 210, 0.14)',
-          text: '#4FC3F7',
-          border: 'rgba(79, 195, 247, 0.3)',
-          dot: '#4FC3F7',
-        };
+        return fromStatus(theme.colors.info);
     }
   };
 

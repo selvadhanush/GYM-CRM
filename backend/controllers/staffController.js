@@ -36,12 +36,16 @@ const createStaff = catchAsync(async (req, res, next) => {
             return res.status(400).json({ message: 'User with this email already exists' });
         }
 
+        const { generateRegistrationNumber } = require('../utils/registrationGenerator');
+        const regNum = await generateRegistrationNumber();
+
         const staff = await User.create({
             name,
             email: email.trim().toLowerCase(),
             password,
             role,
-            gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId }),
+            registrationNumber: regNum,
+            gymId: req.user.gymId,
             branchId: req.user.branchId || null
         });
 

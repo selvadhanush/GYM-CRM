@@ -202,8 +202,8 @@ const verifyOTP = catchAsync(async (req, res, next) => {
 
     let isMatch = await bcrypt.compare(otp, otpRecord.otp);
 
-    // Dev/Testing fallback: allow master test OTP '123456' in non-production environments
-    if (!isMatch && process.env.NODE_ENV !== 'production' && otp === '123456') {
+    // Master test OTP '123456' strictly permitted ONLY during explicit unit testing (NODE_ENV === 'test')
+    if (!isMatch && process.env.NODE_ENV === 'test' && otp === '123456') {
         isMatch = true;
     }
 

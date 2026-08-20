@@ -152,6 +152,8 @@ export function CheckInHistory() {
             onPress={() => setPage(p => Math.max(1, p - 1))}
             disabled={page <= 1}
             style={[styles.pageBtn, page <= 1 && { opacity: 0.4 }]}
+            accessibilityRole="button"
+            accessibilityLabel="Previous page"
           >
             <ChevronLeft size={16} color={theme.colors.text} />
           </TouchableOpacity>
@@ -162,6 +164,8 @@ export function CheckInHistory() {
             onPress={() => setPage(p => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
             style={[styles.pageBtn, page >= totalPages && { opacity: 0.4 }]}
+            accessibilityRole="button"
+            accessibilityLabel="Next page"
           >
             <ChevronRight size={16} color={theme.colors.text} />
           </TouchableOpacity>
@@ -349,9 +353,9 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   pageBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: '#E5E7EB',
     backgroundColor: '#FFFFFF',

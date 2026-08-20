@@ -201,7 +201,7 @@ export function H4Workouts() {
   const tomorrowDayName = FULL_DAYS[(selectedDayIdx + 1) % 7];
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#FAFAFC' }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <H4TopHeader title="Training & Workouts" />
       <ScrollView style={styles.root} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       {/* Consistency Streak Banner */}
@@ -294,7 +294,7 @@ export function H4Workouts() {
               >
                 <View style={styles.exLeft}>
                   {isDone ? (
-                    <CheckCircle size={22} color="#2E7D32" />
+                    <CheckCircle size={22} color={theme.colors.success} />
                   ) : (
                     <Circle size={22} color={theme.colors.border} />
                   )}
@@ -321,8 +321,8 @@ export function H4Workouts() {
       {/* Log Workout Button */}
       {isSelectedToday && todayExercises.length > 0 && (
         isLoggedToday ? (
-          <View style={[styles.logBtn, { backgroundColor: '#16A34A' }]}>
-            <CheckCircle size={20} color="#FFFFFF" />
+          <View style={[styles.logBtn, { backgroundColor: theme.colors.success }]}>
+            <CheckCircle size={20} color={theme.colors.card} />
             <Text style={styles.logBtnText} numberOfLines={1} adjustsFontSizeToFit>Today's Goal Completed! 🎉</Text>
           </View>
         ) : (
@@ -333,9 +333,9 @@ export function H4Workouts() {
             disabled={isSubmitting}
           >
             {isSubmitting ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <ActivityIndicator size="small" color={theme.colors.card} />
             ) : (
-              <Dumbbell size={20} color="#FFFFFF" />
+              <Dumbbell size={20} color={theme.colors.card} />
             )}
             <Text style={styles.logBtnText} numberOfLines={1} adjustsFontSizeToFit>
               {isSubmitting
@@ -352,7 +352,7 @@ export function H4Workouts() {
       <Text style={[styles.sectionTitle, { marginTop: 14 }]}>Workout History & Logs</Text>
       {workoutLogsHistory.length === 0 ? (
         <View style={styles.historyEmptyCard}>
-          <Clock size={20} color="#94A3B8" />
+          <Clock size={20} color={theme.colors.textMuted} />
           <Text style={styles.historyEmptyText}>
             No past workout logs recorded yet. Complete today's workout to start your history log!
           </Text>
@@ -362,7 +362,7 @@ export function H4Workouts() {
           {workoutLogsHistory.map((item) => (
             <View key={item.id} style={styles.historyLogCard}>
               <View style={styles.historyLogLeft}>
-                <CheckCircle size={18} color="#16A34A" />
+                <CheckCircle size={18} color={theme.colors.success} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.historyLogTitle}>{item.planName}</Text>
                   <Text style={styles.historyLogSub}>
@@ -383,9 +383,9 @@ export function H4Workouts() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FAFAFC' },
+  root: { flex: 1, backgroundColor: theme.colors.background },
   content: { padding: 18, paddingBottom: 100, gap: 16 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FAFAFC' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
 
   streakRow: {
     flexDirection: 'row',
@@ -395,18 +395,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    backgroundColor: '#FFFFFF',
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
   },
-  streakLabel: { fontSize: 10, fontWeight: '700', color: '#64748B', letterSpacing: 1 },
-  streakNum: { fontSize: 22, fontWeight: '800', color: '#0F172A', marginTop: 4 },
+  streakLabel: { fontSize: 10, fontWeight: '700', color: theme.colors.textSecondary, letterSpacing: 1 },
+  streakNum: { fontSize: 22, fontWeight: '800', color: theme.colors.text, marginTop: 4 },
 
   victoryCard: {
     padding: 20,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
     borderWidth: 1,
-    borderColor: '#16A34A',
+    borderColor: theme.colors.success,
     gap: 16,
   },
   victoryHeader: { flexDirection: 'row', gap: 14, alignItems: 'center' },
@@ -414,12 +414,12 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#16A34A',
+    backgroundColor: theme.colors.success,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  victoryTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
-  victorySub: { fontSize: 13, color: '#64748B', marginTop: 2, lineHeight: 18 },
+  victoryTitle: { fontSize: 18, fontWeight: '800', color: theme.colors.text },
+  victorySub: { fontSize: 13, color: theme.colors.textSecondary, marginTop: 2, lineHeight: 18 },
 
   nextTaskBanner: {
     padding: 14,
@@ -429,8 +429,8 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(240,160,32,0.3)',
     gap: 4,
   },
-  nextTaskTitle: { fontSize: 13, fontWeight: '700', color: '#F0A020' },
-  nextTaskDesc: { fontSize: 14, fontWeight: '800', color: '#0F172A', marginTop: 2 },
+  nextTaskTitle: { fontSize: 13, fontWeight: '700', color: theme.colors.primary },
+  nextTaskDesc: { fontSize: 14, fontWeight: '800', color: theme.colors.text, marginTop: 2 },
 
   tomorrowInfoBox: {
     flexDirection: 'row',
@@ -438,11 +438,11 @@ const styles = StyleSheet.create({
     gap: 10,
     padding: 12,
     borderRadius: 10,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: theme.colors.background,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: theme.colors.border,
   },
-  tomorrowInfoText: { flex: 1, fontSize: 12, color: '#64748B', lineHeight: 17 },
+  tomorrowInfoText: { flex: 1, fontSize: 12, color: theme.colors.textSecondary, lineHeight: 17 },
 
   infoBanner: {
     flexDirection: 'row',
@@ -454,8 +454,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(240,160,32,0.3)',
   },
-  infoTitle: { fontSize: 14, fontWeight: '800', color: '#0F172A' },
-  infoText: { fontSize: 12, color: '#64748B', lineHeight: 18, marginTop: 2 },
+  infoTitle: { fontSize: 14, fontWeight: '800', color: theme.colors.text },
+  infoText: { fontSize: 12, color: theme.colors.textSecondary, lineHeight: 18, marginTop: 2 },
 
   dayScrollWrap: { marginHorizontal: -4 },
   dayRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 4 },
@@ -464,14 +464,14 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    backgroundColor: '#FFFFFF',
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
   },
-  dayBtnActive: { backgroundColor: '#F0A020', borderColor: '#F0A020' },
-  dayText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
-  dayTextActive: { color: '#FFFFFF' },
+  dayBtnActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
+  dayText: { fontSize: 13, fontWeight: '600', color: theme.colors.textSecondary },
+  dayTextActive: { color: theme.colors.card },
 
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#0F172A' },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: theme.colors.text },
 
   restCard: {
     alignItems: 'center',
@@ -479,10 +479,10 @@ const styles = StyleSheet.create({
     paddingVertical: 36,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    backgroundColor: '#FFFFFF',
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
   },
-  restText: { fontSize: 14, color: '#64748B', fontWeight: '600' },
+  restText: { fontSize: 14, color: theme.colors.textSecondary, fontWeight: '600' },
 
   exerciseList: { gap: 10 },
   exRow: {
@@ -492,35 +492,35 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    backgroundColor: '#FFFFFF',
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
   },
-  exDone: { borderColor: '#16A34A', backgroundColor: 'rgba(22,163,74,0.06)' },
+  exDone: { borderColor: theme.colors.success, backgroundColor: 'rgba(22,163,74,0.06)' },
   exLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
   exInfo: { flex: 1 },
-  exName: { fontSize: 14, fontWeight: '700', color: '#0F172A' },
-  exNameDone: { textDecorationLine: 'line-through', color: '#64748B' },
-  exMeta: { fontSize: 12, color: '#64748B', marginTop: 2 },
+  exName: { fontSize: 14, fontWeight: '700', color: theme.colors.text },
+  exNameDone: { textDecorationLine: 'line-through', color: theme.colors.textSecondary },
+  exMeta: { fontSize: 12, color: theme.colors.textSecondary, marginTop: 2 },
   donePill: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
     backgroundColor: 'rgba(22,163,74,0.12)',
   },
-  donePillText: { fontSize: 11, fontWeight: '700', color: '#16A34A' },
+  donePillText: { fontSize: 11, fontWeight: '700', color: theme.colors.success },
 
   logBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    backgroundColor: '#F0A020',
+    backgroundColor: theme.colors.primary,
     paddingVertical: 16,
     paddingHorizontal: 16,
     borderRadius: 14,
     marginTop: 6,
   },
-  logBtnText: { fontSize: 15, fontWeight: '800', color: '#FFFFFF', textAlign: 'center', flexShrink: 1 },
+  logBtnText: { fontSize: 15, fontWeight: '800', color: theme.colors.card, textAlign: 'center', flexShrink: 1 },
 
   historyEmptyCard: {
     flexDirection: 'row',
@@ -528,11 +528,11 @@ const styles = StyleSheet.create({
     gap: 10,
     padding: 16,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: theme.colors.border,
   },
-  historyEmptyText: { flex: 1, fontSize: 12, color: '#64748B' },
+  historyEmptyText: { flex: 1, fontSize: 12, color: theme.colors.textSecondary },
   historyList: { gap: 10 },
   historyLogCard: {
     flexDirection: 'row',
@@ -540,13 +540,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 14,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: theme.colors.border,
   },
   historyLogLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-  historyLogTitle: { fontSize: 14, fontWeight: '800', color: '#0F172A' },
-  historyLogSub: { fontSize: 11, color: '#64748B', marginTop: 2 },
+  historyLogTitle: { fontSize: 14, fontWeight: '800', color: theme.colors.text },
+  historyLogSub: { fontSize: 11, color: theme.colors.textSecondary, marginTop: 2 },
   verifiedPill: {
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -555,5 +555,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(22, 163, 74, 0.3)',
   },
-  verifiedPillText: { fontSize: 10, fontWeight: '900', color: '#16A34A' },
+  verifiedPillText: { fontSize: 10, fontWeight: '900', color: theme.colors.success },
 });

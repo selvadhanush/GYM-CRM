@@ -4,6 +4,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { API_CLIENT } from '@/lib/api-client';
+import { H4_GYM_IDS } from '@/lib/gym-constants';
 import type { H4Plan, H4AttendanceRecord, H4PaymentRecord, H4DashboardData } from '../types';
 
 // ─── Query Keys ─────────────────────────────────────────────────────────────
@@ -114,13 +115,27 @@ export const useH4Payments = () =>
     staleTime: 60_000,
   });
 
-// ─── Check-in Mutation ────────────────────────────────────────────────────────
+// ─── Check-in Mutations ──────────────────────────────────────────────────────
+export const useH4IdentityCheckIn = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { identityInput: string }) => {
+      const { data } = await API_CLIENT.post('/attendance/checkin-identity', payload);
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: H4_KEYS.attendance });
+      qc.invalidateQueries({ queryKey: H4_KEYS.dashboard });
+    },
+  });
+};
+
 export const useH4CheckIn = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload?: { gymId?: string; branchId?: string; qrCode?: string }) => {
       const { data } = await API_CLIENT.post('/member-portal/sessions/check-in', {
-        gymId: payload?.gymId || '327d37e7-f978-43a9-82ef-e6c4a4dc3c5d',
+        gymId: payload?.gymId || H4_GYM_IDS[1],
         branchId: payload?.branchId,
         qrCode: payload?.qrCode || 'H4_GYM_STANDARD_QR',
       });

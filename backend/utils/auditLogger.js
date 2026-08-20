@@ -19,7 +19,7 @@ const logAudit = async (req, action, entity = '', entityId = '', details = '', e
             entityId: entityId?.toString() || '',
             entityName,
             details,
-            ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || ''
+            ip: req?.headers?.['x-forwarded-for'] || req?.socket?.remoteAddress || ''
         });
     } catch (err) {
         // Never let audit logging crash the main request

@@ -65,13 +65,17 @@ const getPayments = catchAsync(async (req, res, next) => {
 // @route   GET /api/payments/member/:memberId
 // @access  Private/Admin
 const getMemberPayments = catchAsync(async (req, res, next) => {
+    // IDOR Protection: Verify member belongs to authorized tenant scope
+    const memberQuery = { _id: req.params.memberId, ...req.tenantFilter };
+    const member = await Member.findOne(memberQuery);
+    if (!member) {
+        return res.status(404).json({ message: 'Member not found' });
+    }
+
     const query = {
         memberId: req.params.memberId,
-        gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId })
+        ...req.tenantFilter
     };
-    if (req.user.branchId) {
-        query.branchId = req.user.branchId;
-    }
     const payments = await Payment.find(query)
         .sort({ createdAt: -1 })
         .limit(500)
@@ -88,7 +92,11 @@ const createRazorpayOrder = catchAsync(async (req, res, next) => {
         const keyId = process.env.RAZORPAY_KEY_ID;
         const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
-        const isRealKey = keyId && keySecret && !keyId.includes('your_') && !keySecret.includes('your_');
+        const isRealKey = keyId && keySecret && 
+                          keyId !== 'your_razorpay_key_id' &&
+                          keyId !== 'null' && keyId !== 'undefined' && keyId.trim() !== '' &&
+                          !keyId.includes('your_') && !keySecret.includes('your_');
+        const allowMock = process.env.NODE_ENV !== 'production' && process.env.ALLOW_MOCK_PAYMENTS === 'true';
 
         if (isRealKey) {
             const Razorpay = require('razorpay');
@@ -101,9 +109,17 @@ const createRazorpayOrder = catchAsync(async (req, res, next) => {
             return res.json({ success: true, orderId: order.id, amount: order.amount, currency: order.currency, keyId });
         }
 
-        // Mock mode when credentials are placeholders
+        if (!allowMock) {
+            return res.status(503).json({
+                success: false,
+                message: 'Payment gateway configuration missing or invalid. Online payment unavailable.',
+                error: 'RAZORPAY_KEYS_MISSING'
+            });
+        }
+
+        // Mock mode when explicitly allowed in dev/test environment
         const crypto = require('crypto');
-        const mockOrderId = `order_${crypto.randomBytes(8).toString('hex')}`;
+        const mockOrderId = `order_mock_${crypto.randomBytes(8).toString('hex')}`;
         res.json({
             success: true,
             orderId: mockOrderId,
@@ -125,6 +141,30 @@ const verifyRazorpayPayment = catchAsync(async (req, res, next) => {
         const member = await Member.findById(memberId);
         if (!member) {
             return res.status(404).json({ success: false, message: 'Member not found' });
+        }
+
+        const isMock = razorpayOrderId && razorpayOrderId.startsWith('order_mock_');
+        const keySecret = process.env.RAZORPAY_KEY_SECRET;
+        const hasKeySecret = keySecret && keySecret !== 'null' && keySecret !== 'undefined' && keySecret.trim() !== '' && !keySecret.includes('your_');
+        const allowMock = process.env.NODE_ENV !== 'production' && process.env.ALLOW_MOCK_PAYMENTS === 'true';
+
+        if (isMock) {
+            if (!allowMock) {
+                return res.status(400).json({ success: false, message: 'Mock payments are disabled in production mode' });
+            }
+        } else {
+            if (!hasKeySecret) {
+                return res.status(503).json({ success: false, message: 'Payment verification failed: key secret missing' });
+            }
+            const crypto = require('crypto');
+            const body = razorpayOrderId + "|" + razorpayPaymentId;
+            const expectedSignature = crypto
+                .createHmac('sha256', keySecret)
+                .update(body.toString())
+                .digest('hex');
+            if (expectedSignature !== razorpaySignature) {
+                return res.status(400).json({ success: false, message: 'Payment signature verification failed' });
+            }
         }
 
         const payment = await Payment.create({

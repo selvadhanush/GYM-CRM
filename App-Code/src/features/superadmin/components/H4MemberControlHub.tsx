@@ -4,6 +4,7 @@ import { Users, XCircle } from 'lucide-react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { API_CLIENT } from '@/lib/api-client';
 import { Card, Typography, Input, Button, Badge } from '@/components/ui';
+import { theme } from '@/design-system/theme';
 
 export const H4MemberControlHub: React.FC = () => {
   const queryClient = useQueryClient();
@@ -60,7 +61,7 @@ export const H4MemberControlHub: React.FC = () => {
       {/* Header Widget */}
       <Card style={styles.headerCard}>
         <View style={styles.headerRow}>
-          <Users size={24} color="#D99B00" />
+          <Users size={24} color={theme.colors.primary} />
           <Typography variant="h2" style={styles.headerTitle}>H4 Member Control Hub (A-Z)</Typography>
         </View>
         <Typography variant="caption" color="secondary" style={{ marginTop: 4 }}>
@@ -80,7 +81,7 @@ export const H4MemberControlHub: React.FC = () => {
 
       {/* Member Table */}
       {isLoading ? (
-        <ActivityIndicator size="large" color="#ffe01b" style={{ marginVertical: 30 }} />
+        <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginVertical: 30 }} />
       ) : members.length === 0 ? (
         <Card style={styles.emptyCard}>
           <Typography variant="body" color="secondary">No H4 members found matching your search query.</Typography>
@@ -97,13 +98,13 @@ export const H4MemberControlHub: React.FC = () => {
                 activeOpacity={0.88}
               >
                 <View style={styles.memberMainInfo}>
-                  <Typography variant="h3" style={{ fontWeight: '800', color: '#1A1510' }}>
+                  <Typography variant="h3" style={{ fontWeight: '800', color: theme.colors.text }}>
                     {m.name}
                   </Typography>
                   <Typography variant="caption" color="secondary">📞 {m.phone} {m.email ? `• ✉️ ${m.email}` : ''}</Typography>
                   
                   <View style={styles.dueRow}>
-                    <Typography variant="caption" style={{ fontSize: 11, fontWeight: '700', color: '#655B50' }}>
+                    <Typography variant="caption" style={{ fontSize: 11, fontWeight: '700', color: theme.colors.textSecondary }}>
                       Plan Paid: ₹{(m.paidAmount || 0).toLocaleString()} / ₹{(m.planPrice || 0).toLocaleString()}
                     </Typography>
                   </View>
@@ -128,13 +129,13 @@ export const H4MemberControlHub: React.FC = () => {
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
                 <View>
-                  <Typography variant="h2" style={{ fontWeight: '900', color: '#1A1510' }}>
+                  <Typography variant="h2" style={{ fontWeight: '900', color: theme.colors.text }}>
                     {selectedMember.name}
                   </Typography>
                   <Typography variant="caption" color="secondary">Phone: {selectedMember.phone}</Typography>
                 </View>
                 <TouchableOpacity onPress={() => setSelectedMember(null)}>
-                  <XCircle size={24} color="#655B50" />
+                  <XCircle size={24} color={theme.colors.textSecondary} />
                 </TouchableOpacity>
               </View>
 
@@ -145,19 +146,19 @@ export const H4MemberControlHub: React.FC = () => {
                   <View style={styles.statsRow}>
                     <View style={styles.statBox}>
                       <Typography variant="caption" color="secondary">Plan Price</Typography>
-                      <Typography variant="h2" style={{ color: '#1A1510', fontWeight: '900' }}>
+                      <Typography variant="h2" style={{ color: theme.colors.text, fontWeight: '900' }}>
                         ₹{(selectedMember.planPrice || 0).toLocaleString()}
                       </Typography>
                     </View>
                     <View style={styles.statBox}>
                       <Typography variant="caption" color="secondary">Paid</Typography>
-                      <Typography variant="h2" style={{ color: '#2E7D32', fontWeight: '900' }}>
+                      <Typography variant="h2" style={{ color: theme.colors.success, fontWeight: '900' }}>
                         ₹{(selectedMember.paidAmount || 0).toLocaleString()}
                       </Typography>
                     </View>
                     <View style={styles.statBox}>
                       <Typography variant="caption" color="secondary">Pending Dues</Typography>
-                      <Typography variant="h2" style={{ color: '#C62828', fontWeight: '900' }}>
+                      <Typography variant="h2" style={{ color: theme.colors.error, fontWeight: '900' }}>
                         ₹{Math.max(0, (selectedMember.planPrice || 0) - (selectedMember.paidAmount || 0)).toLocaleString()}
                       </Typography>
                     </View>
@@ -200,13 +201,13 @@ export const H4MemberControlHub: React.FC = () => {
                       title={selectedMember.status === 'Active' ? 'Freeze Member' : 'Activate Member'}
                       onPress={() => handleToggleStatus(selectedMember.status === 'Active' ? 'Frozen' : 'Active')}
                       loading={updateMutation.isPending}
-                      style={{ flex: 1, backgroundColor: selectedMember.status === 'Active' ? '#D99B00' : '#2E7D32' }}
+                      style={{ flex: 1, backgroundColor: selectedMember.status === 'Active' ? theme.colors.warning : theme.colors.success }}
                     />
                     <Button
                       title={selectedMember.status === 'Blocked' ? 'Unblock Member' : 'Block Member'}
                       onPress={() => handleToggleStatus(selectedMember.status === 'Blocked' ? 'Active' : 'Blocked')}
                       loading={updateMutation.isPending}
-                      style={{ flex: 1, backgroundColor: selectedMember.status === 'Blocked' ? '#1A1510' : '#C62828' }}
+                      style={{ flex: 1, backgroundColor: selectedMember.status === 'Blocked' ? theme.colors.text : theme.colors.error }}
                     />
                   </View>
                 </View>
@@ -222,14 +223,14 @@ export const H4MemberControlHub: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
   },
   headerCard: {
     padding: 18,
     marginBottom: 16,
     borderLeftWidth: 4,
-    borderLeftColor: '#ffe01b',
-    backgroundColor: '#FFFFFF',
+    borderLeftColor: theme.colors.primary,
+    backgroundColor: theme.colors.card,
   },
   headerRow: {
     flexDirection: 'row',
@@ -238,7 +239,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontWeight: '900',
-    color: '#1A1510',
+    color: theme.colors.text,
   },
   searchContainer: {
     marginBottom: 16,
@@ -247,22 +248,22 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
   },
   listScroll: {
     flex: 1,
   },
   memberRowCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#EAE7E1',
+    borderColor: theme.colors.border,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000000',
+    shadowColor: theme.colors.text,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
@@ -288,10 +289,10 @@ const styles = StyleSheet.create({
   modalContent: {
     width: '100%',
     maxWidth: 440,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
     borderRadius: 24,
     padding: 24,
-    shadowColor: '#000000',
+    shadowColor: theme.colors.text,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
     shadowRadius: 20,
@@ -303,13 +304,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#EAE7E1',
+    borderBottomColor: theme.colors.border,
     paddingBottom: 12,
   },
   modalSection: {
     marginBottom: 18,
     borderBottomWidth: 1,
-    borderBottomColor: '#F8F6F0',
+    borderBottomColor: theme.colors.bgTertiary,
     paddingBottom: 14,
   },
   sectionLabel: {
@@ -325,7 +326,7 @@ const styles = StyleSheet.create({
   },
   statBox: {
     flex: 1,
-    backgroundColor: '#F8F6F0',
+    backgroundColor: theme.colors.bgTertiary,
     borderRadius: 14,
     padding: 10,
     alignItems: 'center',
@@ -334,6 +335,6 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 44,
     minHeight: 44,
-    backgroundColor: '#1A1510',
+    backgroundColor: theme.colors.text,
   },
 });

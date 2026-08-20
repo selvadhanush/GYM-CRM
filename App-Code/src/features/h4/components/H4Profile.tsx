@@ -92,7 +92,7 @@ export function H4Profile() {
   const payments = paymentsData?.data ?? [];
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#FAFAFC' }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <H4TopHeader title="Athlete Profile" />
       <ScrollView style={styles.root} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
@@ -166,7 +166,7 @@ export function H4Profile() {
               <View style={styles.payRight}>
                 <Text style={styles.payAmt}>₹{p.amount}</Text>
                 <View style={[styles.payStatus, { backgroundColor: p.status === 'Paid' ? 'rgba(46,125,50,0.1)' : 'rgba(198,40,40,0.1)' }]}>
-                  <Text style={[styles.payStatusText, { color: p.status === 'Paid' ? '#2E7D32' : '#C62828' }]}>
+                  <Text style={[styles.payStatusText, { color: p.status === 'Paid' ? theme.colors.success : theme.colors.error }]}>
                     {p.status ?? 'Paid'}
                   </Text>
                 </View>
@@ -210,7 +210,7 @@ export function H4Profile() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FAFAFC' },
+  root: { flex: 1, backgroundColor: theme.colors.background },
   content: { padding: 18, paddingBottom: 100, gap: 20 },
 
   // Profile head
@@ -224,39 +224,39 @@ const styles = StyleSheet.create({
     borderWidth: 2, borderColor: 'rgba(240,160,32,0.3)',
     justifyContent: 'center', alignItems: 'center',
   },
-  avatarText: { fontSize: 22, fontWeight: '800', color: '#F0A020' },
+  avatarText: { fontSize: 22, fontWeight: '800', color: theme.colors.primary },
   profileHeadInfo: { flex: 1, gap: 4 },
-  profileName: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
+  profileName: { fontSize: 18, fontWeight: '800', color: theme.colors.text },
   memberBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start',
     backgroundColor: 'rgba(240,160,32,0.1)',
     paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20,
     borderWidth: 1, borderColor: 'rgba(240,160,32,0.25)',
   },
-  memberBadgeText: { fontSize: 11, fontWeight: '700', color: '#F0A020' },
+  memberBadgeText: { fontSize: 11, fontWeight: '700', color: theme.colors.primary },
   editBtn: {
     width: 36, height: 36, borderRadius: 18,
-    borderWidth: 1, borderColor: '#E2E8F0',
-    backgroundColor: '#FFFFFF',
+    borderWidth: 1, borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
     justifyContent: 'center', alignItems: 'center',
   },
 
   // Section
   section: { gap: 8 },
-  sectionTitle: { fontSize: 12, fontWeight: '700', color: '#64748B', letterSpacing: 0.8, textTransform: 'uppercase' },
-  sectionCard: { borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', backgroundColor: '#FFFFFF', overflow: 'hidden' },
+  sectionTitle: { fontSize: 12, fontWeight: '700', color: theme.colors.textSecondary, letterSpacing: 0.8, textTransform: 'uppercase' },
+  sectionCard: { borderRadius: 16, borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.card, overflow: 'hidden' },
 
   // Row
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
-  rowBorder: { borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
-  rowLabel: { fontSize: 13, color: '#64748B' },
-  rowValue: { fontSize: 14, fontWeight: '600', color: '#0F172A' },
+  rowBorder: { borderBottomWidth: 1, borderBottomColor: theme.colors.border },
+  rowLabel: { fontSize: 13, color: theme.colors.textSecondary },
+  rowValue: { fontSize: 14, fontWeight: '600', color: theme.colors.text },
   iconVal: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 
   // Payment
-  payDate: { fontSize: 14, fontWeight: '700', color: '#0F172A' },
+  payDate: { fontSize: 14, fontWeight: '700', color: theme.colors.text },
   payRight: { alignItems: 'flex-end', gap: 4 },
-  payAmt: { fontSize: 15, fontWeight: '800', color: '#0F172A' },
+  payAmt: { fontSize: 15, fontWeight: '800', color: theme.colors.text },
   payStatus: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
   payStatusText: { fontSize: 11, fontWeight: '700' },
 
@@ -265,5 +265,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 10,
     padding: 20, justifyContent: 'center',
   },
-  emptyText: { fontSize: 13, color: '#64748B' },
+  emptyText: { fontSize: 13, color: theme.colors.textSecondary },
 });

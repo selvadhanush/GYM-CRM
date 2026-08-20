@@ -84,12 +84,14 @@ model User {
   // Account is locked (cannot login) until this timestamp passes. Null = not locked.
   lockUntil           DateTime?
   branchId            String?
+  registrationNumber  String?   @unique
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
   @@index([gymId])
   @@index([role])
   @@index([gymId, role])
+  @@index([registrationNumber])
 }
 
 model Plan {
@@ -114,6 +116,7 @@ model Member {
   name                  String
   phone                 String
   email                 String?
+  registrationNumber    String?  @unique
   planId                String
   joinDate              DateTime @default(now())
   expiryDate            DateTime
@@ -143,9 +146,11 @@ model Member {
   @@index([gymId])
   @@index([status])
   @@index([gymId, status])
+  @@index([gymId, branchId, status])
   @@index([expiryDate])
   @@index([phone])
   @@index([planId])
+  @@index([registrationNumber])
 }
 
 model Attendance {
@@ -159,6 +164,7 @@ model Attendance {
   updatedAt   DateTime @updatedAt
 
   @@index([gymId, date])
+  @@index([gymId, branchId, date])
   @@index([memberId])
 }
 
@@ -178,6 +184,7 @@ model SessionCheckIn {
 
   @@index([gymId, status])
   @@index([gymId, startedAt])
+  @@index([gymId, branchId, memberId])
   @@index([memberId])
 }
 
@@ -225,6 +232,9 @@ model Payment {
   updatedAt     DateTime @updatedAt
 
   @@index([gymId, date])
+  @@index([gymId, branchId, date])
+  @@index([gymId, branchId])
+  @@index([branchId])
   @@index([memberId])
 }
 

@@ -60,21 +60,23 @@ const QUICK_ACTIONS = [
 function SuperAdminDashboard() {
     const navigate = useNavigate();
     const { user } = useContext(AuthContext);
-    const [stats, setStats] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [searchLog, setSearchLog] = useState('');
+    const [error, setError] = useState(null);
+
+    const fetchDashboardData = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const statsData = await getStats();
+            setStats(statsData);
+        } catch (err) {
+            console.error('Error fetching dashboard data:', err);
+            setError(err.response?.data?.message || err.message || 'Failed to load dashboard data');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                const statsData = await getStats();
-                setStats(statsData);
-            } catch (error) {
-                console.error('Error fetching dashboard data:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchDashboardData();
     }, []);
 
@@ -169,6 +171,17 @@ function SuperAdminDashboard() {
                     <div key={i} style={{ height: 110, borderRadius: 'var(--radius-lg)' }} className="skeleton" />
                 ))}
             </div>
+        </div>
+    );
+
+    if (error) return (
+        <div className="fade-in card" style={{ color: '#ef4444', textAlign: 'center', padding: '3rem', margin: '2rem 0' }}>
+            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⚠️</div>
+            <h3 style={{ margin: '0 0 0.5rem', color: 'var(--text-primary)' }}>Failed to load dashboard data</h3>
+            <p style={{ margin: '0 0 1.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{error}</p>
+            <button onClick={fetchDashboardData} className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                🔄 Retry Loading
+            </button>
         </div>
     );
 

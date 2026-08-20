@@ -4,6 +4,7 @@ import { Users, XCircle } from 'lucide-react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { API_CLIENT } from '@/lib/api-client';
 import { Card, Typography, Input, Button, Badge } from '@/components/ui';
+import { theme } from '@/design-system/theme';
 
 export const UserControlHub: React.FC = () => {
   const queryClient = useQueryClient();
@@ -103,7 +104,7 @@ export const UserControlHub: React.FC = () => {
       {/* Header Widget */}
       <Card style={styles.headerCard}>
         <View style={styles.headerRow}>
-          <Users size={24} color="#D99B00" />
+          <Users size={24} color={theme.colors.primary} />
           <Typography variant="h2" style={styles.headerTitle}>User Control Hub (A-Z)</Typography>
         </View>
         <Typography variant="caption" color="secondary" style={{ marginTop: 4 }}>
@@ -123,7 +124,7 @@ export const UserControlHub: React.FC = () => {
 
       {/* Subscribers Table */}
       {isLoading ? (
-        <ActivityIndicator size="large" color="#ffe01b" style={{ marginVertical: 30 }} />
+        <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginVertical: 30 }} />
       ) : subscribers.length === 0 ? (
         <Card style={styles.emptyCard}>
           <Typography variant="body" color="secondary">No FitPass subscribers found matching your query.</Typography>
@@ -141,14 +142,14 @@ export const UserControlHub: React.FC = () => {
                 activeOpacity={0.88}
               >
                 <View style={styles.userMainInfo}>
-                  <Typography variant="h3" style={{ fontWeight: '800', color: '#1A1510' }}>
+                  <Typography variant="h3" style={{ fontWeight: '800', color: theme.colors.text }}>
                     {u.name}
                   </Typography>
                   <Typography variant="caption" color="secondary">📞 {u.phone} {u.email ? `• ✉️ ${u.email}` : ''}</Typography>
                   
                   <View style={styles.sessionPillRow}>
                     <View style={styles.sessionBadge}>
-                      <Typography variant="caption" style={{ fontWeight: '800', color: '#1A1510' }}>
+                      <Typography variant="caption" style={{ fontWeight: '800', color: theme.colors.text }}>
                         🎟️ {u.sessionsRemaining} / {u.sessionsTotal} sessions left
                       </Typography>
                     </View>
@@ -174,13 +175,13 @@ export const UserControlHub: React.FC = () => {
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
                 <View>
-                  <Typography variant="h2" style={{ fontWeight: '900', color: '#1A1510' }}>
+                  <Typography variant="h2" style={{ fontWeight: '900', color: theme.colors.text }}>
                     {selectedUser.name}
                   </Typography>
                   <Typography variant="caption" color="secondary">ID: {selectedUser.id || selectedUser._id}</Typography>
                 </View>
                 <TouchableOpacity onPress={() => setSelectedUser(null)}>
-                  <XCircle size={24} color="#655B50" />
+                  <XCircle size={24} color={theme.colors.textSecondary} />
                 </TouchableOpacity>
               </View>
 
@@ -191,19 +192,19 @@ export const UserControlHub: React.FC = () => {
                   <View style={styles.statsRow}>
                     <View style={styles.statBox}>
                       <Typography variant="caption" color="secondary">Remaining</Typography>
-                      <Typography variant="h2" style={{ color: '#D99B00', fontWeight: '900' }}>
+                      <Typography variant="h2" style={{ color: theme.colors.primary, fontWeight: '900' }}>
                         {selectedUser.sessionsRemaining}
                       </Typography>
                     </View>
                     <View style={styles.statBox}>
                       <Typography variant="caption" color="secondary">Used</Typography>
-                      <Typography variant="h2" style={{ color: '#2E7D32', fontWeight: '900' }}>
+                      <Typography variant="h2" style={{ color: theme.colors.success, fontWeight: '900' }}>
                         {selectedUser.sessionsUsed || 0}
                       </Typography>
                     </View>
                     <View style={styles.statBox}>
                       <Typography variant="caption" color="secondary">Total Grant</Typography>
-                      <Typography variant="h2" style={{ color: '#1A1510', fontWeight: '900' }}>
+                      <Typography variant="h2" style={{ color: theme.colors.text, fontWeight: '900' }}>
                         {selectedUser.sessionsTotal}
                       </Typography>
                     </View>
@@ -232,13 +233,13 @@ export const UserControlHub: React.FC = () => {
                       title="+ Add Credits"
                       onPress={() => handleAdjustSessions(true)}
                       loading={adjustSessionsMutation.isPending}
-                      style={{ flex: 1, backgroundColor: '#2E7D32' }}
+                      style={{ flex: 1, backgroundColor: theme.colors.success }}
                     />
                     <Button
                       title="- Deduct"
                       onPress={() => handleAdjustSessions(false)}
                       loading={adjustSessionsMutation.isPending}
-                      style={{ flex: 1, backgroundColor: '#C62828' }}
+                      style={{ flex: 1, backgroundColor: theme.colors.error }}
                     />
                   </View>
                 </View>
@@ -279,13 +280,13 @@ export const UserControlHub: React.FC = () => {
                       title={selectedUser.status === 'Active' ? 'Freeze Account' : 'Activate Account'}
                       onPress={() => handleToggleStatus(selectedUser.status === 'Active' ? 'Frozen' : 'Active')}
                       loading={updateStatusMutation.isPending}
-                      style={{ flex: 1, backgroundColor: selectedUser.status === 'Active' ? '#D99B00' : '#2E7D32' }}
+                      style={{ flex: 1, backgroundColor: selectedUser.status === 'Active' ? theme.colors.warning : theme.colors.success }}
                     />
                     <Button
                       title={selectedUser.status === 'Blocked' ? 'Unblock User' : 'Block User'}
                       onPress={() => handleToggleStatus(selectedUser.status === 'Blocked' ? 'Active' : 'Blocked')}
                       loading={updateStatusMutation.isPending}
-                      style={{ flex: 1, backgroundColor: selectedUser.status === 'Blocked' ? '#1A1510' : '#C62828' }}
+                      style={{ flex: 1, backgroundColor: selectedUser.status === 'Blocked' ? theme.colors.text : theme.colors.error }}
                     />
                   </View>
                 </View>
@@ -301,14 +302,14 @@ export const UserControlHub: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
   },
   headerCard: {
     padding: 18,
     marginBottom: 16,
     borderLeftWidth: 4,
-    borderLeftColor: '#ffe01b',
-    backgroundColor: '#FFFFFF',
+    borderLeftColor: theme.colors.primary,
+    backgroundColor: theme.colors.card,
   },
   headerRow: {
     flexDirection: 'row',
@@ -317,7 +318,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontWeight: '900',
-    color: '#1A1510',
+    color: theme.colors.text,
   },
   searchContainer: {
     marginBottom: 16,
@@ -326,22 +327,22 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
   },
   listScroll: {
     flex: 1,
   },
   userRowCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#EAE7E1',
+    borderColor: theme.colors.border,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000000',
+    shadowColor: theme.colors.text,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
@@ -377,10 +378,10 @@ const styles = StyleSheet.create({
   modalContent: {
     width: '100%',
     maxWidth: 440,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
     borderRadius: 24,
     padding: 24,
-    shadowColor: '#000000',
+    shadowColor: theme.colors.text,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
     shadowRadius: 20,
@@ -392,13 +393,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#EAE7E1',
+    borderBottomColor: theme.colors.border,
     paddingBottom: 12,
   },
   modalSection: {
     marginBottom: 18,
     borderBottomWidth: 1,
-    borderBottomColor: '#F8F6F0',
+    borderBottomColor: theme.colors.bgTertiary,
     paddingBottom: 14,
   },
   sectionLabel: {
@@ -414,7 +415,7 @@ const styles = StyleSheet.create({
   },
   statBox: {
     flex: 1,
-    backgroundColor: '#F8F6F0',
+    backgroundColor: theme.colors.bgTertiary,
     borderRadius: 14,
     padding: 10,
     alignItems: 'center',
@@ -423,6 +424,6 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 44,
     minHeight: 44,
-    backgroundColor: '#1A1510',
+    backgroundColor: theme.colors.text,
   },
 });

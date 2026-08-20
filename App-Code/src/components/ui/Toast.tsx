@@ -3,6 +3,7 @@ import { StyleSheet, Text, Animated, TouchableOpacity, View } from 'react-native
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CheckCircle2, AlertCircle, AlertTriangle, Info } from 'lucide-react-native';
 import { fontFamilies } from '@/design-system/tokens';
+import { theme } from '@/design-system/theme';
 import { useToast } from '@/hooks/useToast';
 
 export const Toast: React.FC = () => {
@@ -30,31 +31,34 @@ export const Toast: React.FC = () => {
   if (!message) return null;
 
   const getToastConfig = () => {
+    // Alpha-suffixed tints of the theme's status color for the icon chip —
+    // keeps success/error/warning/info in sync with `theme.colors` everywhere
+    // else instead of a private hex palette that can drift from it.
     switch (type) {
       case 'success':
         return {
-          icon: <CheckCircle2 color="#16A34A" size={22} />,
-          bgIcon: '#DCFCE7',
-          btnBg: '#16A34A',
+          icon: <CheckCircle2 color={theme.colors.success} size={22} />,
+          bgIcon: `${theme.colors.success}22`,
+          btnBg: theme.colors.success,
         };
       case 'error':
         return {
-          icon: <AlertCircle color="#DC2626" size={22} />,
-          bgIcon: '#FEE2E2',
-          btnBg: '#DC2626',
+          icon: <AlertCircle color={theme.colors.error} size={22} />,
+          bgIcon: `${theme.colors.error}22`,
+          btnBg: theme.colors.error,
         };
       case 'warning':
         return {
-          icon: <AlertTriangle color="#D97706" size={22} />,
-          bgIcon: '#FEF3C7',
-          btnBg: '#D97706',
+          icon: <AlertTriangle color={theme.colors.warning} size={22} />,
+          bgIcon: `${theme.colors.warning}22`,
+          btnBg: theme.colors.warning,
         };
       case 'info':
       default:
         return {
-          icon: <Info color="#2563EB" size={22} />,
-          bgIcon: '#DBEAFE',
-          btnBg: '#2563EB',
+          icon: <Info color={theme.colors.info} size={22} />,
+          bgIcon: `${theme.colors.info}22`,
+          btnBg: theme.colors.info,
         };
     }
   };
@@ -85,14 +89,19 @@ export const Toast: React.FC = () => {
         },
       ]}
     >
-      <View style={styles.popupCard}>
-        {/* Green Tick Icon Circle */}
+      <View
+        style={[
+          styles.popupCard,
+          { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+        ]}
+      >
+        {/* Status Icon Circle */}
         <View style={[styles.iconCircle, { backgroundColor: config.bgIcon }]}>
           {config.icon}
         </View>
 
         {/* Message */}
-        <Text style={styles.messageText} numberOfLines={2}>
+        <Text style={[styles.messageText, { color: theme.colors.text }]} numberOfLines={2}>
           {message}
         </Text>
 
@@ -126,10 +135,8 @@ const styles = StyleSheet.create({
   popupCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
     paddingHorizontal: 16,
     paddingVertical: 14,
     gap: 12,
@@ -146,7 +153,6 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.body,
     fontSize: 14,
     fontWeight: '600',
-    color: '#0F172A',
     lineHeight: 20,
   },
   okBtn: {

@@ -3,6 +3,9 @@
 > [!IMPORTANT]
 > **Teammate Guide**: For detailed developer guides, architecture overviews, verification plans, local setup scripts, and test credentials (including logins/passwords), please refer to the [TEAM_GUIDE.md](file:///d:/Zippy/GYM-CRM/TEAM_GUIDE.md) in the project root.
 
+> [!NOTE]
+> **Mobile app**: `App-Code/` is the canonical, actively developed mobile app (Expo Router, models the Staff/H4/FitPass portal split). A duplicate, stale mobile codebase (`Mobile/`) previously lived alongside it and has been removed to avoid anyone building/deploying from the wrong folder.
+
 A production-ready Gym Management System built with the MERN stack. Designed for gym owners to manage members, subscription plans, payments, and attendance with ease.
 
 

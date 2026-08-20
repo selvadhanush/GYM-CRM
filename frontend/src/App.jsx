@@ -6,6 +6,7 @@ import Register from './pages/Register';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ToastProvider } from './components/ui/Toast';
+import { isH4Gym as checkIsH4Gym } from './utils/gymConstants';
 
 // Route-level code splitting: every page below used to be imported eagerly,
 // so the very first paint (any role, any route) downloaded the entire app
@@ -69,9 +70,8 @@ function App() {
           <ProtectedRoute>
             <Layout>
               {(() => {
-                const normalizedGym = (user?.gymName || user?.gymId?.name || '').toUpperCase();
                 const userGymId = user?.gymId?._id || user?.gymId || '';
-                const isH4Gym = normalizedGym === 'H4' || userGymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+                const isH4Gym = checkIsH4Gym(user?.gymName || user?.gymId?.name, userGymId);
                 const isPartnerAdmin = user?.role === 'partner' || (user?.role === 'admin' && !isH4Gym);
 
                 const targetPath = (user?.role === 'superadmin' || user?.role === 'fitpass_admin') ? "/superadmin/dashboard" :

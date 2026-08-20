@@ -73,6 +73,16 @@ export const markAttendance = async (attendanceData) => {
     return data;
 };
 
+export const markAttendanceByIdentity = async (identityInput) => {
+    const { data } = await API.post('/attendance/checkin-identity', { identityInput });
+    return data;
+};
+
+export const lookupIdentity = async (registrationNumber) => {
+    const { data } = await API.get(`/attendance/lookup-identity/${encodeURIComponent(registrationNumber)}`);
+    return data;
+};
+
 export const getTodayAttendance = async () => {
     const { data } = await API.get('/attendance/today');
     return data;

@@ -1,54 +1,53 @@
 import { create } from 'zustand';
 import { storage } from '@/lib/storage';
-import { radii, spacing, typography } from './tokens';
+import { radii, spacing, typography, palette } from './tokens';
 
 // Spacing, Colors, Typography, and Radii design tokens for GYM-CRM Mobile App
-// Compliance: AGENTS.md §5
+//
+// Color values shared between light and dark mode (brand primary, status
+// colors, accent) live once in `tokens.ts`'s `palette` and are spread here.
+// Only mode-specific values (background/card/text/border/etc.) are declared
+// per-theme below — this is the single source of truth for the app's colors.
 
 // Light Theme colors (Vibrant Electric Orange Theme)
 export const lightColors = {
-  primary: '#FF5F1F', // Vibrant Electric Orange
+  ...palette,
   background: '#FFFFFF',
   card: '#FFFFFF',
   surface: '#FFFFFF',
   text: '#1A1510',
   border: '#EAE7E1',
-  notification: '#E04E10',
+  notification: palette.accent,
   textSecondary: '#655B50',
   textMuted: '#9B9084',
   textInverse: '#FFFFFF',
-  accent: '#E04E10',
-  success: '#2E7D32',
-  warning: '#FF5F1F',
-  error: '#C62828',
-  info: '#1976D2',
   bgTertiary: '#F8F6F0',
-  borderFocus: '#FF5F1F',
+  borderFocus: palette.primary,
   brandLight: '#FFF0EA',
-  brandMuted: 'rgba(255, 95, 31, 0.18)',
+  // FitPass portal uses a blue accent (vs. H4's orange) to visually
+  // distinguish the two portals — documented here instead of a stray hex
+  // repeated across CustomTabBar/GymDiscoveryExplore/etc.
+  fitpassAccent: '#2563EB',
+  fitpassAccentMuted: '#EFF6FF',
 };
 
 // Dark Theme colors (Premium Dark Theme with Vibrant Orange accent)
 export const darkColors = {
-  primary: '#FF5F1F', // Vibrant Electric Orange
+  ...palette,
   background: '#231D14', // Very dark warm brown-black
   card: '#2D251C', // Dark warm brown card/surface
   surface: '#2D251C',
   text: '#FFFFFF', // White text
   border: '#3A3025', // Warm brown border
-  notification: '#E04E10',
+  notification: palette.accent,
   textSecondary: '#A39686',
   textMuted: '#6D6154',
   textInverse: '#231D14',
-  accent: '#E04E10',
-  success: '#2E7D32',
-  warning: '#FF5F1F',
-  error: '#C62828',
-  info: '#1976D2',
   bgTertiary: '#3A3025',
-  borderFocus: '#FF5F1F',
+  borderFocus: palette.primary,
   brandLight: '#3F2518',
-  brandMuted: 'rgba(255, 95, 31, 0.18)',
+  fitpassAccent: '#2563EB',
+  fitpassAccentMuted: '#1E3A5F',
 };
 
 // Global reactive reference for active theme mode

@@ -27,7 +27,7 @@ router.route('/')
 router.post('/razorpay/order', protect, createRazorpayOrder);
 router.post('/razorpay/verify', protect, verifyRazorpayPayment);
 
-router.get('/member/:memberId', protect, authorize('admin', 'receptionist', 'h4_admin'), getMemberPayments);
+router.get('/member/:memberId', protect, authorize('admin', 'receptionist', 'h4_admin'), tenantFilter, getMemberPayments);
 
 module.exports = router;
 

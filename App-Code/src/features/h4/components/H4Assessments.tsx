@@ -52,12 +52,12 @@ export function H4Assessments() {
   const latest = assessments.length > 0 ? assessments[0] : null;
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#FAFAFC' }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <H4TopHeader title="Body Progress" />
       <ScrollView style={styles.root} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.headerGroup}>
           <View style={styles.headerIconWrap}>
-            <TrendingUp size={18} color="#F0A020" strokeWidth={2.5} />
+            <TrendingUp size={18} color={theme.colors.primary} strokeWidth={2.5} />
           </View>
           <View style={{ flex: 1 }}>
             <Typography variant="h2" style={styles.headerTitle}>InBody Analysis</Typography>
@@ -70,7 +70,7 @@ export function H4Assessments() {
         {!latest ? (
           <Card style={styles.emptyCard}>
             <View style={styles.emptyIconCircle}>
-              <Activity size={28} color="#F0A020" />
+              <Activity size={28} color={theme.colors.primary} />
             </View>
             <Typography variant="bodySm" style={styles.emptyTitle}>No Body Assessment Data</Typography>
             <Typography variant="caption" color="secondary" style={styles.emptyDesc}>
@@ -82,7 +82,7 @@ export function H4Assessments() {
             <View style={styles.metricsGrid}>
               <Card style={styles.metricCard}>
                 <View style={styles.metricHeader}>
-                  <Scale size={15} color="#F0A020" />
+                  <Scale size={15} color={theme.colors.primary} />
                   <Typography variant="caption" color="secondary" style={styles.metricLabel}>WEIGHT</Typography>
                 </View>
                 <Text style={styles.metricVal}>
@@ -92,7 +92,7 @@ export function H4Assessments() {
 
               <Card style={styles.metricCard}>
                 <View style={styles.metricHeader}>
-                  <TrendingUp size={15} color="#F0A020" />
+                  <TrendingUp size={15} color={theme.colors.primary} />
                   <Typography variant="caption" color="secondary" style={styles.metricLabel}>BMI</Typography>
                 </View>
                 <Text style={styles.metricVal}>{latest.bmi}</Text>
@@ -100,7 +100,7 @@ export function H4Assessments() {
 
               <Card style={styles.metricCard}>
                 <View style={styles.metricHeader}>
-                  <Flame size={15} color="#F0A020" />
+                  <Flame size={15} color={theme.colors.primary} />
                   <Typography variant="caption" color="secondary" style={styles.metricLabel}>BODY FAT</Typography>
                 </View>
                 <Text style={styles.metricVal}>
@@ -110,7 +110,7 @@ export function H4Assessments() {
 
               <Card style={styles.metricCard}>
                 <View style={styles.metricHeader}>
-                  <Activity size={15} color="#F0A020" />
+                  <Activity size={15} color={theme.colors.primary} />
                   <Typography variant="caption" color="secondary" style={styles.metricLabel}>MUSCLE (SMM)</Typography>
                 </View>
                 <Text style={styles.metricVal}>
@@ -120,7 +120,7 @@ export function H4Assessments() {
 
               <Card style={styles.metricCard}>
                 <View style={styles.metricHeader}>
-                  <Award size={15} color="#F0A020" />
+                  <Award size={15} color={theme.colors.primary} />
                   <Typography variant="caption" color="secondary" style={styles.metricLabel}>BMR</Typography>
                 </View>
                 <Text style={styles.metricVal}>
@@ -131,10 +131,10 @@ export function H4Assessments() {
               {latest.inBodyScore ? (
                 <View style={[styles.metricCard, styles.scoreCard]}>
                   <View style={styles.metricHeader}>
-                    <Award size={15} color="#FFFFFF" />
-                    <Typography variant="caption" style={[styles.metricLabel, { color: '#FFFFFF' }]}>INBODY SCORE</Typography>
+                    <Award size={15} color={theme.colors.card} />
+                    <Typography variant="caption" style={[styles.metricLabel, { color: theme.colors.card }]}>INBODY SCORE</Typography>
                   </View>
-                  <Text style={[styles.metricVal, { color: '#FFFFFF' }]}>{latest.inBodyScore}</Text>
+                  <Text style={[styles.metricVal, { color: theme.colors.card }]}>{latest.inBodyScore}</Text>
                 </View>
               ) : null}
             </View>
@@ -154,7 +154,7 @@ export function H4Assessments() {
                   <Card key={itemId} style={styles.historyCard}>
                     <View style={styles.historyHeader}>
                       <View style={styles.dateGroup}>
-                        <Calendar size={14} color="#F0A020" />
+                        <Calendar size={14} color={theme.colors.primary} />
                         <Text style={styles.dateText}>{dateStr}</Text>
                       </View>
                       {item.inBodyScore ? (
@@ -194,9 +194,9 @@ export function H4Assessments() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FAFAFC' },
+  root: { flex: 1, backgroundColor: theme.colors.background },
   content: { padding: 18, paddingBottom: 100, gap: 16 },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FAFAFC' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
   
   headerGroup: { 
     flexDirection: 'row', 
@@ -208,18 +208,18 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 8,
-    backgroundColor: '#FEF3C7',
+    backgroundColor: theme.colors.warning,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: { 
-    color: '#0F172A', 
+    color: theme.colors.text, 
     fontWeight: '800', 
     fontSize: 20 
   },
   headerSub: {
     fontSize: 12,
-    color: '#64748B',
+    color: theme.colors.textSecondary,
     marginTop: 2,
   },
 
@@ -228,9 +228,9 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     gap: 10, 
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: theme.colors.border,
   },
   emptyIconCircle: {
     width: 60,
@@ -240,8 +240,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  emptyTitle: { color: '#0F172A', fontWeight: '800', fontSize: 16 },
-  emptyDesc: { textAlign: 'center', fontSize: 12, color: '#64748B', lineHeight: 18 },
+  emptyTitle: { color: theme.colors.text, fontWeight: '800', fontSize: 16 },
+  emptyDesc: { textAlign: 'center', fontSize: 12, color: theme.colors.textSecondary, lineHeight: 18 },
   
   mainGroup: { gap: 16 },
   metricsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
@@ -249,8 +249,8 @@ const styles = StyleSheet.create({
     width: '48%', 
     padding: 16, 
     gap: 6, 
-    backgroundColor: '#FFFFFF', 
-    borderColor: '#E2E8F0', 
+    backgroundColor: theme.colors.card, 
+    borderColor: theme.colors.border, 
     borderWidth: 1,
     borderRadius: 16,
     shadowColor: '#000',
@@ -259,21 +259,21 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   scoreCard: {
-    backgroundColor: '#0F172A',
-    borderColor: '#0F172A',
+    backgroundColor: theme.colors.text,
+    borderColor: theme.colors.text,
   },
   metricHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  metricLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5, color: '#64748B' },
-  metricVal: { color: '#0F172A', fontWeight: '800', fontSize: 20 },
-  metricUnit: { fontSize: 12, fontWeight: '600', color: '#64748B' },
+  metricLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5, color: theme.colors.textSecondary },
+  metricVal: { color: theme.colors.text, fontWeight: '800', fontSize: 20 },
+  metricUnit: { fontSize: 12, fontWeight: '600', color: theme.colors.textSecondary },
   
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A', marginTop: 8 },
+  sectionTitle: { fontSize: 16, fontWeight: '800', color: theme.colors.text, marginTop: 8 },
   historyList: { gap: 12 },
   historyCard: { 
     padding: 16, 
     gap: 12, 
-    backgroundColor: '#FFFFFF', 
-    borderColor: '#E2E8F0', 
+    backgroundColor: theme.colors.card, 
+    borderColor: theme.colors.border, 
     borderWidth: 1,
     borderRadius: 20,
     shadowColor: '#000',
@@ -283,9 +283,9 @@ const styles = StyleSheet.create({
   },
   historyHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   dateGroup: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dateText: { color: '#0F172A', fontWeight: '800', fontSize: 13 },
+  dateText: { color: theme.colors.text, fontWeight: '800', fontSize: 13 },
   scoreBadge: { 
-    color: '#F0A020', 
+    color: theme.colors.primary, 
     fontWeight: '800', 
     fontSize: 10, 
     backgroundColor: 'rgba(240, 160, 32, 0.08)', 
@@ -298,11 +298,11 @@ const styles = StyleSheet.create({
   
   cardDivider: {
     height: 1,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: theme.colors.border,
   },
   
   historyStatsRow: { flexDirection: 'row', justifyContent: 'space-between' },
   statCol: { gap: 4 },
-  statLabel: { fontSize: 10, color: '#64748B', fontWeight: '600' },
-  statVal: { color: '#0F172A', fontWeight: '800', fontSize: 13 },
+  statLabel: { fontSize: 10, color: theme.colors.textSecondary, fontWeight: '600' },
+  statVal: { color: theme.colors.text, fontWeight: '800', fontSize: 13 },
 });

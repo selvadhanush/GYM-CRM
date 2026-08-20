@@ -796,7 +796,7 @@ export default function OpsDetailScreen() {
             </Card>
             <Card style={styles.summaryCard}>
               <Typography variant="caption" color="secondary">Conversion Rate</Typography>
-              <Typography variant="h2" style={{ color: '#10b981' }}>{leadsSummary.conversionRate || 0}%</Typography>
+              <Typography variant="h2" style={{ color: theme.colors.success }}>{leadsSummary.conversionRate || 0}%</Typography>
             </Card>
             {(leadsSummary.statusCounts || []).map((sc: any) => (
               <Card key={sc._id} style={styles.summaryCard}>
@@ -816,11 +816,11 @@ export default function OpsDetailScreen() {
             </Card>
             <Card style={styles.kpiCardItem}>
               <Typography variant="caption" color="muted">Operational</Typography>
-              <Typography variant="h3" style={{ color: '#10b981' }}>{equipmentKPIs.functional} Active</Typography>
+              <Typography variant="h3" style={{ color: theme.colors.success }}>{equipmentKPIs.functional} Active</Typography>
             </Card>
             <Card style={styles.kpiCardItem}>
               <Typography variant="caption" color="muted">In Service</Typography>
-              <Typography variant="h3" style={{ color: '#f59e0b' }}>{equipmentKPIs.maintenance} Repair</Typography>
+              <Typography variant="h3" style={{ color: theme.colors.warning }}>{equipmentKPIs.maintenance} Repair</Typography>
             </Card>
           </View>
         )}
@@ -1078,7 +1078,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.bgTertiary,
     borderRadius: theme.radii.md,
     borderWidth: 1.5,
-    borderColor: '#3f3f46',
+    borderColor: theme.colors.textSecondary,
     paddingHorizontal: theme.spacing.md,
     height: 48,
   },
@@ -1106,7 +1106,7 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: theme.radii.md,
     borderWidth: 1.5,
-    borderColor: '#3f3f46',
+    borderColor: theme.colors.textSecondary,
     backgroundColor: theme.colors.bgTertiary,
     justifyContent: 'center',
     alignItems: 'center',

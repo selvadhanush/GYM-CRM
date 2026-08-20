@@ -4,6 +4,7 @@ import { Building2, MapPin, Phone, XCircle } from 'lucide-react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { API_CLIENT } from '@/lib/api-client';
 import { Card, Typography, Input, Button, Badge } from '@/components/ui';
+import { theme } from '@/design-system/theme';
 
 export const PartnerControlHub: React.FC = () => {
   const queryClient = useQueryClient();
@@ -105,7 +106,7 @@ export const PartnerControlHub: React.FC = () => {
       {/* Header Info */}
       <Card style={styles.headerCard}>
         <View style={styles.headerRow}>
-          <Building2 size={24} color="#D99B00" />
+          <Building2 size={24} color={theme.colors.primary} />
           <Typography variant="h2" style={styles.headerTitle}>Partner Control Hub (A-Z)</Typography>
         </View>
         <Typography variant="caption" color="secondary" style={{ marginTop: 4 }}>
@@ -125,7 +126,7 @@ export const PartnerControlHub: React.FC = () => {
 
       {/* Roster Table List */}
       {isLoading ? (
-        <ActivityIndicator size="large" color="#ffe01b" style={{ marginVertical: 30 }} />
+        <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginVertical: 30 }} />
       ) : filteredPartners.length === 0 ? (
         <Card style={styles.emptyCard}>
           <Typography variant="body" color="secondary">No partner gyms match your search query.</Typography>
@@ -143,7 +144,7 @@ export const PartnerControlHub: React.FC = () => {
               >
                 <View style={styles.partnerMainInfo}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <Typography variant="h3" style={{ fontWeight: '800', color: '#1A1510' }}>
+                    <Typography variant="h3" style={{ fontWeight: '800', color: theme.colors.text }}>
                       {p.name}
                     </Typography>
                     {p.isBranch && <Badge label="Branch" variant="info" />}
@@ -151,14 +152,14 @@ export const PartnerControlHub: React.FC = () => {
 
                   {p.address && (
                     <View style={styles.iconInfoRow}>
-                      <MapPin size={13} color="#655B50" />
+                      <MapPin size={13} color={theme.colors.textSecondary} />
                       <Typography variant="caption" color="secondary" numberOfLines={1}>{p.address}</Typography>
                     </View>
                   )}
 
                   {p.phone && (
                     <View style={styles.iconInfoRow}>
-                      <Phone size={13} color="#655B50" />
+                      <Phone size={13} color={theme.colors.textSecondary} />
                       <Typography variant="caption" color="secondary">{p.phone}</Typography>
                     </View>
                   )}
@@ -182,27 +183,27 @@ export const PartnerControlHub: React.FC = () => {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Typography variant="h2" style={{ fontWeight: '900', color: '#1A1510' }}>
+                <Typography variant="h2" style={{ fontWeight: '900', color: theme.colors.text }}>
                   {selectedPartner.name}
                 </Typography>
                 <TouchableOpacity onPress={() => setSelectedPartner(null)}>
-                  <XCircle size={24} color="#655B50" />
+                  <XCircle size={24} color={theme.colors.textSecondary} />
                 </TouchableOpacity>
               </View>
 
               <ScrollView bounces={false} style={{ maxHeight: 420 }}>
                 <View style={styles.modalSection}>
                   <Typography variant="caption" color="secondary" style={styles.sectionLabel}>GYM DETAILS</Typography>
-                  <Typography variant="bodySm" style={{ color: '#1A1510' }}>📍 {selectedPartner.address || 'Address not listed'}</Typography>
-                  <Typography variant="bodySm" style={{ color: '#1A1510', marginTop: 4 }}>📞 {selectedPartner.phone || 'Phone not listed'}</Typography>
-                  <Typography variant="bodySm" style={{ color: '#1A1510', marginTop: 4 }}>✉️ {selectedPartner.email || 'Email not listed'}</Typography>
+                  <Typography variant="bodySm" style={{ color: theme.colors.text }}>📍 {selectedPartner.address || 'Address not listed'}</Typography>
+                  <Typography variant="bodySm" style={{ color: theme.colors.text, marginTop: 4 }}>📞 {selectedPartner.phone || 'Phone not listed'}</Typography>
+                  <Typography variant="bodySm" style={{ color: theme.colors.text, marginTop: 4 }}>✉️ {selectedPartner.email || 'Email not listed'}</Typography>
                 </View>
 
                 {selectedPartner.admins && selectedPartner.admins.length > 0 && (
                   <View style={styles.modalSection}>
                     <Typography variant="caption" color="secondary" style={styles.sectionLabel}>GYM MANAGER / ADMIN</Typography>
                     {selectedPartner.admins.map((a: any) => (
-                      <Typography key={a._id} variant="bodySm" style={{ fontWeight: '700', color: '#1A1510' }}>
+                      <Typography key={a._id} variant="bodySm" style={{ fontWeight: '700', color: theme.colors.text }}>
                         👤 {a.name} ({a.email})
                       </Typography>
                     ))}
@@ -238,13 +239,13 @@ export const PartnerControlHub: React.FC = () => {
                       title={selectedPartner.status === 'Active' ? 'Suspend Partner Access' : 'Activate Partner Access'}
                       onPress={() => handleToggleStatus(selectedPartner)}
                       loading={updateMutation.isPending}
-                      style={{ backgroundColor: selectedPartner.status === 'Active' ? '#C62828' : '#2E7D32' }}
+                      style={{ backgroundColor: selectedPartner.status === 'Active' ? theme.colors.error : theme.colors.success }}
                     />
                     <Button
                       title="Remove Partner Gym"
                       onPress={handleDeletePartner}
                       loading={deleteMutation.isPending}
-                      style={{ backgroundColor: '#1A1510' }}
+                      style={{ backgroundColor: theme.colors.text }}
                     />
                   </View>
                 </View>
@@ -260,14 +261,14 @@ export const PartnerControlHub: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
   },
   headerCard: {
     padding: 18,
     marginBottom: 16,
     borderLeftWidth: 4,
-    borderLeftColor: '#ffe01b',
-    backgroundColor: '#FFFFFF',
+    borderLeftColor: theme.colors.primary,
+    backgroundColor: theme.colors.card,
   },
   headerRow: {
     flexDirection: 'row',
@@ -276,7 +277,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontWeight: '900',
-    color: '#1A1510',
+    color: theme.colors.text,
   },
   searchContainer: {
     marginBottom: 16,
@@ -285,22 +286,22 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
   },
   listScroll: {
     flex: 1,
   },
   partnerRowCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#EAE7E1',
+    borderColor: theme.colors.border,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000000',
+    shadowColor: theme.colors.text,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
@@ -329,10 +330,10 @@ const styles = StyleSheet.create({
   modalContent: {
     width: '100%',
     maxWidth: 420,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
     borderRadius: 24,
     padding: 24,
-    shadowColor: '#000000',
+    shadowColor: theme.colors.text,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
     shadowRadius: 20,
@@ -344,13 +345,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 18,
     borderBottomWidth: 1,
-    borderBottomColor: '#EAE7E1',
+    borderBottomColor: theme.colors.border,
     paddingBottom: 12,
   },
   modalSection: {
     marginBottom: 18,
     borderBottomWidth: 1,
-    borderBottomColor: '#F8F6F0',
+    borderBottomColor: theme.colors.bgTertiary,
     paddingBottom: 14,
   },
   sectionLabel: {

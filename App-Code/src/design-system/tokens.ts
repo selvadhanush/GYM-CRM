@@ -11,44 +11,71 @@ export const spacing = {
   '3xl': 64,
 };
 
+// Canonical brand/status palette — the single source of truth for values that
+// are shared between light and dark mode. `theme.ts`'s lightColors/darkColors
+// spread this palette and only override the values that legitimately differ
+// per mode (background, card, text, border, etc.). Don't redeclare these hex
+// values anywhere else — import `palette` (via `theme.colors`) instead.
+export const palette = {
+  primary: '#FF5F1F', // Vibrant Electric Orange — brand primary
+  primaryHover: '#E04E10',
+  primaryLight: '#FFECE5',
+  primaryMuted: '#FFF3EE',
+  accent: '#E04E10', // Dark amber/gold accent, also used as `notification`
+  success: '#2E7D32',
+  warning: '#D97706', // Distinct amber — previously collided with `primary`
+  error: '#C62828',
+  info: '#1976D2',
+  brandMuted: 'rgba(255, 95, 31, 0.18)',
+};
+
+// Deprecated nested shape, kept only so any stray import doesn't hard-crash.
+// Prefer `theme.colors` (from `@/design-system/theme`) in new code.
 export const colors = {
   brand: {
-    primary: '#FF5F1F', // Vibrant Electric Orange
-    primaryHover: '#E04E10', // Dark Amber / Gold
-    primaryLight: '#FFECE5', // Soft Amber Tint
-    primaryMuted: '#FFF3EE', // Cream/Soft Amber Card Accent
+    primary: palette.primary,
+    primaryHover: palette.primaryHover,
+    primaryLight: palette.primaryLight,
+    primaryMuted: palette.primaryMuted,
   },
-  accent: '#D9860F', // Dark Amber / Gold
+  accent: palette.accent,
   status: {
-    success: '#2E7D32', // Active Pass - Green
-    warning: '#FF5F1F', // Warning - Orange
-    error: '#C62828', // Expired Session - Red
-    info: '#1976D2', // Cooldown - Blue
+    success: palette.success,
+    warning: palette.warning,
+    error: palette.error,
+    info: palette.info,
   },
   background: {
-    primary: '#231D14', // Very dark warm brown-black background
-    secondary: '#2D251C', // Dark warm brown card/surface background
+    primary: '#231D14',
+    secondary: '#2D251C',
     tertiary: '#2D251C',
   },
   text: {
-    primary: '#FFFFFF', // Pure white for high-contrast titles
-    secondary: '#A39686', // Warm muted brown-gray body text
-    muted: '#6D6154', // Muted warm brown-gray for captions
-    inverse: '#231D14', // Inverse text
+    primary: '#FFFFFF',
+    secondary: '#A39686',
+    muted: '#6D6154',
+    inverse: '#231D14',
   },
   border: {
-    default: '#3A3025', // Warm brown border
-    focus: '#FF5F1F',
+    default: '#3A3025',
+    focus: palette.primary,
   },
 };
 
 import { Platform } from 'react-native';
 
+// NOTE: 'Oswald-Bold' is loaded via a web <link> in app/_layout.tsx, but no
+// .ttf is bundled into the native app and no expo-font/useFonts call loads
+// it there — on iOS/Android it was silently falling back to the system font
+// while claiming to be Oswald. Until the font file is actually bundled, the
+// native fallback is declared honestly as a bold system font so the display
+// type scale renders consistently instead of pretending to be a font that
+// isn't present.
 export const fontFamilies = {
   header: Platform.select({
     web: "'Oswald', sans-serif",
-    ios: 'Oswald-Bold',
-    android: 'Oswald-Bold',
+    ios: 'System', // rendered bold via typography.*.fontWeight, see theme.ts
+    android: 'sans-serif-condensed',
     default: 'sans-serif',
   }) as string,
   body: Platform.select({

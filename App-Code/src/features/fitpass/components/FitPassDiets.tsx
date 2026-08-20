@@ -85,7 +85,7 @@ export function FitPassDiets() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#FF5F1F" />
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
@@ -95,10 +95,10 @@ export function FitPassDiets() {
       <Card style={styles.waterCard}>
         <View style={styles.waterHeader}>
           <View>
-            <Typography variant="caption" style={{ color: '#FF5F1F', fontWeight: '700' }}>FITPASS HYDRATION GOAL</Typography>
+            <Typography variant="caption" style={{ color: theme.colors.primary, fontWeight: '700' }}>FITPASS HYDRATION GOAL</Typography>
             <Typography variant="h2" style={{ color: theme.colors.text }}>{water} / 8 Cups</Typography>
           </View>
-          <Droplet size={32} color="#FF5F1F" fill={water > 0 ? '#FF5F1F' : 'none'} />
+          <Droplet size={32} color={theme.colors.primary} fill={water > 0 ? theme.colors.primary : 'none'} />
         </View>
         <View style={styles.waterBtns}>
           <TouchableOpacity style={styles.waterBtn} onPress={() => saveWater(water + 1)}>
@@ -125,11 +125,11 @@ export function FitPassDiets() {
 
             <View style={styles.macroBarContainer}>
               <View style={styles.macroLabelRow}>
-                <Typography variant="bodySm" style={{ fontWeight: '700', color: theme.colors.text }}><Flame size={14} color="#FF5F1F" /> Calories</Typography>
+                <Typography variant="bodySm" style={{ fontWeight: '700', color: theme.colors.text }}><Flame size={14} color={theme.colors.primary} /> Calories</Typography>
                 <Typography variant="caption" color="secondary">{consumedMacros.calories} / {targets.calories} kcal</Typography>
               </View>
               <View style={styles.barBg}>
-                <View style={[styles.barFill, { backgroundColor: '#FF5F1F', width: `${Math.min(100, (consumedMacros.calories / targets.calories) * 100)}%` }]} />
+                <View style={[styles.barFill, { backgroundColor: theme.colors.primary, width: `${Math.min(100, (consumedMacros.calories / targets.calories) * 100)}%` }]} />
               </View>
             </View>
 
@@ -163,7 +163,7 @@ export function FitPassDiets() {
                 >
                   <View style={styles.mealLeft}>
                     {isDone ? (
-                      <View style={styles.doneCheck}><Check size={14} color="#ffffff" /></View>
+                      <View style={styles.doneCheck}><Check size={14} color={theme.colors.card} /></View>
                     ) : (
                       <View style={styles.undoneCheck} />
                     )}
@@ -194,11 +194,11 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: theme.colors.background },
   content: { padding: theme.spacing.md, paddingBottom: 40 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
-  waterCard: { padding: theme.spacing.md, marginBottom: theme.spacing.md, borderLeftWidth: 4, borderLeftColor: '#FF5F1F' },
+  waterCard: { padding: theme.spacing.md, marginBottom: theme.spacing.md, borderLeftWidth: 4, borderLeftColor: theme.colors.primary },
   waterHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   waterBtns: { flexDirection: 'row', gap: theme.spacing.sm, marginTop: theme.spacing.md },
-  waterBtn: { flex: 1, backgroundColor: '#FF5F1F', paddingVertical: theme.spacing.sm, borderRadius: theme.radii.md, alignItems: 'center' },
-  waterBtnText: { color: '#ffffff', fontWeight: '700' },
+  waterBtn: { flex: 1, backgroundColor: theme.colors.primary, paddingVertical: theme.spacing.sm, borderRadius: theme.radii.md, alignItems: 'center' },
+  waterBtnText: { color: theme.colors.card, fontWeight: '700' },
   emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
   emptyTitle: { color: theme.colors.text, marginTop: theme.spacing.md },
   emptyDesc: { textAlign: 'center', marginTop: theme.spacing.xs, paddingHorizontal: theme.spacing.xl },

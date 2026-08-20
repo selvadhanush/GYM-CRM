@@ -489,7 +489,13 @@ const Members = () => {
                             >
                                 <td>
                                     <div style={{ fontWeight: '600' }}>{member.name}</div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{member.email}</div>
+                                    {member.registrationNumber ? (
+                                        <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--primary, #F0A020)' }}>
+                                            {member.registrationNumber}
+                                        </div>
+                                    ) : (
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{member.email}</div>
+                                    )}
                                 </td>
                                 <td className="hide-mobile">{member.phone}</td>
                                 <td>{member.planId?.name || 'N/A'}</td>
@@ -631,13 +637,18 @@ const Members = () => {
                         <div style={{ padding: '1.5rem', background: 'white', borderRadius: '12px', display: 'inline-block', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
                             <QRCodeCanvas
                                 id="member-qr"
-                                value={viewingQRMember._id}
+                                value={`GYMCRM:1:${viewingQRMember.registrationNumber || viewingQRMember._id}`}
                                 size={200}
                                 level="H"
                                 includeMargin={true}
                             />
                         </div>
-                        <h3 style={{ marginTop: '1.5rem', marginBottom: '0.5rem' }}>{viewingQRMember.name}</h3>
+                        <h3 style={{ marginTop: '1.5rem', marginBottom: '0.3rem' }}>{viewingQRMember.name}</h3>
+                        {viewingQRMember.registrationNumber && (
+                            <p style={{ color: 'var(--primary, #F0A020)', fontWeight: '800', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+                                {viewingQRMember.registrationNumber}
+                            </p>
+                        )}
                         <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Member ID: {viewingQRMember._id}</p>
                         <button className="btn btn-primary" style={{ width: '100%' }} onClick={handleDownloadQR}>Download QR Code</button>
                     </div>

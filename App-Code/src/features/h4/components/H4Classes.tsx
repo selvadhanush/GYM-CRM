@@ -28,6 +28,7 @@ import {
   Info,
 } from 'lucide-react-native';
 import { fontFamilies } from '@/design-system/tokens';
+import { theme } from '@/design-system/theme';
 import { Skeleton } from '@/components/ui';
 import { useH4Classes, useH4BookClass, useH4CancelClass, GymClassItem } from '../api/h4.api';
 import { H4TopHeader } from './H4TopHeader';
@@ -144,14 +145,14 @@ export function H4Classes() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={['#F0A020']} />
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[theme.colors.primary]} />
         }
       >
         {/* Banner Header Card */}
         <View style={styles.bannerCard}>
           <View style={styles.bannerBadgeRow}>
             <View style={styles.sparkleTag}>
-              <Sparkles size={12} color="#F0A020" />
+              <Sparkles size={12} color={theme.colors.primary} />
               <Text style={styles.sparkleTagText}>H4 STUDIO SCHEDULE</Text>
             </View>
             <View style={styles.livePill}>
@@ -173,12 +174,12 @@ export function H4Classes() {
             </View>
             <View style={styles.metricDivider} />
             <View style={styles.metricItem}>
-              <Text style={[styles.metricValue, { color: '#16A34A' }]}>{bookedClassesCount}</Text>
+              <Text style={[styles.metricValue, { color: theme.colors.success }]}>{bookedClassesCount}</Text>
               <Text style={styles.metricLabel}>My Reserved</Text>
             </View>
             <View style={styles.metricDivider} />
             <View style={styles.metricItem}>
-              <Text style={[styles.metricValue, { color: '#F0A020' }]}>{openSeatsCount}</Text>
+              <Text style={[styles.metricValue, { color: theme.colors.primary }]}>{openSeatsCount}</Text>
               <Text style={styles.metricLabel}>Open Seats</Text>
             </View>
           </View>
@@ -186,17 +187,17 @@ export function H4Classes() {
 
         {/* Search Bar */}
         <View style={styles.searchBox}>
-          <Search size={18} color="#64748B" />
+          <Search size={18} color={theme.colors.textSecondary} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search class name, trainer, or type..."
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor={theme.colors.textMuted}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
           {searchQuery ? (
             <TouchableOpacity onPress={() => setSearchQuery('')} style={{ padding: 4 }}>
-              <XCircle size={16} color="#94A3B8" />
+              <XCircle size={16} color={theme.colors.textMuted} />
             </TouchableOpacity>
           ) : null}
         </View>
@@ -241,7 +242,7 @@ export function H4Classes() {
         ) : filteredClasses.length === 0 ? (
           <View style={styles.emptyCard}>
             <View style={styles.emptyIconCircle}>
-              <Users size={32} color="#F0A020" />
+              <Users size={32} color={theme.colors.primary} />
             </View>
             <Text style={styles.emptyTitle}>No Classes Found</Text>
             <Text style={styles.emptySubtitle}>
@@ -289,17 +290,17 @@ export function H4Classes() {
                   {/* Top Category Badge & Status */}
                   <View style={styles.cardHeaderRow}>
                     <View style={styles.categoryPill}>
-                      <Dumbbell size={12} color="#F0A020" />
+                      <Dumbbell size={12} color={theme.colors.primary} />
                       <Text style={styles.categoryPillText}>{(cls.type || 'STUDIO').toUpperCase()}</Text>
                     </View>
 
                     {isPast ? (
-                      <View style={[styles.statusFullBadge, { backgroundColor: '#F3F4F6' }]}>
-                        <Text style={[styles.statusFullText, { color: '#6B7280' }]}>COMPLETED</Text>
+                      <View style={[styles.statusFullBadge, { backgroundColor: theme.colors.border }]}>
+                        <Text style={[styles.statusFullText, { color: theme.colors.textSecondary }]}>COMPLETED</Text>
                       </View>
                     ) : cls.isBooked ? (
                       <View style={styles.statusBookedBadge}>
-                        <CheckCircle2 size={13} color="#16A34A" />
+                        <CheckCircle2 size={13} color={theme.colors.success} />
                         <Text style={styles.statusBookedText}>RESERVED</Text>
                       </View>
                     ) : isFull ? (
@@ -324,19 +325,19 @@ export function H4Classes() {
                   {/* Meta Items Row */}
                   <View style={styles.metaRow}>
                     <View style={styles.metaBadge}>
-                      <Calendar size={13} color="#F0A020" />
+                      <Calendar size={13} color={theme.colors.primary} />
                       <Text style={styles.metaText}>{formattedDate}</Text>
                     </View>
 
                     <View style={styles.metaBadge}>
-                      <Clock size={13} color="#F0A020" />
+                      <Clock size={13} color={theme.colors.primary} />
                       <Text style={styles.metaText}>
                         {cls.startTime} - {cls.endTime}
                       </Text>
                     </View>
 
                     <View style={styles.metaBadge}>
-                      <UserCheck size={13} color="#F0A020" />
+                      <UserCheck size={13} color={theme.colors.primary} />
                       <Text style={styles.metaText}>{cls.trainerName || 'H4 Certified Trainer'}</Text>
                     </View>
                   </View>
@@ -355,7 +356,7 @@ export function H4Classes() {
                           styles.capacityFill,
                           {
                             width: `${capacityPercent}%`,
-                            backgroundColor: capacityPercent > 80 ? '#DC2626' : '#F0A020',
+                            backgroundColor: capacityPercent > 80 ? theme.colors.error : theme.colors.primary,
                           },
                         ]}
                       />
@@ -365,8 +366,8 @@ export function H4Classes() {
                   {/* Action Buttons */}
                   <View style={styles.actionRow}>
                     {isPast ? (
-                      <View style={[styles.reserveBtn, styles.reserveBtnDisabled, { backgroundColor: '#E5E7EB' }]}>
-                        <Text style={[styles.reserveBtnText, { color: '#9CA3AF' }]}>Class Ended / Completed</Text>
+                      <View style={[styles.reserveBtn, styles.reserveBtnDisabled, { backgroundColor: theme.colors.border }]}>
+                        <Text style={[styles.reserveBtnText, { color: theme.colors.textMuted }]}>Class Ended / Completed</Text>
                       </View>
                     ) : cls.isBooked ? (
                       <TouchableOpacity
@@ -376,10 +377,10 @@ export function H4Classes() {
                         activeOpacity={0.85}
                       >
                         {isActioning ? (
-                          <ActivityIndicator size="small" color="#DC2626" />
+                          <ActivityIndicator size="small" color={theme.colors.error} />
                         ) : (
                           <>
-                            <XCircle size={16} color="#DC2626" />
+                            <XCircle size={16} color={theme.colors.error} />
                             <Text style={styles.cancelBookingText}>Cancel Reservation</Text>
                           </>
                         )}
@@ -392,10 +393,10 @@ export function H4Classes() {
                         activeOpacity={0.85}
                       >
                         {isActioning ? (
-                          <ActivityIndicator size="small" color="#FFFFFF" />
+                          <ActivityIndicator size="small" color={theme.colors.card} />
                         ) : (
                           <>
-                            <CheckCircle2 size={16} color="#FFFFFF" />
+                            <CheckCircle2 size={16} color={theme.colors.card} />
                             <Text style={styles.reserveBtnText}>
                               {isFull ? 'Class Full' : 'Reserve Seat Now'}
                             </Text>
@@ -415,14 +416,14 @@ export function H4Classes() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FAFAFC' },
+  root: { flex: 1, backgroundColor: theme.colors.background },
   content: { padding: 18, paddingBottom: 100, gap: 16 },
 
   bannerCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: theme.colors.border,
     padding: 18,
     gap: 10,
     shadowColor: '#000',
@@ -442,7 +443,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(240, 160, 32, 0.25)',
   },
-  sparkleTagText: { fontSize: 10, fontWeight: '900', color: '#F0A020', letterSpacing: 0.8 },
+  sparkleTagText: { fontSize: 10, fontWeight: '900', color: theme.colors.primary, letterSpacing: 0.8 },
   livePill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -452,62 +453,62 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 10,
   },
-  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#16A34A' },
-  livePillText: { fontSize: 9, fontWeight: '900', color: '#16A34A', letterSpacing: 0.5 },
+  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: theme.colors.success },
+  livePillText: { fontSize: 9, fontWeight: '900', color: theme.colors.success, letterSpacing: 0.5 },
 
-  bannerTitle: { fontSize: 20, fontWeight: '800', color: '#0F172A', letterSpacing: -0.3 },
-  bannerSubtitle: { fontSize: 13, color: '#64748B', lineHeight: 18 },
+  bannerTitle: { fontSize: 20, fontWeight: '800', color: theme.colors.text, letterSpacing: -0.3 },
+  bannerSubtitle: { fontSize: 13, color: theme.colors.textSecondary, lineHeight: 18 },
 
   metricsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: theme.colors.background,
     paddingVertical: 12,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: theme.colors.border,
     marginTop: 4,
   },
   metricItem: { alignItems: 'center', gap: 2 },
-  metricValue: { fontSize: 18, fontWeight: '900', color: '#0F172A' },
-  metricLabel: { fontSize: 11, color: '#64748B' },
-  metricDivider: { width: 1, height: 24, backgroundColor: '#E2E8F0' },
+  metricValue: { fontSize: 18, fontWeight: '900', color: theme.colors.text },
+  metricLabel: { fontSize: 11, color: theme.colors.textSecondary },
+  metricDivider: { width: 1, height: 24, backgroundColor: theme.colors.border },
 
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: theme.colors.border,
     paddingHorizontal: 14,
     height: 48,
   },
-  searchInput: { flex: 1, fontSize: 14, color: '#0F172A' },
+  searchInput: { flex: 1, fontSize: 14, color: theme.colors.text },
 
   filterScroll: { gap: 8 },
   filterChip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: theme.colors.border,
   },
   filterChipActive: {
-    backgroundColor: '#F0A020',
-    borderColor: '#F0A020',
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
   },
-  filterChipText: { fontSize: 13, fontWeight: '700', color: '#64748B' },
-  filterChipTextActive: { color: '#FFFFFF' },
+  filterChipText: { fontSize: 13, fontWeight: '700', color: theme.colors.textSecondary },
+  filterChipTextActive: { color: theme.colors.card },
 
   emptyCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: theme.colors.border,
     padding: 28,
     alignItems: 'center',
     gap: 10,
@@ -520,8 +521,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  emptyTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
-  emptySubtitle: { fontSize: 13, color: '#64748B', textAlign: 'center', lineHeight: 19 },
+  emptyTitle: { fontSize: 18, fontWeight: '800', color: theme.colors.text },
+  emptySubtitle: { fontSize: 13, color: theme.colors.textSecondary, textAlign: 'center', lineHeight: 19 },
   clearFilterBtn: {
     backgroundColor: 'rgba(240, 160, 32, 0.12)',
     paddingHorizontal: 16,
@@ -531,14 +532,14 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(240, 160, 32, 0.3)',
     marginTop: 6,
   },
-  clearFilterText: { fontSize: 13, fontWeight: '800', color: '#F0A020' },
+  clearFilterText: { fontSize: 13, fontWeight: '800', color: theme.colors.primary },
 
   classList: { gap: 16 },
   classCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: theme.colors.border,
     padding: 18,
     gap: 12,
     overflow: 'hidden',
@@ -555,7 +556,7 @@ const styles = StyleSheet.create({
   },
   bookedCardBorder: {
     borderColor: 'rgba(22, 163, 74, 0.4)',
-    backgroundColor: '#FAFFFC',
+    backgroundColor: theme.colors.background,
   },
   cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   categoryPill: {
@@ -567,7 +568,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
   },
-  categoryPillText: { fontSize: 10, fontWeight: '900', color: '#F0A020', letterSpacing: 0.5 },
+  categoryPillText: { fontSize: 10, fontWeight: '900', color: theme.colors.primary, letterSpacing: 0.5 },
 
   statusBookedBadge: {
     flexDirection: 'row',
@@ -578,7 +579,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
   },
-  statusBookedText: { fontSize: 10, fontWeight: '900', color: '#16A34A', letterSpacing: 0.5 },
+  statusBookedText: { fontSize: 10, fontWeight: '900', color: theme.colors.success, letterSpacing: 0.5 },
 
   statusFullBadge: {
     backgroundColor: 'rgba(220, 38, 38, 0.1)',
@@ -586,7 +587,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
   },
-  statusFullText: { fontSize: 10, fontWeight: '900', color: '#DC2626', letterSpacing: 0.5 },
+  statusFullText: { fontSize: 10, fontWeight: '900', color: theme.colors.error, letterSpacing: 0.5 },
 
   statusOpenBadge: {
     backgroundColor: 'rgba(240, 160, 32, 0.1)',
@@ -594,30 +595,30 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
   },
-  statusOpenText: { fontSize: 10, fontWeight: '900', color: '#F0A020', letterSpacing: 0.5 },
+  statusOpenText: { fontSize: 10, fontWeight: '900', color: theme.colors.primary, letterSpacing: 0.5 },
 
-  classTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
-  classDescription: { fontSize: 13, color: '#64748B', lineHeight: 18 },
+  classTitle: { fontSize: 18, fontWeight: '800', color: theme.colors.text },
+  classDescription: { fontSize: 13, color: theme.colors.textSecondary, lineHeight: 18 },
 
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   metaBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: theme.colors.background,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: theme.colors.border,
   },
-  metaText: { fontSize: 12, fontWeight: '600', color: '#334155' },
+  metaText: { fontSize: 12, fontWeight: '600', color: theme.colors.text },
 
   capacitySection: { gap: 6, paddingTop: 4 },
   capacityLabelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  capacityLabel: { fontSize: 11, fontWeight: '700', color: '#64748B' },
-  capacityCountText: { fontSize: 11, fontWeight: '700', color: '#0F172A' },
-  capacityTrack: { height: 6, borderRadius: 3, backgroundColor: '#F1F5F9', overflow: 'hidden' },
+  capacityLabel: { fontSize: 11, fontWeight: '700', color: theme.colors.textSecondary },
+  capacityCountText: { fontSize: 11, fontWeight: '700', color: theme.colors.text },
+  capacityTrack: { height: 6, borderRadius: 3, backgroundColor: theme.colors.border, overflow: 'hidden' },
   capacityFill: { height: '100%', borderRadius: 3 },
 
   actionRow: { paddingTop: 6 },
@@ -626,12 +627,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#F0A020',
+    backgroundColor: theme.colors.primary,
     paddingVertical: 14,
     borderRadius: 14,
   },
-  reserveBtnDisabled: { backgroundColor: '#CBD5E1' },
-  reserveBtnText: { fontSize: 14, fontWeight: '800', color: '#FFFFFF' },
+  reserveBtnDisabled: { backgroundColor: theme.colors.border },
+  reserveBtnText: { fontSize: 14, fontWeight: '800', color: theme.colors.card },
 
   cancelBookingBtn: {
     flexDirection: 'row',
@@ -644,5 +645,5 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     borderRadius: 14,
   },
-  cancelBookingText: { fontSize: 14, fontWeight: '800', color: '#DC2626' },
+  cancelBookingText: { fontSize: 14, fontWeight: '800', color: theme.colors.error },
 });

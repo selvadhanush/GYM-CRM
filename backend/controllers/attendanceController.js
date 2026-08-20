@@ -90,13 +90,17 @@ const getTodayAttendance = catchAsync(async (req, res, next) => {
 // @route   GET /api/attendance/member/:memberId
 // @access  Private/Admin
 const getMemberAttendance = catchAsync(async (req, res, next) => {
+    // IDOR Protection: Verify member belongs to authorized tenant scope
+    const memberQuery = { _id: req.params.memberId, ...req.tenantFilter };
+    const member = await Member.findOne(memberQuery);
+    if (!member) {
+        return res.status(404).json({ message: 'Member not found' });
+    }
+
     const query = {
         memberId: req.params.memberId,
-        gymId: req.user.gymId, ...(req.user.branchId && { branchId: req.user.branchId })
+        ...req.tenantFilter
     };
-    if (req.user.branchId) {
-        query.branchId = req.user.branchId;
-    }
 
     const attendance = await Attendance.find(query)
         .sort({ createdAt: -1 })
@@ -105,8 +109,82 @@ const getMemberAttendance = catchAsync(async (req, res, next) => {
     res.json(attendance);
 });
 
+// @desc    Converged identity check-in via QR payload or manual Registration Number
+// @route   POST /api/attendance/checkin-identity
+// @access  Private/Admin/Receptionist
+const markAttendanceByIdentityController = catchAsync(async (req, res, next) => {
+    const { attendanceService } = require('../services/attendanceService');
+    const { markAttendanceByIdentity } = require('../services/attendanceService');
+    const input = req.body.identityInput || req.body.registrationNumber || req.body.qrCode || req.body.memberId;
+
+    if (!input) {
+        return res.status(400).json({ message: 'Registration Number or QR payload is required' });
+    }
+
+    try {
+        const result = await markAttendanceByIdentity({ rawInput: input, req });
+        res.status(200).json(result);
+    } catch (err) {
+        const status = err.statusCode || 400;
+        res.status(status).json({ message: err.message });
+    }
+});
+
+// @desc    Lookup person identity by Registration Number within authorized tenant scope
+// @route   GET /api/attendance/lookup-identity/:registrationNumber
+// @access  Private/Admin/Receptionist
+const lookupIdentityController = catchAsync(async (req, res, next) => {
+    const { parseRegistrationPayload } = require('../services/attendanceService');
+    const regNum = parseRegistrationPayload(req.params.registrationNumber);
+    const User = require('../models/User');
+
+    let member = await Member.findOne({ registrationNumber: regNum });
+    let staff = null;
+
+    if (!member) {
+        staff = await User.findOne({ registrationNumber: regNum, memberId: null });
+    }
+
+    if (!member && !staff) {
+        return res.status(404).json({ message: 'No entity found with this Registration Number' });
+    }
+
+    const person = member || staff;
+    const isMember = !!member;
+
+    // Security check: Ensure person belongs to caller's tenant
+    if (req.user.role !== 'superadmin' && req.user.role !== 'fitpass_admin') {
+        const authorizedGymId = req.tenantFilter?.gymId || req.user.gymId;
+        if (person.gymId !== authorizedGymId) {
+            return res.status(404).json({ message: 'No entity found with this Registration Number' });
+        }
+
+        const fixedBranchId = req.user.userBranchId || req.user.branchId || req.tenantFilter?.branchId;
+        if (fixedBranchId && person.branchId && person.branchId !== fixedBranchId) {
+            return res.status(404).json({ message: 'No entity found with this Registration Number' });
+        }
+    }
+
+    res.json({
+        type: isMember ? 'member' : 'staff',
+        registrationNumber: regNum,
+        person: {
+            id: person.id,
+            name: person.name,
+            phone: person.phone || null,
+            email: person.email || null,
+            status: person.status,
+            role: isMember ? 'Member' : person.role,
+            gymId: person.gymId,
+            branchId: person.branchId
+        }
+    });
+});
+
 module.exports = {
     markAttendance,
     getMemberAttendance,
     getTodayAttendance,
+    markAttendanceByIdentityController,
+    lookupIdentityController
 };

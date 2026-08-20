@@ -187,7 +187,7 @@ export const SuperAdminDashboard: React.FC = () => {
                 <View style={styles.kpiHeader}>
                   <Typography variant="caption" color="secondary" style={styles.kpiTitle}>AVG CHECK-INS</Typography>
                   <View style={[styles.iconBox, { backgroundColor: 'rgba(156, 39, 176, 0.12)' }]}>
-                    <TrendingUp size={16} color="#ab47bc" />
+                    <TrendingUp size={16} color={theme.colors.accent} />
                   </View>
                 </View>
                 <Typography variant="h2" style={styles.kpiValue}>{fitpassData?.avgVisitsPerMember || 0}</Typography>

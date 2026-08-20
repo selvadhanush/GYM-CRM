@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getMembers, markAttendance, getTodayAttendance, getMemberAttendance } from '../services/apiService';
+import { getMembers, markAttendanceByIdentity, getTodayAttendance, getMemberAttendance } from '../services/apiService';
 import Modal from '../components/Modal';
 import QRScanner from '../components/QRScanner';
 
@@ -8,6 +8,7 @@ const Attendance = () => {
     const [todayList, setTodayList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedMember, setSelectedMember] = useState('');
+    const [regNumInput, setRegNumInput] = useState('');
     const [message, setMessage] = useState({ text: '', type: '' });
     const [selectedMemberHistory, setSelectedMemberHistory] = useState(null);
     const [isScannerOpen, setIsScannerOpen] = useState(false);
@@ -31,27 +32,27 @@ const Attendance = () => {
         }
     };
 
-    const handleMarkAttendance = async (memberId = null) => {
-        const idToMark = memberId || selectedMember;
-        if (!idToMark) return;
+    const handleMarkAttendance = async (inputVal = null) => {
+        const payload = inputVal || regNumInput || selectedMember;
+        if (!payload) return;
 
         try {
-            await markAttendance({ memberId: idToMark });
-            setMessage({ text: 'Attendance marked successfully!', type: 'success' });
+            const res = await markAttendanceByIdentity(payload);
+            setMessage({ text: res.message || 'Attendance marked successfully!', type: 'success' });
             setSelectedMember('');
+            setRegNumInput('');
             if (isScannerOpen) setIsScannerOpen(false);
             fetchData();
         } catch (error) {
             setMessage({ text: error.response?.data?.message || 'Error marking attendance', type: 'error' });
         }
-        setTimeout(() => setMessage({ text: '', type: '' }), 3000);
+        setTimeout(() => setMessage({ text: '', type: '' }), 4000);
     };
 
     const handleScanSuccess = useCallback((decodedText) => {
         console.log(`Scan successful: ${decodedText}`);
-        // The decoded text should be the member ID
         handleMarkAttendance(decodedText);
-    }, [handleMarkAttendance]);
+    }, []);
 
     // html5-qrcode calls this continuously while it fails to find a code in
     // frame — intentionally a no-op, not every miss is worth surfacing.
@@ -90,15 +91,45 @@ const Attendance = () => {
                         </div>
                     )}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        <select
-                            className="input"
-                            value={selectedMember}
-                            onChange={(e) => setSelectedMember(e.target.value)}
+                        <div>
+                            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Registration Number / QR Code Input</label>
+                            <input
+                                type="text"
+                                className="input"
+                                placeholder="Enter Reg No (e.g. REG-100001)"
+                                value={regNumInput}
+                                onChange={(e) => {
+                                    setRegNumInput(e.target.value);
+                                    if (e.target.value) setSelectedMember('');
+                                }}
+                            />
+                        </div>
+                        <div style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>— OR —</div>
+                        <div>
+                            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Select Active Member</label>
+                            <select
+                                className="input"
+                                value={selectedMember}
+                                onChange={(e) => {
+                                    setSelectedMember(e.target.value);
+                                    if (e.target.value) setRegNumInput('');
+                                }}
+                            >
+                                <option value="">Select Member</option>
+                                {members.map(m => (
+                                    <option key={m._id} value={m.registrationNumber || m._id}>
+                                        {m.name} ({m.registrationNumber ? `${m.registrationNumber}` : m.phone})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <button
+                            className="btn btn-primary"
+                            onClick={() => handleMarkAttendance()}
+                            disabled={!regNumInput && !selectedMember}
                         >
-                            <option value="">Select Member</option>
-                            {members.map(m => <option key={m._id} value={m._id}>{m.name} ({m.phone})</option>)}
-                        </select>
-                        <button className="btn btn-primary" onClick={() => handleMarkAttendance()} disabled={!selectedMember}>Mark Check-In</button>
+                            Mark Check-In
+                        </button>
                     </div>
                 </div>
 

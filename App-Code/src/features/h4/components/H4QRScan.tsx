@@ -1,24 +1,19 @@
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, Alert, TouchableOpacity, ScrollView, Modal, Text, TextInput } from 'react-native';
+import { View, StyleSheet, Alert, TouchableOpacity, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
-import { X, QrCode, Dumbbell, ChevronLeft, MapPin, Search, ShieldCheck, CheckCircle2, ArrowRight, Activity, Flame, Building2 } from 'lucide-react-native';
+import { Dumbbell, ChevronLeft } from 'lucide-react-native';
 import { theme } from '@/design-system/theme';
 import { fontFamilies } from '@/design-system/tokens';
-import { useH4CheckIn, useH4Dashboard } from '../api/h4.api';
+import { useH4CheckIn, useH4IdentityCheckIn, useH4Dashboard } from '../api/h4.api';
 import { useQuery } from '@tanstack/react-query';
 import { API_CLIENT } from '@/lib/api-client';
+import { H4_GYM_IDS } from '@/lib/gym-constants';
+import { GymSelectModal, GymSelectItem } from '@/components/GymSelectModal';
+import { parseGymCrmQr } from '@/lib/qr-parser';
 
 type ScanState = 'idle' | 'scanning' | 'processing' | 'done' | 'error';
-
-interface H4GymItem {
-  id: string;
-  _id?: string;
-  name: string;
-  address?: string;
-  isHomeGym?: boolean;
-}
 
 export function H4QRScan() {
   const router = useRouter();
@@ -26,12 +21,13 @@ export function H4QRScan() {
   const [scanState, setScanState] = useState<ScanState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const checkInMutation = useH4CheckIn();
+  const identityCheckInMutation = useH4IdentityCheckIn();
   const { data: dashboardData } = useH4Dashboard();
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [manualSearch, setManualSearch] = useState('');
 
   // Fetch gyms and filter STRICTLY for H4 Gyms & Branches only
-  const { data: h4GymsList, isLoading: isGymsLoading } = useQuery<H4GymItem[]>({
+  const { data: h4GymsList } = useQuery<GymSelectItem[]>({
     queryKey: ['h4-gyms-and-branches-only'],
     queryFn: async () => {
       try {
@@ -51,10 +47,10 @@ export function H4QRScan() {
   });
 
   const memberHomeGymName = dashboardData?.member?.gymName || 'H4 Fitness Main Flagship Gym';
-  const memberHomeGymId = dashboardData?.member?.gymId || '327d37e7-f978-43a9-82ef-e6c4a4dc3c5d';
+  const memberHomeGymId = dashboardData?.member?.gymId || H4_GYM_IDS[1];
 
   // Consolidated H4 Gym List — always includes registered Home Gym at top
-  const h4Locations: H4GymItem[] = [
+  const h4Locations: GymSelectItem[] = [
     {
       id: memberHomeGymId,
       name: memberHomeGymName,
@@ -64,35 +60,53 @@ export function H4QRScan() {
     ...(h4GymsList || []).filter(g => g.id !== memberHomeGymId && g._id !== memberHomeGymId),
   ];
 
-  const filteredH4Locations = h4Locations.filter(g =>
-    g.name.toLowerCase().includes(manualSearch.toLowerCase()) ||
-    (g.address || '').toLowerCase().includes(manualSearch.toLowerCase())
-  );
-
   const handleBarCodeScanned = useCallback(
     async ({ data }: { data: string }) => {
       if (scanState !== 'idle') return;
       setScanState('scanning');
 
-      try {
-        let payload: { gymId?: string; branchId?: string };
-        try {
-          payload = JSON.parse(data);
-        } catch {
-          payload = { gymId: data };
-        }
+      const parsed = parseGymCrmQr(data);
 
-        setScanState('processing');
-        await checkInMutation.mutateAsync({
-          gymId: payload.gymId || memberHomeGymId,
-          branchId: payload.branchId,
-          qrCode: data,
-        });
-
-        setScanState('done');
-        Alert.alert('✅ H4 Attendance Marked!', 'Your physical attendance at H4 Fitness has been recorded.', [
-          { text: 'Go to Dashboard', onPress: () => router.push('/(h4)/dashboard') },
+      if (parsed.type === 'INVALID') {
+        setErrorMessage(parsed.reason);
+        setScanState('error');
+        Alert.alert('Unsupported QR Code', parsed.reason, [
+          { text: 'Try Again', onPress: () => { setScanState('idle'); setErrorMessage(null); } },
+          { text: 'Cancel', onPress: () => router.back() },
         ]);
+        return;
+      }
+
+      setScanState('processing');
+
+      try {
+        if (parsed.type === 'IDENTITY') {
+          // Route to identity attendance endpoint (POST /api/v1/attendance/checkin-identity)
+          const result = await identityCheckInMutation.mutateAsync({
+            identityInput: parsed.registrationNumber,
+          });
+
+          setScanState('done');
+          Alert.alert(
+            '✅ H4 Attendance Marked!',
+            `Registration Identity ${parsed.registrationNumber} verified. Attendance recorded successfully.`,
+            [{ text: 'Go to Dashboard', onPress: () => router.push('/(h4)/dashboard') }]
+          );
+        } else if (parsed.type === 'GYM_LOCATION') {
+          // Route to FitPass / Gym counter session endpoint (POST /api/v1/member-portal/sessions/check-in)
+          await checkInMutation.mutateAsync({
+            gymId: parsed.gymId,
+            branchId: parsed.branchId,
+            qrCode: data,
+          });
+
+          setScanState('done');
+          Alert.alert(
+            '✅ Entry Authorized!',
+            'Gym location session check-in authorized successfully.',
+            [{ text: 'Go to Dashboard', onPress: () => router.push('/(h4)/dashboard') }]
+          );
+        }
       } catch (err: any) {
         const msg =
           err?.response?.data?.message ||
@@ -106,10 +120,10 @@ export function H4QRScan() {
         ]);
       }
     },
-    [scanState, checkInMutation, router, memberHomeGymId],
+    [scanState, checkInMutation, identityCheckInMutation, router],
   );
 
-  const handleManualCheckIn = async (gym: H4GymItem) => {
+  const handleManualCheckIn = async (gym: GymSelectItem) => {
     setIsManualModalOpen(false);
     setScanState('processing');
     try {
@@ -130,134 +144,103 @@ export function H4QRScan() {
     }
   };
 
+  const manualModal = (
+    <GymSelectModal
+      visible={isManualModalOpen}
+      onClose={() => setIsManualModalOpen(false)}
+      locations={h4Locations}
+      search={manualSearch}
+      onSearchChange={setManualSearch}
+      onSelect={handleManualCheckIn}
+      badgeText="H4 FITNESS BRANCHES ONLY"
+      title="Select H4 Branch / Gym"
+      searchPlaceholder="Search H4 location by branch name..."
+      accentColor={theme.colors.primary}
+    />
+  );
+
   if (!permission) {
     return (
-      <SafeAreaView style={styles.center}>
-        <Text style={styles.permSubtitle}>Requesting camera permission…</Text>
+      <SafeAreaView style={[styles.center, { backgroundColor: theme.colors.background }]}>
+        <Text style={[styles.permSubtitle, { color: theme.colors.textSecondary }]}>Requesting camera permission…</Text>
       </SafeAreaView>
     );
   }
 
   if (!permission.granted) {
     return (
-      <SafeAreaView style={styles.center}>
-        <View style={styles.permIconCircle}>
-          <Dumbbell size={36} color="#F0A020" />
+      <SafeAreaView style={[styles.center, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.permIconCircle, { backgroundColor: `${theme.colors.primary}1F`, borderColor: `${theme.colors.primary}59` }]}>
+          <Dumbbell size={36} color={theme.colors.primary} />
         </View>
-        <Text style={styles.permTitle}>Camera Access Required</Text>
-        <Text style={styles.permSubtitle}>
+        <Text style={[styles.permTitle, { color: theme.colors.text }]}>Camera Access Required</Text>
+        <Text style={[styles.permSubtitle, { color: theme.colors.textSecondary }]}>
           H4 Fitness uses your camera to scan H4 gym QR codes for instant attendance check-ins.
         </Text>
-        <TouchableOpacity style={styles.grantBtn} onPress={requestPermission} activeOpacity={0.85}>
+        <TouchableOpacity
+          style={[styles.grantBtn, { backgroundColor: theme.colors.primary }]}
+          onPress={requestPermission}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="Grant camera access"
+        >
           <Text style={styles.grantBtnText}>Grant Camera Access</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.manualFallbackBtn}
+          style={[styles.manualFallbackBtn, { backgroundColor: `${theme.colors.primary}1A`, borderColor: `${theme.colors.primary}40` }]}
           onPress={() => setIsManualModalOpen(true)}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Select H4 branch manually"
         >
-          <Dumbbell size={16} color="#F0A020" />
-          <Text style={styles.manualFallbackText}>Select H4 Branch Manually</Text>
+          <Dumbbell size={16} color={theme.colors.primary} />
+          <Text style={[styles.manualFallbackText, { color: theme.colors.primary }]}>Select H4 Branch Manually</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.goBackBtn} onPress={() => router.back()} activeOpacity={0.7}>
-          <Text style={styles.goBackText}>Go Back</Text>
+        <TouchableOpacity
+          style={styles.goBackBtn}
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Text style={[styles.goBackText, { color: theme.colors.textMuted }]}>Go Back</Text>
         </TouchableOpacity>
 
-        {/* Manual H4 Gym Selection Modal */}
-        <Modal visible={isManualModalOpen} animationType="slide" onRequestClose={() => setIsManualModalOpen(false)}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <View style={{ flex: 1 }}>
-                <View style={styles.modalBadgeRow}>
-                  <ShieldCheck size={13} color="#F0A020" />
-                  <Text style={styles.modalBadgeText}>H4 ATHLETE VERIFICATION</Text>
-                </View>
-                <Text style={styles.modalTitle}>Select H4 Gym / Branch</Text>
-              </View>
-              <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setIsManualModalOpen(false)}>
-                <X size={20} color="#0F172A" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.modalSearchBox}>
-              <Search size={16} color="#64748B" />
-              <TextInput
-                style={styles.modalSearchInput}
-                placeholder="Search H4 location by branch name..."
-                placeholderTextColor="#64748B"
-                value={manualSearch}
-                onChangeText={setManualSearch}
-              />
-            </View>
-
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 24 }}>
-              {filteredH4Locations.map((g) => (
-                <TouchableOpacity
-                  key={g.id}
-                  style={[styles.gymRow, g.isHomeGym && styles.homeGymRow]}
-                  onPress={() => handleManualCheckIn(g)}
-                  activeOpacity={0.85}
-                >
-                  <View style={[styles.gymIconBox, g.isHomeGym && styles.homeGymIconBox]}>
-                    <Dumbbell size={20} color="#F0A020" />
-                  </View>
-                  <View style={{ flex: 1, gap: 2 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Text style={styles.gymRowName}>{g.name}</Text>
-                      {g.isHomeGym && (
-                        <View style={styles.homePill}>
-                          <Text style={styles.homePillText}>REGISTERED HOME</Text>
-                        </View>
-                      )}
-                    </View>
-                    {g.address ? (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                        <MapPin size={11} color="#64748B" />
-                        <Text style={styles.gymRowAddress} numberOfLines={1}>{g.address}</Text>
-                      </View>
-                    ) : null}
-                  </View>
-                  <View style={styles.checkInChip}>
-                    <Text style={styles.checkInChipText}>Check In</Text>
-                    <ArrowRight size={12} color="#fff" />
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </Modal>
+        {manualModal}
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
+    <SafeAreaView edges={['top', 'bottom']} style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Top Header Bar */}
-      <View style={styles.topHeader}>
+      <View style={[styles.topHeader, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border }]}>
         <TouchableOpacity
-          style={styles.backCircleBtn}
+          style={[styles.backCircleBtn, { backgroundColor: theme.colors.bgTertiary, borderColor: theme.colors.border }]}
           onPress={() => router.back()}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
         >
-          <ChevronLeft size={22} color="#0F172A" />
+          <ChevronLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
 
         <View style={styles.headerTitleWrap}>
-          <Text style={styles.headerMainTitle}>H4 Attendance QR</Text>
-          <Text style={styles.headerSubTitle}>Physical Entry & Attendance Check-in</Text>
+          <Text style={[styles.headerMainTitle, { color: theme.colors.text }]}>H4 Attendance QR</Text>
+          <Text style={[styles.headerSubTitle, { color: theme.colors.textMuted }]}>Physical Entry & Attendance Check-in</Text>
         </View>
 
-        <View style={styles.brandBadge}>
-          <Dumbbell size={13} color="#F0A020" />
-          <Text style={styles.brandBadgeText}>H4</Text>
+        <View style={[styles.brandBadge, { backgroundColor: `${theme.colors.primary}1F`, borderColor: `${theme.colors.primary}4D` }]}>
+          <Dumbbell size={13} color={theme.colors.primary} />
+          <Text style={[styles.brandBadgeText, { color: theme.colors.primary }]}>H4</Text>
         </View>
       </View>
 
       {/* Main Reticle Viewfinder Frame */}
       <View style={styles.scannerViewportFrame}>
-        <View style={styles.cameraClipContainer}>
+        <View style={[styles.cameraClipContainer, { borderColor: theme.colors.primary }]}>
           <CameraView
             style={styles.cameraInstance}
             facing="back"
@@ -266,33 +249,33 @@ export function H4QRScan() {
           >
             {/* Viewfinder Reticle */}
             <View style={styles.viewfinderCenter}>
-              <View style={styles.cornerTL} />
-              <View style={styles.cornerTR} />
-              <View style={styles.cornerBL} />
-              <View style={styles.cornerBR} />
-              <View style={styles.laserLine} />
+              <View style={[styles.corner, styles.cornerTL, { borderColor: theme.colors.primary }]} />
+              <View style={[styles.corner, styles.cornerTR, { borderColor: theme.colors.primary }]} />
+              <View style={[styles.corner, styles.cornerBL, { borderColor: theme.colors.primary }]} />
+              <View style={[styles.corner, styles.cornerBR, { borderColor: theme.colors.primary }]} />
+              <View style={[styles.laserLine, { backgroundColor: theme.colors.primary, shadowColor: theme.colors.primary }]} />
             </View>
           </CameraView>
         </View>
       </View>
 
       {/* Bottom Action Sheet Card */}
-      <View style={styles.bottomCardContainer}>
-        <View style={styles.statusIndicatorRow}>
+      <View style={[styles.bottomCardContainer, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+        <View style={[styles.statusIndicatorRow, { backgroundColor: theme.colors.bgTertiary, borderColor: theme.colors.border }]}>
           <View
             style={[
               styles.statusPulseDot,
               {
                 backgroundColor:
                   scanState === 'error'
-                    ? '#DC2626'
+                    ? theme.colors.error
                     : scanState === 'done'
-                    ? '#16A34A'
-                    : '#F0A020',
+                    ? theme.colors.success
+                    : theme.colors.primary,
               },
             ]}
           />
-          <Text style={styles.scanStatusText}>
+          <Text style={[styles.scanStatusText, { color: theme.colors.text }]}>
             {scanState === 'idle' && 'Align H4 gym counter QR code inside frame'}
             {scanState === 'scanning' && 'Reading H4 attendance QR code…'}
             {scanState === 'processing' && 'Validating H4 athlete access…'}
@@ -303,80 +286,20 @@ export function H4QRScan() {
 
         {/* Manual Gym Selection Button */}
         <TouchableOpacity
-          style={styles.manualTriggerBtn}
+          style={[styles.manualTriggerBtn, { backgroundColor: `${theme.colors.primary}1A`, borderColor: `${theme.colors.primary}4D` }]}
           onPress={() => setIsManualModalOpen(true)}
           activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="Select H4 branch manually"
         >
-          <Dumbbell size={16} color="#F0A020" />
-          <Text style={styles.manualTriggerText}>
+          <Dumbbell size={16} color={theme.colors.primary} />
+          <Text style={[styles.manualTriggerText, { color: theme.colors.primary }]}>
             Can't scan? Select H4 Branch Manually
           </Text>
         </TouchableOpacity>
       </View>
 
-      {/* Manual Gym Selection Modal Sheet */}
-      <Modal visible={isManualModalOpen} animationType="slide" onRequestClose={() => setIsManualModalOpen(false)}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <View style={{ flex: 1 }}>
-              <View style={styles.modalBadgeRow}>
-                <ShieldCheck size={13} color="#F0A020" />
-                <Text style={styles.modalBadgeText}>H4 FITNESS BRANCHES ONLY</Text>
-              </View>
-              <Text style={styles.modalTitle}>Select H4 Branch / Gym</Text>
-            </View>
-            <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setIsManualModalOpen(false)}>
-              <X size={20} color="#0F172A" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.modalSearchBox}>
-            <Search size={16} color="#64748B" />
-            <TextInput
-              style={styles.modalSearchInput}
-              placeholder="Search H4 location..."
-              placeholderTextColor="#64748B"
-              value={manualSearch}
-              onChangeText={setManualSearch}
-            />
-          </View>
-
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 120 }}>
-            {filteredH4Locations.map((g) => (
-              <TouchableOpacity
-                key={g.id}
-                style={[styles.gymRow, g.isHomeGym && styles.homeGymRow]}
-                onPress={() => handleManualCheckIn(g)}
-                activeOpacity={0.85}
-              >
-                <View style={[styles.gymIconBox, g.isHomeGym && styles.homeGymIconBox]}>
-                  <Dumbbell size={20} color="#F0A020" />
-                </View>
-                <View style={{ flex: 1, gap: 2 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Text style={styles.gymRowName}>{g.name}</Text>
-                    {g.isHomeGym && (
-                      <View style={styles.homePill}>
-                        <Text style={styles.homePillText}>REGISTERED HOME</Text>
-                      </View>
-                    )}
-                  </View>
-                  {g.address ? (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <MapPin size={11} color="#64748B" />
-                      <Text style={styles.gymRowAddress} numberOfLines={1}>{g.address}</Text>
-                    </View>
-                  ) : null}
-                </View>
-                <View style={styles.checkInChip}>
-                  <Text style={styles.checkInChipText}>Check In</Text>
-                  <ArrowRight size={12} color="#fff" />
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      </Modal>
+      {manualModal}
     </SafeAreaView>
   );
 }
@@ -384,12 +307,10 @@ export function H4QRScan() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFC',
     justifyContent: 'space-between',
   },
   center: {
     flex: 1,
-    backgroundColor: '#FAFAFC',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
@@ -399,9 +320,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: 'rgba(240, 160, 32, 0.12)',
     borderWidth: 1.5,
-    borderColor: 'rgba(240, 160, 32, 0.35)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -409,24 +328,22 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.header,
     fontSize: 22,
     fontWeight: '800',
-    color: '#0F172A',
     textAlign: 'center',
   },
   permSubtitle: {
     fontFamily: fontFamilies.body,
     fontSize: 13,
-    color: '#64748B',
     textAlign: 'center',
     lineHeight: 19,
     paddingHorizontal: 20,
   },
   grantBtn: {
-    backgroundColor: '#F0A020',
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 14,
     width: '100%',
     alignItems: 'center',
+    minHeight: 44,
   },
   grantBtnText: {
     fontFamily: fontFamilies.header,
@@ -437,27 +354,24 @@ const styles = StyleSheet.create({
   manualFallbackBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
-    backgroundColor: 'rgba(240, 160, 32, 0.1)',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(240, 160, 32, 0.25)',
     width: '100%',
-    justifyContent: 'center',
+    minHeight: 44,
   },
   manualFallbackText: {
     fontFamily: fontFamilies.header,
     fontSize: 14,
     fontWeight: '800',
-    color: '#F0A020',
   },
-  goBackBtn: { paddingVertical: 8 },
+  goBackBtn: { paddingVertical: 8, minHeight: 44, justifyContent: 'center' },
   goBackText: {
     fontFamily: fontFamilies.body,
     fontSize: 13,
-    color: '#64748B',
     fontWeight: '600',
   },
 
@@ -468,17 +382,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 12,
-    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
   },
   backCircleBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F8FAFC',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -487,31 +397,26 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.header,
     fontSize: 19,
     fontWeight: '800',
-    color: '#0F172A',
     letterSpacing: -0.2,
   },
   headerSubTitle: {
     fontFamily: fontFamilies.body,
     fontSize: 11,
-    color: '#64748B',
     marginTop: 1,
   },
   brandBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(240, 160, 32, 0.12)',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(240, 160, 32, 0.3)',
   },
   brandBadgeText: {
     fontFamily: fontFamilies.header,
     fontSize: 11,
     fontWeight: '900',
-    color: '#F0A020',
   },
 
   scannerViewportFrame: {
@@ -528,7 +433,6 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     overflow: 'hidden',
     borderWidth: 3,
-    borderColor: '#F0A020',
     backgroundColor: '#000',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -548,26 +452,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  cornerTL: { position: 'absolute', top: 0, left: 0, width: 28, height: 28, borderTopWidth: 4, borderLeftWidth: 4, borderColor: '#F0A020', borderTopLeftRadius: 14 },
-  cornerTR: { position: 'absolute', top: 0, right: 0, width: 28, height: 28, borderTopWidth: 4, borderRightWidth: 4, borderColor: '#F0A020', borderTopRightRadius: 14 },
-  cornerBL: { position: 'absolute', bottom: 0, left: 0, width: 28, height: 28, borderBottomWidth: 4, borderLeftWidth: 4, borderColor: '#F0A020', borderBottomLeftRadius: 14 },
-  cornerBR: { position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderBottomWidth: 4, borderRightWidth: 4, borderColor: '#F0A020', borderBottomRightRadius: 14 },
+  corner: { position: 'absolute', width: 28, height: 28, borderWidth: 4 },
+  cornerTL: { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0, borderTopLeftRadius: 14 },
+  cornerTR: { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0, borderTopRightRadius: 14 },
+  cornerBL: { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0, borderBottomLeftRadius: 14 },
+  cornerBR: { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0, borderBottomRightRadius: 14 },
   laserLine: {
     width: '90%',
     height: 2,
-    backgroundColor: '#F0A020',
-    shadowColor: '#F0A020',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
     shadowRadius: 8,
   },
 
   bottomCardContainer: {
-    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 90,
@@ -581,18 +482,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#F8FAFC',
     padding: 12,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
   },
   statusPulseDot: { width: 8, height: 8, borderRadius: 4 },
   scanStatusText: {
     fontFamily: fontFamilies.body,
     fontSize: 13,
     fontWeight: '600',
-    color: '#0F172A',
     flex: 1,
   },
   manualTriggerBtn: {
@@ -600,138 +498,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: 'rgba(240, 160, 32, 0.1)',
     paddingVertical: 14,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(240, 160, 32, 0.3)',
+    minHeight: 44,
   },
   manualTriggerText: {
     fontFamily: fontFamilies.header,
     fontSize: 14,
     fontWeight: '800',
-    color: '#F0A020',
     letterSpacing: 0.2,
-  },
-
-  modalContent: {
-    flex: 1,
-    backgroundColor: '#FAFAFC',
-    padding: 20,
-    paddingTop: 50,
-    gap: 16,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  modalBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  modalBadgeText: {
-    fontFamily: fontFamilies.header,
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#F0A020',
-    letterSpacing: 0.8,
-  },
-  modalTitle: {
-    fontFamily: fontFamilies.header,
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginTop: 2,
-  },
-  modalCloseBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalSearchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 14,
-    height: 46,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  modalSearchInput: {
-    flex: 1,
-    fontFamily: fontFamilies.body,
-    fontSize: 14,
-    color: '#0F172A',
-  },
-  gymRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 14,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    marginBottom: 10,
-  },
-  homeGymRow: {
-    borderColor: 'rgba(240, 160, 32, 0.4)',
-    backgroundColor: '#FFFDF9',
-  },
-  gymIconBox: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    backgroundColor: 'rgba(240, 160, 32, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(240, 160, 32, 0.25)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  homeGymIconBox: {
-    backgroundColor: 'rgba(240, 160, 32, 0.18)',
-  },
-  gymRowName: {
-    fontFamily: fontFamilies.header,
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#0F172A',
-  },
-  homePill: {
-    backgroundColor: 'rgba(240, 160, 32, 0.15)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  homePillText: {
-    fontSize: 9,
-    fontWeight: '900',
-    color: '#F0A020',
-  },
-  gymRowAddress: {
-    fontFamily: fontFamilies.body,
-    fontSize: 12,
-    color: '#64748B',
-    flex: 1,
-  },
-  checkInChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#F0A020',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 10,
-  },
-  checkInChipText: {
-    fontFamily: fontFamilies.header,
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#FFFFFF',
   },
 });

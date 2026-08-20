@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { getStats, getMembers } from '../services/apiService';
 import { AuthContext } from '../context/AuthContext';
 import API from '../services/api';
+import { isH4Gym as checkIsH4Gym } from '../utils/gymConstants';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie } from 'recharts';
 import { Users, CheckCircle2, AlertTriangle, Clock, Sparkles, IndianRupee, TrendingDown, TrendingUp, Megaphone, Check, QrCode, Calendar, Phone, ChevronDown } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -157,9 +158,8 @@ const Dashboard = () => {
         { title: 'Total Check-Ins Today', value: (stats?.todayAttendanceCount || 0) + (stats?.todaySessionsCount || 0), icon: <CheckCircle2 size={22} />, color: 'var(--warning-color)' },
     ];
 
-    const normalizedGym = (user?.gymName || user?.gymId?.name || '').toUpperCase();
     const userGymId = user?.gymId?._id || user?.gymId || '';
-    const isH4User = user?.role === 'h4_admin' || normalizedGym === 'H4' || userGymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd' || (activeDivision === 'h4' && !['partner'].includes(user?.role));
+    const isH4User = user?.role === 'h4_admin' || checkIsH4Gym(user?.gymName || user?.gymId?.name, userGymId) || (activeDivision === 'h4' && !['partner'].includes(user?.role));
 
     return (
         <div className="fade-in">
@@ -167,7 +167,7 @@ const Dashboard = () => {
                 <div className="page-header-left">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                         <h2 style={{ margin: 0 }}>{activeDivision === 'h4' ? 'Gym CRM Dashboard' : 'Partner Dashboard'}</h2>
-                        {['superadmin', 'fitpass_admin', 'h4_admin'].includes(user?.role) && isH4User && (
+                        {['superadmin', 'fitpass_admin', 'h4_admin', 'admin'].includes(user?.role) && isH4User && (
                             <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
                                 {user?.branchId ? (
                                     <div style={{

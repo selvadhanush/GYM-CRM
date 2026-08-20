@@ -48,14 +48,14 @@ router.get('/expiring-soon', protect, authorize('admin', 'receptionist', 'supera
 
 router.get('/status', protect, tenantFilter, getMembers); // Optional: redundant with query params but good for clarity
 
-router.get('/:id/audit', protect, authorize('superadmin'), getMemberAuditTrail);
-router.post('/:id/renew', protect, authorize('admin', 'receptionist', 'superadmin', 'fitpass_admin', 'h4_admin'), validate({ body: renewMemberSchema }), renewMember);
-router.put('/:id/transfer', protect, authorize('admin', 'superadmin', 'fitpass_admin', 'h4_admin'), validate({ body: transferMemberSchema }), transferMember);
+router.get('/:id/audit', protect, authorize('superadmin'), tenantFilter, getMemberAuditTrail);
+router.post('/:id/renew', protect, authorize('admin', 'receptionist', 'superadmin', 'fitpass_admin', 'h4_admin'), tenantFilter, validate({ body: renewMemberSchema }), renewMember);
+router.put('/:id/transfer', protect, authorize('admin', 'superadmin', 'fitpass_admin', 'h4_admin'), tenantFilter, validate({ body: transferMemberSchema }), transferMember);
 
 router.route('/:id')
-    .get(protect, authorize('admin', 'receptionist', 'superadmin', 'fitpass_admin', 'h4_admin'), getMemberById)
-    .put(protect, authorize('admin', 'receptionist', 'superadmin', 'fitpass_admin', 'h4_admin'), validate({ body: updateMemberSchema }), updateMember)
-    .delete(protect, authorize('admin', 'superadmin', 'fitpass_admin', 'h4_admin'), deleteMember);
+    .get(protect, authorize('admin', 'receptionist', 'superadmin', 'fitpass_admin', 'h4_admin'), tenantFilter, getMemberById)
+    .put(protect, authorize('admin', 'receptionist', 'superadmin', 'fitpass_admin', 'h4_admin'), tenantFilter, validate({ body: updateMemberSchema }), updateMember)
+    .delete(protect, authorize('admin', 'superadmin', 'fitpass_admin', 'h4_admin'), tenantFilter, deleteMember);
 
 module.exports = router;
 

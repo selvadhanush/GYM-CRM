@@ -46,6 +46,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
           width: width as any,
           height,
           borderRadius,
+          backgroundColor: theme.colors.textMuted,
           opacity: pulseAnim,
         },
         style,
@@ -55,7 +56,5 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 };
 
 const styles = StyleSheet.create({
-  skeleton: {
-    backgroundColor: '#94A3B8',
-  },
+  skeleton: {},
 });

@@ -1,6 +1,7 @@
 import { useContext } from 'react';
 import { Navigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { isH4Gym } from '../utils/gymConstants';
 
 const ProtectedRoute = ({ children, roles }) => {
     const { user, loading } = useContext(AuthContext);
@@ -15,10 +16,9 @@ const ProtectedRoute = ({ children, roles }) => {
         return <Navigate to="/login" replace />;
     }
 
-    const normalizedGym = (user.gymName || user.gymId?.name || '').toUpperCase();
     const userGymId = user.gymId?._id || user.gymId || '';
-    const isH4Gym = normalizedGym === 'H4' || userGymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
-    const isPartnerAdmin = user.role === 'partner' || (user.role === 'admin' && !isH4Gym);
+    const isUserH4Gym = isH4Gym(user.gymName || user.gymId?.name, userGymId);
+    const isPartnerAdmin = user.role === 'partner' || (user.role === 'admin' && !isUserH4Gym);
 
     const partnerAllowedPaths = [
         '/partner/visit-log',

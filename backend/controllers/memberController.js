@@ -85,11 +85,14 @@ const createMember = catchAsync(async (req, res, next) => {
         }
 
         const targetBranchId = req.user.branchId || branchId || null;
+        const { generateRegistrationNumber } = require('../utils/registrationGenerator');
+        const regNum = await generateRegistrationNumber();
 
         const member = await Member.create({
             name,
             phone,
             email: email || null,
+            registrationNumber: regNum,
             planId,
             joinDate: startDate,
             expiryDate,
@@ -136,7 +139,8 @@ const getMembers = catchAsync(async (req, res, next) => {
         if (search) {
             query.$or = [
                 { name: { $regex: search, $options: 'i' } },
-                { phone: { $regex: search, $options: 'i' } }
+                { phone: { $regex: search, $options: 'i' } },
+                { registrationNumber: { $regex: search, $options: 'i' } }
             ];
         }
 

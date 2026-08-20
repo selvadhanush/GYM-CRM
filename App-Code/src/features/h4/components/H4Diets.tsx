@@ -203,7 +203,7 @@ export function H4Diets() {
   const waterPercent = Math.min(100, Math.round((waterCups / TOTAL_CUPS) * 100));
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#FAFAFC' }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <H4TopHeader title="Nutrition & Diet" />
       <ScrollView style={styles.root} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       {/* ── Hydration Tracker ── */}
@@ -215,7 +215,7 @@ export function H4Diets() {
             <Text style={styles.cardSub}>{waterCups} of {TOTAL_CUPS} Glasses (250 mL each)</Text>
           </View>
           <View style={styles.dropletBadge}>
-            <Droplets size={24} color="#1976D2" />
+            <Droplets size={24} color={theme.colors.info} />
           </View>
         </View>
 
@@ -236,7 +236,7 @@ export function H4Diets() {
               onPress={() => updateWater(i < waterCups && i + 1 === waterCups ? i : i + 1)}
               activeOpacity={0.7}
             >
-              <Droplets size={16} color={i < waterCups ? '#FFFFFF' : '#1976D2'} />
+              <Droplets size={16} color={i < waterCups ? '#FFFFFF' : theme.colors.info} />
             </TouchableOpacity>
           ))}
         </View>
@@ -258,7 +258,7 @@ export function H4Diets() {
             disabled={waterCups <= 0}
             activeOpacity={0.8}
           >
-            <Minus size={18} color="#64748B" />
+            <Minus size={18} color={theme.colors.textSecondary} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.controlIconBtn}
@@ -266,7 +266,7 @@ export function H4Diets() {
             disabled={waterCups === 0}
             activeOpacity={0.8}
           >
-            <RotateCcw size={18} color="#64748B" />
+            <RotateCcw size={18} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -366,7 +366,7 @@ export function H4Diets() {
 
           {/* Log Nutrition & Water Button */}
           {isNutritionLoggedToday ? (
-            <View style={[styles.logNutritionBtn, { backgroundColor: '#16A34A' }]}>
+            <View style={[styles.logNutritionBtn, { backgroundColor: theme.colors.success }]}>
               <CheckCircle size={20} color="#FFFFFF" />
               <Text style={styles.logNutritionBtnText} numberOfLines={1} adjustsFontSizeToFit>Today's Goal Completed! 🎉</Text>
             </View>
@@ -432,35 +432,35 @@ export function H4Diets() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FAFAFC' },
+  root: { flex: 1, backgroundColor: theme.colors.background },
   content: { padding: 18, paddingBottom: 100, gap: 16 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FAFAFC' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
 
   card: {
     borderRadius: 16,
     padding: 18,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: theme.colors.border,
     gap: 14,
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  cardLabel: { fontSize: 10, fontWeight: '700', color: '#64748B', letterSpacing: 1 },
-  cardTitle: { fontSize: 22, fontWeight: '800', color: '#0F172A', marginTop: 4 },
-  cardSub: { fontSize: 12, color: '#64748B', marginTop: 2 },
+  cardLabel: { fontSize: 10, fontWeight: '700', color: theme.colors.textSecondary, letterSpacing: 1 },
+  cardTitle: { fontSize: 22, fontWeight: '800', color: theme.colors.text, marginTop: 4 },
+  cardSub: { fontSize: 12, color: theme.colors.textSecondary, marginTop: 2 },
   dropletBadge: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(0,117,255,0.12)',
+    backgroundColor: `${theme.colors.info}1F`,
     justifyContent: 'center',
     alignItems: 'center',
   },
 
   progressContainer: { gap: 6 },
-  progressBg: { height: 8, backgroundColor: '#E2E8F0', borderRadius: 4, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: '#0075FF', borderRadius: 4 },
-  progressText: { fontSize: 11, fontWeight: '600', color: '#0075FF', textAlign: 'right' },
+  progressBg: { height: 8, backgroundColor: theme.colors.border, borderRadius: 4, overflow: 'hidden' },
+  progressFill: { height: '100%', backgroundColor: theme.colors.info, borderRadius: 4 },
+  progressText: { fontSize: 11, fontWeight: '600', color: theme.colors.info, textAlign: 'right' },
 
   cupsGrid: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginTop: 4 },
   cupBox: {
@@ -468,12 +468,12 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: '#0075FF',
+    borderColor: theme.colors.info,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'transparent',
   },
-  cupBoxFilled: { backgroundColor: '#0075FF', borderColor: '#0075FF' },
+  cupBoxFilled: { backgroundColor: theme.colors.info, borderColor: theme.colors.info },
 
   cupActions: { flexDirection: 'row', gap: 10, alignItems: 'center', marginTop: 6 },
   addCupBtn: {
@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#0075FF',
+    backgroundColor: theme.colors.info,
   },
   addCupBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
   iconBtn: {
@@ -492,10 +492,10 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: theme.colors.border,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
   },
 
   emptyCard: {
@@ -504,33 +504,33 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: theme.colors.border,
     paddingHorizontal: 24,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
   },
-  emptyTitle: { fontSize: 16, fontWeight: '700', color: '#0F172A' },
-  emptyDesc: { fontSize: 13, color: '#64748B', textAlign: 'center', lineHeight: 20 },
+  emptyTitle: { fontSize: 16, fontWeight: '700', color: theme.colors.text },
+  emptyDesc: { fontSize: 13, color: theme.colors.textSecondary, textAlign: 'center', lineHeight: 20 },
 
-  macroTitle: { fontSize: 15, fontWeight: '700', color: '#0F172A' },
+  macroTitle: { fontSize: 15, fontWeight: '700', color: theme.colors.text },
   macroBar: { gap: 8 },
   macroBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  macroLbl: { fontSize: 13, fontWeight: '600', color: '#0F172A' },
-  macroVal: { fontSize: 12, color: '#64748B' },
-  barBg: { height: 7, backgroundColor: '#E2E8F0', borderRadius: 4, overflow: 'hidden' },
-  barFill: { height: '100%', backgroundColor: '#F0A020', borderRadius: 4 },
+  macroLbl: { fontSize: 13, fontWeight: '600', color: theme.colors.text },
+  macroVal: { fontSize: 12, color: theme.colors.textSecondary },
+  barBg: { height: 7, backgroundColor: theme.colors.border, borderRadius: 4, overflow: 'hidden' },
+  barFill: { height: '100%', backgroundColor: theme.colors.primary, borderRadius: 4 },
   macroGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
+    borderTopColor: theme.colors.border,
   },
   macroItem: { flex: 1, alignItems: 'center', gap: 2 },
-  macroItemLabel: { fontSize: 11, color: '#64748B' },
-  macroItemVal: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
-  macroItemTarget: { fontSize: 11, color: '#64748B' },
+  macroItemLabel: { fontSize: 11, color: theme.colors.textSecondary },
+  macroItemVal: { fontSize: 16, fontWeight: '800', color: theme.colors.text },
+  macroItemTarget: { fontSize: 11, color: theme.colors.textSecondary },
 
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#0F172A' },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: theme.colors.text },
   mealList: { gap: 10 },
   mealRow: {
     flexDirection: 'row',
@@ -539,23 +539,23 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    backgroundColor: '#FFFFFF',
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
   },
-  mealDone: { borderColor: '#16A34A', backgroundColor: 'rgba(22,163,74,0.06)' },
+  mealDone: { borderColor: theme.colors.success, backgroundColor: `${theme.colors.success}0F` },
   mealLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
   mealInfo: { flex: 1 },
-  mealName: { fontSize: 14, fontWeight: '700', color: '#0F172A' },
-  mealNameDone: { textDecorationLine: 'line-through', color: '#64748B' },
-  mealItems: { fontSize: 12, color: '#64748B', marginTop: 2 },
+  mealName: { fontSize: 14, fontWeight: '700', color: theme.colors.text },
+  mealNameDone: { textDecorationLine: 'line-through', color: theme.colors.textSecondary },
+  mealItems: { fontSize: 12, color: theme.colors.textSecondary, marginTop: 2 },
   mealRight: { alignItems: 'flex-end', marginLeft: 12 },
-  mealCal: { fontSize: 13, fontWeight: '700', color: '#0F172A' },
-  mealTime: { fontSize: 11, color: '#64748B' },
+  mealCal: { fontSize: 13, fontWeight: '700', color: theme.colors.text },
+  mealTime: { fontSize: 11, color: theme.colors.textSecondary },
   checkCircle: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: '#16A34A',
+    backgroundColor: theme.colors.success,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -564,7 +564,7 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     borderWidth: 2,
-    borderColor: '#CBD5E1',
+    borderColor: theme.colors.border,
   },
 
   trainerFooterCard: {
@@ -572,9 +572,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: theme.colors.border,
     marginTop: 8,
     gap: 14,
   },
@@ -582,14 +582,14 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: 'rgba(240, 160, 32, 0.12)',
+    backgroundColor: `${theme.colors.primary}1F`,
     justifyContent: 'center',
     alignItems: 'center',
   },
   trainerFooterInfo: { flex: 1, gap: 2 },
-  trainerFooterTag: { fontSize: 10, fontWeight: '700', color: '#64748B', letterSpacing: 0.8 },
-  trainerFooterName: { fontSize: 15, fontWeight: '800', color: '#0F172A' },
-  trainerFooterBio: { fontSize: 12, color: '#64748B', lineHeight: 17, marginTop: 2 },
+  trainerFooterTag: { fontSize: 10, fontWeight: '700', color: theme.colors.textSecondary, letterSpacing: 0.8 },
+  trainerFooterName: { fontSize: 15, fontWeight: '800', color: theme.colors.text },
+  trainerFooterBio: { fontSize: 12, color: theme.colors.textSecondary, lineHeight: 17, marginTop: 2 },
 
   waterControls: { flexDirection: 'row', gap: 10, alignItems: 'center', marginTop: 6 },
   addBtn: {
@@ -600,7 +600,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#0075FF',
+    backgroundColor: theme.colors.info,
   },
   addBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
   controlIconBtn: {
@@ -608,50 +608,50 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: theme.colors.border,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
   },
   appleBadge: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(240,160,32,0.12)',
+    backgroundColor: `${theme.colors.primary}1F`,
     justifyContent: 'center',
     alignItems: 'center',
   },
   macroBox: { flex: 1, alignItems: 'center', gap: 2 },
-  macroUnit: { fontSize: 11, fontWeight: '600', color: '#64748B' },
-  macroLabel: { fontSize: 10, color: '#94A3B8' },
+  macroUnit: { fontSize: 11, fontWeight: '600', color: theme.colors.textSecondary },
+  macroLabel: { fontSize: 10, color: theme.colors.textMuted },
   mealsList: { gap: 10 },
   historyCard: {
     padding: 14,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: theme.colors.border,
   },
   historyRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  historyDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#16A34A' },
-  historyDate: { fontSize: 14, fontWeight: '800', color: '#0F172A' },
-  historyMeta: { fontSize: 11, color: '#64748B', marginTop: 2 },
+  historyDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: theme.colors.success },
+  historyDate: { fontSize: 14, fontWeight: '800', color: theme.colors.text },
+  historyMeta: { fontSize: 11, color: theme.colors.textSecondary, marginTop: 2 },
   todayPill: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
-    backgroundColor: 'rgba(22, 163, 74, 0.12)',
+    backgroundColor: `${theme.colors.success}1F`,
     borderWidth: 1,
-    borderColor: 'rgba(22, 163, 74, 0.3)',
+    borderColor: `${theme.colors.success}4D`,
   },
-  todayPillText: { fontSize: 10, fontWeight: '900', color: '#16A34A' },
+  todayPillText: { fontSize: 10, fontWeight: '900', color: theme.colors.success },
 
   logNutritionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    backgroundColor: '#16A34A',
+    backgroundColor: theme.colors.success,
     paddingVertical: 15,
     paddingHorizontal: 16,
     borderRadius: 14,

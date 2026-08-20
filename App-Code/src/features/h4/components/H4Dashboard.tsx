@@ -205,6 +205,8 @@ function HomeStudioClassesSection() {
                       style={styles.cancelTextBtn}
                       onPress={() => handleCancel(cls)}
                       disabled={isPending}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Cancel booking for ${cls.name || 'class'}`}
                     >
                       <Text style={styles.cancelTextBtnLabel}>Cancel</Text>
                     </TouchableOpacity>
@@ -213,6 +215,8 @@ function HomeStudioClassesSection() {
                       style={[styles.bookTextBtn, isFull && { opacity: 0.5 }]}
                       onPress={() => handleBook(cls)}
                       disabled={isFull || isPending}
+                      accessibilityRole="button"
+                      accessibilityLabel={isFull ? 'Class full' : `Book ${cls.name || 'class'}`}
                     >
                       <Text style={styles.bookTextBtnLabel}>
                         {isFull ? 'Full' : 'Book'}
@@ -466,11 +470,11 @@ function TodayNutritionSummaryCard() {
             <View style={[styles.waterProgressBar, { width: `${waterProgress}%` }]} />
           </View>
           <View style={{ flexDirection: 'row', gap: 6 }}>
-            <TouchableOpacity style={styles.waterBtn} onPress={addCup}>
+            <TouchableOpacity style={styles.waterBtn} onPress={addCup} accessibilityRole="button" accessibilityLabel="Add a cup of water">
               <Plus size={14} color={theme.colors.text} />
             </TouchableOpacity>
             {waterCups > 0 && (
-              <TouchableOpacity style={styles.waterBtn} onPress={removeCup}>
+              <TouchableOpacity style={styles.waterBtn} onPress={removeCup} accessibilityRole="button" accessibilityLabel="Remove a cup of water">
                 <Minus size={14} color={theme.colors.text} />
               </TouchableOpacity>
             )}
@@ -698,14 +702,18 @@ const styles = StyleSheet.create({
   classMetaText: { fontSize: 11, color: theme.colors.textSecondary, marginTop: 2 },
   bookTextBtn: {
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: theme.colors.text,
   },
   bookTextBtnLabel: { fontSize: 11, fontWeight: '900', color: theme.colors.text, fontFamily: theme.typography.h3.fontFamily },
   cancelTextBtn: {
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: theme.colors.error,
   },
@@ -761,8 +769,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#3B82F6',
   },
   waterBtn: {
-    width: 28,
-    height: 28,
+    width: 44,
+    height: 44,
     borderWidth: 1,
     borderColor: theme.colors.border,
     justifyContent: 'center',

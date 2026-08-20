@@ -211,7 +211,7 @@ const GymProfile = () => {
                         border: '1px solid rgba(240, 160, 32, 0.3)',
                         display: 'flex',
                         alignItems: 'center',
-                        justify-content: 'center',
+                        justifyContent: 'center',
                         color: 'var(--primary)'
                     }}>
                         <Building2 size={24} />
@@ -500,7 +500,7 @@ const GymProfile = () => {
                         border: '1px solid rgba(198, 40, 40, 0.3)',
                         display: 'flex',
                         alignItems: 'center',
-                        justify-content: 'center',
+                        justifyContent: 'center',
                         color: 'var(--danger)',
                         margin: '0 auto 1.25rem'
                     }}>

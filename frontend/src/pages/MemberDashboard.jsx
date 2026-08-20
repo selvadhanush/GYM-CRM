@@ -339,12 +339,17 @@ const MemberDashboard = () => {
                         cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
                     }} onClick={() => setQrFullscreen(true)} title="Click to enlarge">
                         <QRCodeCanvas
-                            value={memberId}
+                            value={`GYMCRM:1:${plan?.registrationNumber || memberId}`}
                             size={130}
                             level="H"
                             includeMargin={false}
                         />
                     </div>
+                    {plan?.registrationNumber && (
+                        <div style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--primary-color)', letterSpacing: '0.05em' }}>
+                            {plan.registrationNumber}
+                        </div>
+                    )}
                     <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
                         <button
                             onClick={() => setQrFullscreen(true)}
@@ -675,9 +680,14 @@ const MemberDashboard = () => {
                     <p style={{ color: '#fff', fontSize: '0.875rem', opacity: 0.6 }}>Tap anywhere to close</p>
                     <div style={{ background: '#fff', padding: '24px', borderRadius: '20px', boxShadow: '0 20px 80px rgba(0,0,0,0.5)' }}
                         onClick={e => e.stopPropagation()}>
-                        <QRCodeCanvas value={memberId} size={280} level="H" includeMargin={false} />
+                        <QRCodeCanvas value={`GYMCRM:1:${plan?.registrationNumber || memberId}`} size={280} level="H" includeMargin={false} />
                     </div>
                     <p style={{ color: '#fff', fontWeight: '700', fontSize: '1.1rem', margin: 0 }}>{plan?.name}</p>
+                    {plan?.registrationNumber && (
+                        <p style={{ color: '#10b981', fontWeight: '800', fontSize: '1.2rem', letterSpacing: '0.05em', margin: 0 }}>
+                            {plan.registrationNumber}
+                        </p>
+                    )}
                     <p style={{ color: '#aaa', fontSize: '0.8rem', margin: 0 }}>Show this to gym staff to mark attendance</p>
                     <button onClick={downloadQR} className="btn btn-primary" style={{ marginTop: '0.5rem' }}>
                         ⬇️ Download QR

@@ -216,6 +216,7 @@ const Staff = () => {
                             <table className="table">
                                 <thead>
                                     <tr>
+                                        <th>Reg No</th>
                                         <th>Name</th>
                                         <th>Email Address</th>
                                         <th>Role</th>
@@ -227,6 +228,19 @@ const Staff = () => {
                                     {filteredStaff.length > 0 ? (
                                         filteredStaff.map(staff => (
                                             <tr key={staff._id || staff.id}>
+                                                <td>
+                                                    <span style={{
+                                                        fontFamily: 'monospace',
+                                                        fontWeight: '700',
+                                                        fontSize: '0.8rem',
+                                                        color: 'var(--primary)',
+                                                        background: 'rgba(99, 102, 241, 0.1)',
+                                                        padding: '0.2rem 0.5rem',
+                                                        borderRadius: '4px'
+                                                    }}>
+                                                        {staff.registrationNumber || 'N/A'}
+                                                    </span>
+                                                </td>
                                                 <td style={{ fontWeight: '600' }}>{staff.name}</td>
                                                 <td>{staff.email}</td>
                                                 <td>

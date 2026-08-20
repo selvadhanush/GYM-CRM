@@ -13,6 +13,7 @@ export const Card: React.FC<CardProps> = ({ children, accentColor, style }) => {
     <View
       style={[
         styles.card,
+        { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
         accentColor ? { borderLeftWidth: 5, borderLeftColor: accentColor } : null,
         style,
       ]}
@@ -24,11 +25,9 @@ export const Card: React.FC<CardProps> = ({ children, accentColor, style }) => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: theme.spacing.lg,
     borderWidth: 1,
-    borderColor: '#EAE7E1',
     marginBottom: theme.spacing.md,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },

@@ -17,6 +17,10 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import { API_CLIENT } from '@/lib/api-client';
+import { theme } from '@/design-system/theme';
+import { fontFamilies } from '@/design-system/tokens';
+
+type FieldErrors = Partial<Record<'name' | 'email' | 'phone' | 'password' | 'otp', string>>;
 
 export const RegisterForm: React.FC = () => {
   const router = useRouter();
@@ -28,25 +32,40 @@ export const RegisterForm: React.FC = () => {
   const [email, setEmail] = useState(emailParam);
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showOTPVerification, setShowOTPVerification] = useState(false);
   const [otp, setOtp] = useState('');
+  const [errors, setErrors] = useState<FieldErrors>({});
+
+  const setFieldValue = (field: keyof FieldErrors, value: string, setter: (v: string) => void) => {
+    setter(value);
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+  };
 
   const handleRegister = async () => {
-    if (!name.trim()) return toast.show('Please enter your name', 'error');
-    if (!email.trim()) return toast.show('Please enter your email', 'error');
-    if (!phone.trim() || phone.trim().length < 10) return toast.show('Please enter a valid 10-digit phone number', 'error');
-    if (!password.trim() || password.length < 6) return toast.show('Password must be at least 6 characters', 'error');
+    const nextErrors: FieldErrors = {};
+    if (!name.trim()) nextErrors.name = 'Enter your name';
+    if (!email.trim()) nextErrors.email = 'Enter your email';
+    else if (!/\S+@\S+\.\S+/.test(email.trim())) nextErrors.email = 'Enter a valid email address';
+    if (!phone.trim() || phone.trim().length < 10) nextErrors.phone = 'Enter a valid 10-digit phone number';
+    if (!password.trim() || password.length < 6) nextErrors.password = 'Password must be at least 6 characters';
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
+    }
+    setErrors({});
 
     setLoading(true);
     try {
-      const { data } = await API_CLIENT.post('/auth/register', {
+      await API_CLIENT.post('/auth/register', {
         name: name.trim(),
         email: email.trim().toLowerCase(),
         phone: phone.trim(),
         password: password
       });
-      
+
       toast.show('Registration initialised! Verification OTP sent to your email.', 'success');
       setShowOTPVerification(true);
     } catch (error: any) {
@@ -59,8 +78,10 @@ export const RegisterForm: React.FC = () => {
 
   const handleVerifyOTP = async () => {
     if (!otp.trim() || otp.trim().length !== 6) {
-      return toast.show('Please enter the 6-digit verification code', 'error');
+      setErrors((prev) => ({ ...prev, otp: 'Enter the 6-digit verification code' }));
+      return;
     }
+    setErrors((prev) => ({ ...prev, otp: undefined }));
 
     setLoading(true);
     try {
@@ -69,7 +90,7 @@ export const RegisterForm: React.FC = () => {
       if (result.success) {
         toast.show('Account verified! Welcome to FitPass!', 'success');
       } else {
-        toast.show(result.message || 'Verification failed', 'error');
+        setErrors((prev) => ({ ...prev, otp: result.message || 'Verification failed' }));
       }
     } catch (error: any) {
       const msg = error.response?.data?.message || error.message || 'OTP verification failed';
@@ -79,8 +100,58 @@ export const RegisterForm: React.FC = () => {
     }
   };
 
+  const renderInput = (opts: {
+    field: keyof FieldErrors;
+    icon: React.ComponentProps<typeof Ionicons>['name'];
+    placeholder: string;
+    value: string;
+    onChangeText: (v: string) => void;
+    keyboardType?: React.ComponentProps<typeof TextInput>['keyboardType'];
+    maxLength?: number;
+    secure?: boolean;
+    editable?: boolean;
+    autoFocus?: boolean;
+  }) => {
+    const error = errors[opts.field];
+    return (
+      <View>
+        <View style={[
+          styles.inputWrapper,
+          { backgroundColor: theme.colors.bgTertiary, borderColor: error ? theme.colors.error : theme.colors.border },
+        ]}>
+          <Ionicons name={opts.icon} size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
+          <TextInput
+            style={[styles.input, { color: theme.colors.text }]}
+            placeholder={opts.placeholder}
+            placeholderTextColor={theme.colors.textMuted}
+            value={opts.value}
+            onChangeText={(t) => setFieldValue(opts.field, t, opts.onChangeText)}
+            keyboardType={opts.keyboardType}
+            maxLength={opts.maxLength}
+            secureTextEntry={opts.secure && !showPassword}
+            autoCapitalize={opts.keyboardType === 'email-address' ? 'none' : undefined}
+            autoCorrect={opts.keyboardType === 'email-address' ? false : undefined}
+            editable={opts.editable}
+            autoFocus={opts.autoFocus}
+          />
+          {opts.secure && (
+            <TouchableOpacity
+              onPress={() => setShowPassword((v) => !v)}
+              accessibilityRole="button"
+              accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+              hitSlop={8}
+            >
+              <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
+        {error ? <Text style={[styles.fieldError, { color: theme.colors.error }]}>{error}</Text> : null}
+      </View>
+    );
+  };
+
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -93,7 +164,7 @@ export const RegisterForm: React.FC = () => {
         >
           <View style={styles.content}>
             <TouchableOpacity
-              style={styles.backBtn}
+              style={[styles.backBtn, { backgroundColor: theme.colors.bgTertiary, borderColor: theme.colors.border }]}
               onPress={() => {
                 if (showOTPVerification) {
                   setShowOTPVerification(false);
@@ -101,13 +172,15 @@ export const RegisterForm: React.FC = () => {
                   router.replace('/(auth)/login');
                 }
               }}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
             >
-              <Ionicons name="arrow-back" size={20} color="#4A3F35" />
+              <Ionicons name="arrow-back" size={20} color={theme.colors.text} />
             </TouchableOpacity>
 
             <View style={styles.headerContainer}>
-              <Text style={styles.title}>{showOTPVerification ? 'VERIFY OTP' : 'FITPASS SIGNUP'}</Text>
-              <Text style={styles.subtitle}>
+              <Text style={[styles.title, { color: theme.colors.text }]}>{showOTPVerification ? 'VERIFY OTP' : 'FITPASS SIGNUP'}</Text>
+              <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
                 {showOTPVerification
                   ? `Enter the 6-digit verification code sent to ${email}`
                   : 'Join Zippy FitPass and get access to premier gyms.'}
@@ -117,66 +190,44 @@ export const RegisterForm: React.FC = () => {
             <View style={styles.formContainer}>
               {!showOTPVerification ? (
                 <>
-                  <View style={styles.inputWrapper}>
-                    <Ionicons name="person-outline" size={20} color="#6E5E51" style={styles.inputIcon} />
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Full Name"
-                      placeholderTextColor="#A19183"
-                      value={name}
-                      onChangeText={setName}
-                    />
-                  </View>
-
-                  <View style={styles.inputWrapper}>
-                    <Ionicons name="mail-outline" size={20} color="#6E5E51" style={styles.inputIcon} />
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Email Address"
-                      placeholderTextColor="#A19183"
-                      value={email}
-                      onChangeText={setEmail}
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      editable={!emailParam}
-                    />
-                  </View>
-
-                  <View style={styles.inputWrapper}>
-                    <Ionicons name="call-outline" size={20} color="#6E5E51" style={styles.inputIcon} />
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Phone Number (10 Digits)"
-                      placeholderTextColor="#A19183"
-                      value={phone}
-                      onChangeText={setPhone}
-                      keyboardType="phone-pad"
-                      maxLength={10}
-                    />
-                  </View>
-
-                  <View style={styles.inputWrapper}>
-                    <Ionicons name="lock-closed-outline" size={20} color="#6E5E51" style={styles.inputIcon} />
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Create Password (min. 6 chars)"
-                      placeholderTextColor="#A19183"
-                      value={password}
-                      onChangeText={setPassword}
-                      secureTextEntry
-                      autoCapitalize="none"
-                    />
-                  </View>
+                  {renderInput({ field: 'name', icon: 'person-outline', placeholder: 'Full Name', value: name, onChangeText: setName })}
+                  {renderInput({
+                    field: 'email',
+                    icon: 'mail-outline',
+                    placeholder: 'Email Address',
+                    value: email,
+                    onChangeText: setEmail,
+                    keyboardType: 'email-address',
+                    editable: !emailParam,
+                  })}
+                  {renderInput({
+                    field: 'phone',
+                    icon: 'call-outline',
+                    placeholder: 'Phone Number (10 Digits)',
+                    value: phone,
+                    onChangeText: setPhone,
+                    keyboardType: 'phone-pad',
+                    maxLength: 10,
+                  })}
+                  {renderInput({
+                    field: 'password',
+                    icon: 'lock-closed-outline',
+                    placeholder: 'Create Password (min. 6 chars)',
+                    value: password,
+                    onChangeText: setPassword,
+                    secure: true,
+                  })}
 
                   <TouchableOpacity
                     style={styles.primaryButton}
                     onPress={handleRegister}
                     disabled={loading}
                     activeOpacity={0.88}
+                    accessibilityRole="button"
+                    accessibilityLabel="Register account"
                   >
                     <LinearGradient
-                      colors={['#FF6B00', '#E04F00']}
+                      colors={[theme.colors.primary, theme.colors.accent]}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
                       style={styles.buttonGradient}
@@ -194,28 +245,27 @@ export const RegisterForm: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <View style={styles.inputWrapper}>
-                    <Ionicons name="keypad-outline" size={20} color="#6E5E51" style={styles.inputIcon} />
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Enter 6-digit Code"
-                      placeholderTextColor="#A19183"
-                      value={otp}
-                      onChangeText={setOtp}
-                      keyboardType="number-pad"
-                      maxLength={6}
-                      autoFocus
-                    />
-                  </View>
+                  {renderInput({
+                    field: 'otp',
+                    icon: 'keypad-outline',
+                    placeholder: 'Enter 6-digit Code',
+                    value: otp,
+                    onChangeText: setOtp,
+                    keyboardType: 'number-pad',
+                    maxLength: 6,
+                    autoFocus: true,
+                  })}
 
                   <TouchableOpacity
                     style={styles.primaryButton}
                     onPress={handleVerifyOTP}
                     disabled={loading}
                     activeOpacity={0.88}
+                    accessibilityRole="button"
+                    accessibilityLabel="Verify and sign in"
                   >
                     <LinearGradient
-                      colors={['#FF6B00', '#E04F00']}
+                      colors={[theme.colors.primary, theme.colors.accent]}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
                       style={styles.buttonGradient}
@@ -240,7 +290,6 @@ export const RegisterForm: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FAF9F6',
   },
   keyboardView: {
     flex: 1,
@@ -265,10 +314,8 @@ const styles = StyleSheet.create({
     height: 44,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F3F0EC',
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: '#E6E1DC',
   },
   headerContainer: {
     alignItems: 'center',
@@ -276,15 +323,15 @@ const styles = StyleSheet.create({
     marginTop: 60,
   },
   title: {
+    fontFamily: fontFamilies.header,
     fontSize: 28,
-    color: '#1C1611',
     fontWeight: '900',
     letterSpacing: 0.5,
     marginBottom: 8,
   },
   subtitle: {
+    fontFamily: fontFamilies.body,
     fontSize: 15,
-    color: '#6E5E51',
     textAlign: 'center',
     lineHeight: 22,
     fontWeight: '500',
@@ -295,30 +342,34 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F4F1EC',
     borderRadius: 18,
     height: 60,
     paddingHorizontal: 20,
     borderWidth: 1.5,
-    borderColor: '#E6E1DC',
   },
   inputIcon: {
     marginRight: 12,
   },
   input: {
     flex: 1,
-    color: '#1C1611',
     fontSize: 16,
     fontWeight: '500',
+  },
+  fieldError: {
+    fontFamily: fontFamilies.body,
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 6,
+    marginLeft: 4,
   },
   primaryButton: {
     height: 60,
     borderRadius: 18,
     overflow: 'hidden',
     marginTop: 6,
-    shadowColor: '#FF6B00',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.15,
     shadowRadius: 10,
     elevation: 4,
   },
@@ -330,6 +381,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   primaryButtonText: {
+    fontFamily: fontFamilies.header,
     color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '900',

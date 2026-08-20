@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { Shield, Award, Dumbbell, Building, User, Users, ArrowLeft } from 'lucide-react';
 import PasswordInput from '../components/ui/PasswordInput';
+import { isH4Gym as checkIsH4Gym } from '../utils/gymConstants';
 
 const Login = () => {
     const [currentView, setCurrentView] = useState('main'); // 'main' | 'admin_sub' | 'gym_sub' | 'gym_admin_branch_sub' | 'member_sub' | 'login_form'
@@ -57,9 +58,8 @@ const Login = () => {
         setLoading(false);
         if (result.success) {
             const role = result.user.role;
-            const normalizedGym = (result.user.gymName || result.user.gymId?.name || '').toUpperCase();
             const userGymId = result.user.gymId?._id || result.user.gymId || '';
-            const isH4Gym = normalizedGym === 'H4' || userGymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+            const isH4Gym = checkIsH4Gym(result.user.gymName || result.user.gymId?.name, userGymId);
             const isPartnerAdmin = role === 'partner' || (role === 'admin' && !isH4Gym);
 
             if (role === 'superadmin') {

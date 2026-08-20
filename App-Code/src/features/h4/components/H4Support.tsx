@@ -119,12 +119,12 @@ export function H4Support() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#FAFAFC' }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <H4TopHeader title="Support Desk" />
       <ScrollView style={styles.root} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.headerGroup}>
           <View style={styles.headerIconWrap}>
-            <LifeBuoy size={18} color="#F0A020" strokeWidth={2.5} />
+            <LifeBuoy size={18} color={theme.colors.primary} strokeWidth={2.5} />
           </View>
           <View style={{ flex: 1 }}>
             <Typography variant="h2" style={styles.headerTitle}>H4 Help Center</Typography>
@@ -133,7 +133,7 @@ export function H4Support() {
             </Typography>
           </View>
           <TouchableOpacity style={styles.createBtn} onPress={() => setCreateModalOpen(true)} activeOpacity={0.85}>
-            <PlusCircle size={14} color="#FFFFFF" style={{ marginRight: 4 }} />
+            <PlusCircle size={14} color={theme.colors.card} style={{ marginRight: 4 }} />
             <Text style={styles.createBtnText}>New</Text>
           </TouchableOpacity>
         </View>
@@ -141,7 +141,7 @@ export function H4Support() {
         {tickets.length === 0 ? (
           <Card style={styles.emptyCard}>
             <View style={styles.emptyIconCircle}>
-              <LifeBuoy size={28} color="#F0A020" />
+              <LifeBuoy size={28} color={theme.colors.primary} />
             </View>
             <Typography variant="bodySm" style={styles.emptyTitle}>No Support Tickets</Typography>
             <Typography variant="caption" color="secondary" style={styles.emptyDesc}>
@@ -165,12 +165,12 @@ export function H4Support() {
 
                   <View style={styles.cardFooter}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <MessageSquare size={13} color="#64748B" />
+                      <MessageSquare size={13} color={theme.colors.textSecondary} />
                       <Text style={styles.messageCountText}>
                         {t.messages?.length || 0} Message{(t.messages?.length || 0) === 1 ? '' : 's'}
                       </Text>
                     </View>
-                    <ChevronRight size={16} color="#F0A020" />
+                    <ChevronRight size={16} color={theme.colors.primary} />
                   </View>
                 </View>
               </TouchableOpacity>
@@ -185,7 +185,7 @@ export function H4Support() {
             <TextInput
               style={styles.input}
               placeholder="e.g. Question about membership renewal"
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={theme.colors.textMuted}
               value={subject}
               onChangeText={setSubject}
             />
@@ -209,7 +209,7 @@ export function H4Support() {
             <TextInput
               style={[styles.input, styles.textArea]}
               placeholder="Describe your issue or question in detail..."
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={theme.colors.textMuted}
               multiline
               numberOfLines={4}
               value={message}
@@ -218,7 +218,7 @@ export function H4Support() {
 
             <TouchableOpacity style={styles.submitBtn} onPress={handleCreateTicket} disabled={submitting} activeOpacity={0.85}>
               {submitting ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
+                <ActivityIndicator color={theme.colors.card} size="small" />
               ) : (
                 <Text style={styles.submitBtnText}>Submit Ticket</Text>
               )}
@@ -240,7 +240,7 @@ export function H4Support() {
                   const isUser = msg.senderRole === 'member';
                   return (
                     <View key={msg.id} style={[styles.msgBubble, isUser ? styles.msgUser : styles.msgSupport]}>
-                      <Text style={[styles.msgSender, isUser ? { color: '#B45309' } : { color: '#1E3A8A' }]}>
+                      <Text style={[styles.msgSender, isUser ? { color: theme.colors.warning } : { color: theme.colors.info }]}>
                         {msg.senderName} ({msg.senderRole})
                       </Text>
                       <Text style={styles.msgText}>{msg.message}</Text>
@@ -253,15 +253,15 @@ export function H4Support() {
                 <TextInput
                   style={styles.replyInput}
                   placeholder="Type your reply..."
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor={theme.colors.textMuted}
                   value={replyMessage}
                   onChangeText={setReplyMessage}
                 />
                 <TouchableOpacity style={styles.sendBtn} onPress={handleSendReply} disabled={replying} activeOpacity={0.85}>
                   {replying ? (
-                    <ActivityIndicator color="#FFFFFF" size="small" />
+                    <ActivityIndicator color={theme.colors.card} size="small" />
                   ) : (
-                    <Send size={15} color="#FFFFFF" />
+                    <Send size={15} color={theme.colors.card} />
                   )}
                 </TouchableOpacity>
               </View>
@@ -274,9 +274,9 @@ export function H4Support() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FAFAFC' },
+  root: { flex: 1, backgroundColor: theme.colors.background },
   content: { padding: 18, paddingBottom: 100, gap: 16 },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FAFAFC' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
   
   headerGroup: { 
     flexDirection: 'row', 
@@ -288,38 +288,38 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 8,
-    backgroundColor: '#FEF3C7',
+    backgroundColor: theme.colors.warning,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: { 
-    color: '#0F172A', 
+    color: theme.colors.text, 
     fontWeight: '800', 
     fontSize: 20 
   },
   headerSub: {
     fontSize: 12,
-    color: '#64748B',
+    color: theme.colors.textSecondary,
     marginTop: 2,
   },
   createBtn: { 
-    backgroundColor: '#000000', 
+    backgroundColor: theme.colors.primary, 
     paddingHorizontal: 12, 
     paddingVertical: 8, 
     borderRadius: 12, 
     flexDirection: 'row', 
     alignItems: 'center' 
   },
-  createBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 11, letterSpacing: 0.3 },
+  createBtnText: { color: theme.colors.card, fontWeight: '800', fontSize: 11, letterSpacing: 0.3 },
 
   emptyCard: { 
     padding: 30, 
     alignItems: 'center', 
     gap: 10, 
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: theme.colors.border,
   },
   emptyIconCircle: {
     width: 60,
@@ -329,16 +329,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  emptyTitle: { color: '#0F172A', fontWeight: '800', fontSize: 16 },
-  emptyDesc: { textAlign: 'center', fontSize: 12, color: '#64748B', lineHeight: 18 },
+  emptyTitle: { color: theme.colors.text, fontWeight: '800', fontSize: 16 },
+  emptyDesc: { textAlign: 'center', fontSize: 12, color: theme.colors.textSecondary, lineHeight: 18 },
   
   ticketList: { gap: 14 },
   ticketCard: { 
     padding: 16, 
     gap: 12, 
     borderRadius: 20,
-    backgroundColor: '#FFFFFF', 
-    borderColor: '#E2E8F0', 
+    backgroundColor: theme.colors.card, 
+    borderColor: theme.colors.border, 
     borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -346,27 +346,27 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 },
-  ticketSubject: { color: '#0F172A', fontWeight: '800', fontSize: 15 },
-  ticketCategory: { fontSize: 11, color: '#64748B', marginTop: 1 },
+  ticketSubject: { color: theme.colors.text, fontWeight: '800', fontSize: 15 },
+  ticketCategory: { fontSize: 11, color: theme.colors.textSecondary, marginTop: 1 },
   
   cardDivider: {
     height: 1,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: theme.colors.border,
   },
   
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  messageCountText: { fontSize: 12, color: '#64748B', fontWeight: '700' },
+  messageCountText: { fontSize: 12, color: theme.colors.textSecondary, fontWeight: '700' },
   
   modalForm: { gap: 10 },
-  inputLabel: { fontSize: 10, fontWeight: '800', color: '#64748B', letterSpacing: 0.5 },
+  inputLabel: { fontSize: 10, fontWeight: '800', color: theme.colors.textSecondary, letterSpacing: 0.5 },
   input: { 
-    backgroundColor: '#F8FAFC', 
-    color: '#0F172A', 
+    backgroundColor: theme.colors.background, 
+    color: theme.colors.text, 
     paddingHorizontal: 12, 
     height: 46,
     borderRadius: 12, 
     borderWidth: 1, 
-    borderColor: '#E2E8F0', 
+    borderColor: theme.colors.border, 
     fontSize: 13,
     fontFamily: fontFamilies.body,
   },
@@ -377,45 +377,45 @@ const styles = StyleSheet.create({
     paddingVertical: 6, 
     borderRadius: 8, 
     borderWidth: 1, 
-    borderColor: '#E2E8F0',
-    backgroundColor: '#FFFFFF',
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
   },
-  catChipActive: { backgroundColor: '#F0A020', borderColor: '#F0A020' },
-  catChipText: { fontSize: 11, fontWeight: '700', color: '#64748B' },
-  catChipTextActive: { color: '#FFFFFF' },
+  catChipActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
+  catChipText: { fontSize: 11, fontWeight: '700', color: theme.colors.textSecondary },
+  catChipTextActive: { color: theme.colors.card },
   
   submitBtn: { 
-    backgroundColor: '#000000', 
+    backgroundColor: theme.colors.primary, 
     paddingVertical: 14, 
     borderRadius: 12, 
     alignItems: 'center', 
     marginTop: 6 
   },
-  submitBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 14 },
+  submitBtnText: { color: theme.colors.card, fontWeight: '800', fontSize: 14 },
   
   threadContainer: { gap: 12, maxHeight: 400 },
   threadHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  threadCategoryText: { fontSize: 12, color: '#64748B', fontWeight: '600' },
+  threadCategoryText: { fontSize: 12, color: theme.colors.textSecondary, fontWeight: '600' },
   messagesScroll: { maxHeight: 260 },
   msgBubble: { padding: 12, borderRadius: 12, gap: 4, marginVertical: 3 },
   msgUser: { backgroundColor: 'rgba(240, 160, 32, 0.08)', alignSelf: 'flex-end', width: '85%', borderWidth: 1, borderColor: 'rgba(240, 160, 32, 0.15)' },
-  msgSupport: { backgroundColor: '#F8FAFC', alignSelf: 'flex-start', width: '85%', borderWidth: 1, borderColor: '#E2E8F0' },
+  msgSupport: { backgroundColor: theme.colors.background, alignSelf: 'flex-start', width: '85%', borderWidth: 1, borderColor: theme.colors.border },
   msgSender: { fontSize: 9, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.3 },
-  msgText: { color: '#1E293B', fontSize: 13, lineHeight: 18 },
+  msgText: { color: theme.colors.text, fontSize: 13, lineHeight: 18 },
   replyBox: { flexDirection: 'row', gap: 8, alignItems: 'center', paddingTop: 6 },
   replyInput: { 
     flex: 1, 
-    backgroundColor: '#F8FAFC', 
-    color: '#0F172A', 
+    backgroundColor: theme.colors.background, 
+    color: theme.colors.text, 
     paddingHorizontal: 12, 
     height: 42,
     borderRadius: 12, 
     borderWidth: 1, 
-    borderColor: '#E2E8F0', 
+    borderColor: theme.colors.border, 
     fontSize: 13 
   },
   sendBtn: { 
-    backgroundColor: '#000000', 
+    backgroundColor: theme.colors.primary, 
     width: 42, 
     height: 42, 
     borderRadius: 12, 

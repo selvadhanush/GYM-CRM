@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useSidebar } from '../context/SidebarContext';
 import API from '../services/api';
+import { isH4Gym as checkIsH4Gym } from '../utils/gymConstants';
 import {
     LayoutDashboard, Users, ShieldCheck, Calendar, IndianRupee,
     UserCheck, Clock, Building2, History, ChevronRight,
@@ -329,9 +330,8 @@ const Sidebar = () => {
             }
         ];
     } else {
-        const normalizedGym = (user?.gymName || user?.gymId?.name || '').toUpperCase();
         const userGymId = user?.gymId?._id || user?.gymId || '';
-        const isH4Gym = normalizedGym === 'H4' || userGymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+        const isH4Gym = checkIsH4Gym(user?.gymName || user?.gymId?.name, userGymId);
         const isPartnerAdmin = role === 'partner' || (role === 'admin' && !isH4Gym);
 
         if (isPartnerAdmin) {

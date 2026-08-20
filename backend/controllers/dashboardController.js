@@ -62,7 +62,8 @@ const getDashboardStats = catchAsync(async (req, res, next) => {
                         currentSessionEndsAt: { gt: new Date() }
                     },
                     select: { id: true, name: true, phone: true, currentSessionEndsAt: true },
-                    orderBy: { currentSessionEndsAt: 'asc' }
+                    orderBy: { currentSessionEndsAt: 'asc' },
+                    take: 50
                 })
             ]);
 

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { API_CLIENT, registerUnauthorizedHandler } from '@/lib/api-client';
 import { storage } from '@/lib/storage';
 import { queryClient } from '@/lib/query-client';
+import { isH4Gym as checkIsH4Gym } from '@/lib/gym-constants';
 
 export interface User {
   id: string;
@@ -92,13 +93,13 @@ export const useAuth = create<AuthState>((set, get) => {
         if (data.role !== 'superadmin') {
           const userGymName = data.gymName || '';
           const userGymId = data.gymId || '';
-          const isH4Gym = userGymName.toUpperCase() === 'H4' || userGymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+          const isH4Gym = checkIsH4Gym(userGymName, userGymId);
           division = isH4Gym ? 'h4' : 'fitpass';
         }
 
         await storage.setToken(data.token);
         await storage.setItem('user', JSON.stringify(data));
-        
+
         if (division) {
           await storage.setItem('activeDivision', division);
         } else {
@@ -145,12 +146,12 @@ export const useAuth = create<AuthState>((set, get) => {
               throw new Error('Access Denied: This portal is restricted to Staffs and Partners.');
             }
           } else if (portal === 'h4') {
-            const isH4 = isAdministrative || (userRole === 'member' && (userGymName.toUpperCase() === 'H4' || userGymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd'));
+            const isH4 = isAdministrative || (userRole === 'member' && checkIsH4Gym(userGymName, userGymId));
             if (!isH4) {
               throw new Error('Access Denied: This portal is restricted to H4 Gym Members.');
             }
           } else if (portal === 'fitpass') {
-            const isFitpass = isAdministrative || (userRole === 'member' && (userGymName.toUpperCase() !== 'H4' && userGymId !== '05a08fdf-7427-48a5-8b25-e18d5a5668cd'));
+            const isFitpass = isAdministrative || (userRole === 'member' && !checkIsH4Gym(userGymName, userGymId));
             if (!isFitpass) {
               throw new Error('Access Denied: This portal is restricted to Fitpass Members.');
             }
@@ -160,7 +161,7 @@ export const useAuth = create<AuthState>((set, get) => {
         // Determine active division based on user context
         let division: 'fitpass' | 'h4' | null = null;
         if (data.role !== 'superadmin') {
-          const isH4Gym = userGymName.toUpperCase() === 'H4' || userGymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+          const isH4Gym = checkIsH4Gym(userGymName, userGymId);
           division = isH4Gym ? 'h4' : 'fitpass';
         }
 

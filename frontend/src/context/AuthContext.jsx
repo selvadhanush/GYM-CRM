@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect } from 'react';
 import API from '../services/api';
+import { isH4Gym } from '../utils/gymConstants';
 
 export const AuthContext = createContext();
 
@@ -24,7 +25,7 @@ export const AuthProvider = ({ children }) => {
             setUser(parsedUser);
             
             let division = localStorage.getItem('activeDivision');
-            if (parsedUser.role === 'superadmin' || parsedUser.role === 'h4_admin' || (parsedUser.gymName && parsedUser.gymName.toUpperCase() === 'H4') || parsedUser.gymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd') {
+            if (parsedUser.role === 'superadmin' || parsedUser.role === 'h4_admin' || isH4Gym(parsedUser.gymName, parsedUser.gymId)) {
                 division = 'h4';
             } else if (parsedUser.role === 'fitpass_admin') {
                 division = 'fitpass';
@@ -44,24 +45,23 @@ export const AuthProvider = ({ children }) => {
 
             const roleMatches = (selRole, userRole, gymName, gymId) => {
                 if (!selRole) return true;
-                const normalizedGym = (gymName || '').toUpperCase();
-                const isH4Gym = normalizedGym === 'H4' || gymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd';
+                const userIsH4Gym = isH4Gym(gymName, gymId);
 
                 if (selRole === 'superadmin') return userRole === 'superadmin';
                 if (selRole === 'fitpass_admin') return userRole === 'fitpass_admin';
                 if (selRole === 'h4_admin') return userRole === 'h4_admin';
                 if (selRole === 'h4_gym_admin') {
-                    return userRole === 'h4_admin' || (['admin', 'partner'].includes(userRole) && isH4Gym);
+                    return userRole === 'h4_admin' || (['admin', 'partner'].includes(userRole) && userIsH4Gym);
                 }
                 if (selRole === 'fitpass_partner_admin') {
-                    return ['admin', 'partner'].includes(userRole) && !isH4Gym;
+                    return ['admin', 'partner'].includes(userRole) && !userIsH4Gym;
                 }
                 if (selRole === 'staff') return ['receptionist', 'trainer'].includes(userRole);
                 if (selRole === 'h4_member') {
-                    return userRole === 'member' && isH4Gym;
+                    return userRole === 'member' && userIsH4Gym;
                 }
                 if (selRole === 'fitpass_member') {
-                    return userRole === 'member' && !isH4Gym;
+                    return userRole === 'member' && !userIsH4Gym;
                 }
                 if (selRole === 'member') return userRole === 'member';
                 return false;
@@ -89,7 +89,7 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('token', data.token);
             
             let division = 'fitpass';
-            if (data.role === 'superadmin' || data.role === 'h4_admin' || (data.gymName && data.gymName.toUpperCase() === 'H4') || data.gymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd') {
+            if (data.role === 'superadmin' || data.role === 'h4_admin' || isH4Gym(data.gymName, data.gymId)) {
                 division = 'h4';
             } else if (data.role === 'fitpass_admin') {
                 division = 'fitpass';

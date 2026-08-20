@@ -313,10 +313,19 @@ const createRazorpayOrder = catchAsync(async (req, res, next) => {
         const keySecret = process.env.RAZORPAY_KEY_SECRET;
         const hasRazorpayKeys = keyId && keySecret && 
                                 keyId !== 'your_razorpay_key_id' &&
-                                keyId !== 'null' && keyId !== 'undefined' && keyId.trim() !== '';
+                                keyId !== 'null' && keyId !== 'undefined' && keyId.trim() !== '' &&
+                                !keyId.includes('your_') && !keySecret.includes('your_');
+
+        const allowMock = process.env.NODE_ENV !== 'production' && process.env.ALLOW_MOCK_PAYMENTS === 'true';
 
         if (!hasRazorpayKeys) {
-            logger.warn('Razorpay keys missing or invalid in .env. Returning a mock order for testing.');
+            if (!allowMock) {
+                return res.status(503).json({
+                    message: 'Payment gateway configuration is missing or invalid. Online payment is unavailable.',
+                    error: 'RAZORPAY_KEYS_MISSING'
+                });
+            }
+            logger.warn('Razorpay keys missing or invalid in .env. Returning a mock order for dev mode.');
             const mockOrder = {
                 id: `order_mock_${crypto.randomBytes(8).toString('hex')}`,
                 amount: amountInPaise,
@@ -369,25 +378,30 @@ const verifyRazorpayPayment = catchAsync(async (req, res, next) => {
         }
 
         const isMock = razorpay_order_id && razorpay_order_id.startsWith('order_mock_');
-        let isAuthentic = false;
-
         const keySecret = process.env.RAZORPAY_KEY_SECRET;
-        const hasKeySecret = keySecret && keySecret !== 'null' && keySecret !== 'undefined' && keySecret.trim() !== '';
+        const hasKeySecret = keySecret && keySecret !== 'null' && keySecret !== 'undefined' && keySecret.trim() !== '' && !keySecret.includes('your_');
+        const allowMock = process.env.NODE_ENV !== 'production' && process.env.ALLOW_MOCK_PAYMENTS === 'true';
 
-        if (isMock || !hasKeySecret) {
-            isAuthentic = true;
+        if (isMock) {
+            if (!allowMock) {
+                return res.status(400).json({ success: false, message: 'Mock payments are disabled in production mode' });
+            }
         } else {
+            if (!hasKeySecret) {
+                return res.status(503).json({ success: false, message: 'Payment verification failed: secret key missing' });
+            }
             const body = razorpay_order_id + "|" + razorpay_payment_id;
             const expectedSignature = crypto
                 .createHmac('sha256', keySecret)
                 .update(body.toString())
                 .digest('hex');
-            isAuthentic = expectedSignature === razorpay_signature;
+            if (expectedSignature !== razorpay_signature) {
+                return res.status(400).json({ success: false, message: 'Payment signature verification failed' });
+            }
         }
 
-        if (isAuthentic) {
-            // Use the actual amount paid (partial or full)
-            const amountPaid = Number(amount_paid) || ((member.planPrice || 0) - (member.paidAmount || 0));
+        // Payment is authentic; process payment recording and update member status
+        const amountPaid = Number(amount_paid) || ((member.planPrice || 0) - (member.paidAmount || 0));
 
             // Create Payment record
             await prisma.payment.create({
@@ -419,12 +433,6 @@ const verifyRazorpayPayment = catchAsync(async (req, res, next) => {
                 amountPaid,
                 remainingDue: (member.planPrice || 0) - newPaidAmount
             });
-        } else {
-            res.status(400).json({
-                success: false,
-                message: 'Payment verification failed'
-            });
-        }
     } catch (error) { next(error); }
 });
 

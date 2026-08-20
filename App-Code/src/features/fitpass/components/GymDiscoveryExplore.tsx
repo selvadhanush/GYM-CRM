@@ -11,31 +11,36 @@ import {
   Linking,
   ActivityIndicator,
 } from 'react-native';
+import {
+  Flame,
+  MapPin,
+  Sparkles,
+  Zap,
+  CalendarPlus,
+  Star,
+  CircleDot,
+  X,
+  Phone,
+  Navigation,
+  Check,
+  Dumbbell,
+  Images,
+} from 'lucide-react-native';
+import { theme } from '@/design-system/theme';
 import { useDiscoveryGyms, usePublicPostsFeed } from '../api/fitpass.api';
 import type { DiscoveryGymItem } from '../types';
 
-// Zippy Digital Solutions Design Tokens — AGENTS.md §5
-const COLORS = {
-  primary: '#F0A020',
-  primaryDark: '#D9860F',
-  bgDark: '#231D14',
-  cardBg: '#2D251C',
-  border: '#3A3025',
-  textPrimary: '#FFFFFF',
-  textSecondary: '#A39686',
-  textMuted: '#6D6154',
-  success: '#2E7D32',
-  error: '#C62828',
-};
-
+// Category filter pills — icon + label. Uses the app's lucide-react-native
+// set instead of raw emoji glyphs (which render inconsistently across OS/font)
+// to match the rest of the app's iconography.
 const CATEGORIES = [
-  { id: 'all', label: '🔥 All Gyms' },
-  { id: 'nearby', label: '📍 Nearby' },
-  { id: 'recommended', label: '✨ Recommended' },
-  { id: 'trending', label: '⚡ Trending' },
-  { id: 'newly_added', label: '🆕 Newly Added' },
-  { id: 'highest_rated', label: '⭐ Top Rated' },
-  { id: 'open_now', label: '🟢 Open Now' },
+  { id: 'all', label: 'All Gyms', Icon: Flame },
+  { id: 'nearby', label: 'Nearby', Icon: MapPin },
+  { id: 'recommended', label: 'Recommended', Icon: Sparkles },
+  { id: 'trending', label: 'Trending', Icon: Zap },
+  { id: 'newly_added', label: 'Newly Added', Icon: CalendarPlus },
+  { id: 'highest_rated', label: 'Top Rated', Icon: Star },
+  { id: 'open_now', label: 'Open Now', Icon: CircleDot },
 ];
 
 export const GymDiscoveryExplore: React.FC = () => {
@@ -61,13 +66,13 @@ export const GymDiscoveryExplore: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Search Header */}
       <View style={styles.searchSection}>
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, { backgroundColor: theme.colors.card, borderColor: theme.colors.border, color: theme.colors.text }]}
           placeholder="Search by gym name, city, amenities..."
-          placeholderTextColor={COLORS.textMuted}
+          placeholderTextColor={theme.colors.textMuted}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
@@ -80,11 +85,24 @@ export const GymDiscoveryExplore: React.FC = () => {
           return (
             <TouchableOpacity
               key={cat.id}
-              style={[styles.categoryChip, isSelected && styles.categoryChipActive]}
+              style={[
+                styles.categoryChip,
+                { backgroundColor: theme.colors.card },
+                isSelected && { backgroundColor: theme.colors.primary },
+              ]}
               onPress={() => setActiveCategory(cat.id)}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={cat.label}
             >
-              <Text style={[styles.categoryChipText, isSelected && styles.categoryChipTextActive]}>
+              <cat.Icon size={13} color={isSelected ? theme.colors.background : theme.colors.textSecondary} />
+              <Text
+                style={[
+                  styles.categoryChipText,
+                  { color: theme.colors.textSecondary },
+                  isSelected && { color: theme.colors.background, fontWeight: 'bold' },
+                ]}
+              >
                 {cat.label}
               </Text>
             </TouchableOpacity>
@@ -96,18 +114,21 @@ export const GymDiscoveryExplore: React.FC = () => {
         {/* Gym Highlights Posts Horizontal Carousel */}
         {posts.length > 0 && (
           <View style={styles.postsSection}>
-            <Text style={styles.sectionTitle}>📸 Gym Highlights</Text>
+            <View style={styles.sectionTitleRow}>
+              <Images size={16} color={theme.colors.primary} />
+              <Text style={[styles.sectionTitle, { color: theme.colors.primary }]}>Gym Highlights</Text>
+            </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
               {posts.map((post) => (
-                <View key={post.id} style={styles.postCard}>
+                <View key={post.id} style={[styles.postCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
                   {post.images && post.images.length > 0 ? (
                     <Image source={{ uri: post.images[0] }} style={styles.postCardImage} />
                   ) : (
-                    <View style={[styles.postCardImage, { backgroundColor: '#1A150F' }]} />
+                    <View style={[styles.postCardImage, { backgroundColor: theme.colors.bgTertiary }]} />
                   )}
                   <View style={styles.postCardBody}>
-                    <Text style={styles.postGymName}>{post.gym?.name}</Text>
-                    <Text style={styles.postTitle} numberOfLines={1}>{post.title}</Text>
+                    <Text style={[styles.postGymName, { color: theme.colors.primary }]}>{post.gym?.name}</Text>
+                    <Text style={[styles.postTitle, { color: theme.colors.text }]} numberOfLines={1}>{post.title}</Text>
                   </View>
                 </View>
               ))}
@@ -117,15 +138,15 @@ export const GymDiscoveryExplore: React.FC = () => {
 
         {/* Gym List */}
         <View style={styles.listSection}>
-          <Text style={styles.sectionTitle}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.primary }]}>
             FitPass Gyms ({gyms.length})
           </Text>
 
           {loadingGyms ? (
-            <ActivityIndicator size="large" color={COLORS.primary} style={{ marginVertical: 30 }} />
+            <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginVertical: 30 }} />
           ) : gyms.length === 0 ? (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyText}>No gyms match your search criteria.</Text>
+            <View style={[styles.emptyCard, { backgroundColor: theme.colors.card }]}>
+              <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>No gyms match your search criteria.</Text>
             </View>
           ) : (
             gyms.map((gym) => {
@@ -133,7 +154,7 @@ export const GymDiscoveryExplore: React.FC = () => {
               return (
                 <TouchableOpacity
                   key={gym.id}
-                  style={styles.gymCard}
+                  style={[styles.gymCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}
                   onPress={() => setSelectedGym(gym)}
                   activeOpacity={0.8}
                 >
@@ -144,21 +165,24 @@ export const GymDiscoveryExplore: React.FC = () => {
                     />
                     <Image
                       source={{ uri: p.logoUrl || 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=80' }}
-                      style={styles.logoImage}
+                      style={[styles.logoImage, { borderColor: theme.colors.card }]}
                     />
                     <View style={styles.statusPillsRow}>
                       {p.isOpenNow ? (
-                        <View style={[styles.statusPill, { backgroundColor: 'rgba(46,125,50,0.9)' }]}>
-                          <Text style={styles.statusPillText}>🟢 Open Now</Text>
+                        <View style={[styles.statusPill, styles.statusPillRow, { backgroundColor: `${theme.colors.success}E6` }]}>
+                          <CircleDot size={10} color="#FFFFFF" />
+                          <Text style={styles.statusPillText}>Open Now</Text>
                         </View>
                       ) : (
-                        <View style={[styles.statusPill, { backgroundColor: 'rgba(198,40,40,0.9)' }]}>
-                          <Text style={styles.statusPillText}>🔴 Closed</Text>
+                        <View style={[styles.statusPill, styles.statusPillRow, { backgroundColor: `${theme.colors.error}E6` }]}>
+                          <CircleDot size={10} color="#FFFFFF" />
+                          <Text style={styles.statusPillText}>Closed</Text>
                         </View>
                       )}
                       {p.distanceKm !== null && p.distanceKm !== undefined && (
-                        <View style={[styles.statusPill, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
-                          <Text style={[styles.statusPillText, { color: COLORS.primary }]}>📍 {p.distanceKm} km</Text>
+                        <View style={[styles.statusPill, styles.statusPillRow, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
+                          <MapPin size={10} color={theme.colors.primary} />
+                          <Text style={[styles.statusPillText, { color: theme.colors.primary }]}>{p.distanceKm} km</Text>
                         </View>
                       )}
                     </View>
@@ -166,14 +190,20 @@ export const GymDiscoveryExplore: React.FC = () => {
 
                   <View style={styles.gymCardContent}>
                     <View style={styles.titleRow}>
-                      <Text style={styles.gymTitle}>{gym.name}</Text>
-                      <Text style={styles.ratingText}>⭐ {p.rating || 4.8}</Text>
+                      <Text style={[styles.gymTitle, { color: theme.colors.text }]}>{gym.name}</Text>
+                      <View style={styles.ratingRow}>
+                        <Star size={13} color={theme.colors.primary} fill={theme.colors.primary} />
+                        <Text style={[styles.ratingText, { color: theme.colors.primary }]}>{p.rating || 4.8}</Text>
+                      </View>
                     </View>
-                    <Text style={styles.gymAddress}>📍 {p.city || 'Chennai'} • {p.address}</Text>
-                    <Text style={styles.gymDesc} numberOfLines={2}>{p.shortDescription}</Text>
+                    <View style={styles.addressRow}>
+                      <MapPin size={12} color={theme.colors.textSecondary} />
+                      <Text style={[styles.gymAddress, { color: theme.colors.textSecondary }]}>{p.city || 'Chennai'} • {p.address}</Text>
+                    </View>
+                    <Text style={[styles.gymDesc, { color: theme.colors.textMuted }]} numberOfLines={2}>{p.shortDescription}</Text>
 
-                    <View style={styles.detailsBtn}>
-                      <Text style={styles.detailsBtnText}>View Full Profile & Facilities →</Text>
+                    <View style={[styles.detailsBtn, { backgroundColor: theme.colors.primary }]}>
+                      <Text style={[styles.detailsBtnText, { color: theme.colors.background }]}>View Full Profile & Facilities →</Text>
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -187,27 +217,34 @@ export const GymDiscoveryExplore: React.FC = () => {
       {selectedGym && (
         <Modal visible transparent animationType="slide" onRequestClose={() => setSelectedGym(null)}>
           <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
+            <View style={[styles.modalContent, { backgroundColor: theme.colors.background }]}>
               <ScrollView>
                 <View style={styles.modalCoverWrapper}>
                   <Image
                     source={{ uri: selectedGym.discoveryProfile?.coverImageUrl }}
                     style={styles.modalCoverImage}
                   />
-                  <TouchableOpacity style={styles.closeBtn} onPress={() => setSelectedGym(null)}>
-                    <Text style={styles.closeBtnText}>✕</Text>
+                  <TouchableOpacity
+                    style={styles.closeBtn}
+                    onPress={() => setSelectedGym(null)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close"
+                  >
+                    <X size={18} color="#FFFFFF" />
                   </TouchableOpacity>
 
                   <View style={styles.modalHeaderInfo}>
                     <Image
                       source={{ uri: selectedGym.discoveryProfile?.logoUrl }}
-                      style={styles.modalLogo}
+                      style={[styles.modalLogo, { borderColor: theme.colors.primary }]}
                     />
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.modalGymTitle}>{selectedGym.name}</Text>
-                      <Text style={styles.modalGymSub}>
-                        FitPass Partner • ⭐ {selectedGym.discoveryProfile?.rating || 4.8}
-                      </Text>
+                      <Text style={[styles.modalGymTitle, { color: theme.colors.text }]}>{selectedGym.name}</Text>
+                      <View style={styles.ratingRow}>
+                        <Text style={[styles.modalGymSub, { color: theme.colors.brandLight }]}>FitPass Partner •</Text>
+                        <Star size={11} color={theme.colors.brandLight} fill={theme.colors.brandLight} />
+                        <Text style={[styles.modalGymSub, { color: theme.colors.brandLight }]}>{selectedGym.discoveryProfile?.rating || 4.8}</Text>
+                      </View>
                     </View>
                   </View>
                 </View>
@@ -216,46 +253,54 @@ export const GymDiscoveryExplore: React.FC = () => {
                   {/* Action Buttons: Min tap target 44px */}
                   <View style={styles.modalActionsRow}>
                     <TouchableOpacity
-                      style={styles.actionBtnCall}
+                      style={[styles.actionBtnCall, { backgroundColor: theme.colors.primary }]}
                       onPress={() => handleCall(selectedGym.discoveryProfile?.contactNumber || selectedGym.phone)}
                       activeOpacity={0.8}
+                      accessibilityRole="button"
+                      accessibilityLabel="Call gym"
                     >
-                      <Text style={styles.actionBtnCallText}>📞 Call Gym</Text>
+                      <Phone size={14} color={theme.colors.background} />
+                      <Text style={[styles.actionBtnCallText, { color: theme.colors.background }]}>Call Gym</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                      style={styles.actionBtnNav}
+                      style={[styles.actionBtnNav, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}
                       onPress={() => handleDirections(selectedGym)}
                       activeOpacity={0.8}
+                      accessibilityRole="button"
+                      accessibilityLabel="Get directions"
                     >
-                      <Text style={styles.actionBtnNavText}>🗺️ Directions</Text>
+                      <Navigation size={14} color={theme.colors.text} />
+                      <Text style={[styles.actionBtnNavText, { color: theme.colors.text }]}>Directions</Text>
                     </TouchableOpacity>
                   </View>
 
-                  <Text style={styles.modalSectionTitle}>About Gym</Text>
-                  <Text style={styles.modalDesc}>
+                  <Text style={[styles.modalSectionTitle, { color: theme.colors.primary }]}>About Gym</Text>
+                  <Text style={[styles.modalDesc, { color: theme.colors.textSecondary }]}>
                     {selectedGym.discoveryProfile?.description || selectedGym.discoveryProfile?.shortDescription}
                   </Text>
 
-                  <Text style={styles.modalSectionTitle}>Operating Hours</Text>
-                  <Text style={styles.modalDesc}>
+                  <Text style={[styles.modalSectionTitle, { color: theme.colors.primary }]}>Operating Hours</Text>
+                  <Text style={[styles.modalDesc, { color: theme.colors.textSecondary }]}>
                     {selectedGym.discoveryProfile?.openingTime} - {selectedGym.discoveryProfile?.closingTime}
                   </Text>
 
-                  <Text style={styles.modalSectionTitle}>Amenities Available</Text>
+                  <Text style={[styles.modalSectionTitle, { color: theme.colors.primary }]}>Amenities Available</Text>
                   <View style={styles.chipsWrap}>
                     {selectedGym.discoveryProfile?.amenities?.map((item) => (
-                      <View key={item} style={styles.amenityChip}>
-                        <Text style={styles.amenityChipText}>✓ {item}</Text>
+                      <View key={item} style={[styles.amenityChip, styles.chipRow, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+                        <Check size={12} color={theme.colors.success} />
+                        <Text style={[styles.amenityChipText, { color: theme.colors.text }]}>{item}</Text>
                       </View>
                     ))}
                   </View>
 
-                  <Text style={styles.modalSectionTitle}>Equipment Available</Text>
+                  <Text style={[styles.modalSectionTitle, { color: theme.colors.primary }]}>Equipment Available</Text>
                   <View style={styles.chipsWrap}>
                     {selectedGym.discoveryProfile?.equipments?.map((item) => (
-                      <View key={item} style={styles.equipmentChip}>
-                        <Text style={styles.equipmentChipText}>🏋️ {item}</Text>
+                      <View key={item} style={[styles.equipmentChip, styles.chipRow, { backgroundColor: theme.colors.card }]}>
+                        <Dumbbell size={12} color={theme.colors.textSecondary} />
+                        <Text style={[styles.equipmentChipText, { color: theme.colors.textSecondary }]}>{item}</Text>
                       </View>
                     ))}
                   </View>
@@ -272,7 +317,6 @@ export const GymDiscoveryExplore: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bgDark,
   },
   searchSection: {
     paddingHorizontal: 16,
@@ -280,13 +324,10 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   searchInput: {
-    backgroundColor: COLORS.cardBg,
-    borderColor: COLORS.border,
     borderWidth: 1,
     borderRadius: 24,
     paddingHorizontal: 18,
     paddingVertical: 12,
-    color: COLORS.textPrimary,
     fontSize: 14,
   },
   categoryScroll: {
@@ -294,42 +335,40 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   categoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: COLORS.cardBg,
     marginRight: 8,
     height: 38,
     justifyContent: 'center',
   },
-  categoryChipActive: {
-    backgroundColor: COLORS.primary,
-  },
   categoryChipText: {
-    color: COLORS.textSecondary,
     fontSize: 13,
     fontWeight: '600',
-  },
-  categoryChipTextActive: {
-    color: COLORS.bgDark,
-    fontWeight: 'bold',
   },
   postsSection: {
     marginTop: 12,
     marginBottom: 16,
   },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginLeft: 16,
+    marginBottom: 10,
+  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: COLORS.primary,
     marginLeft: 16,
     marginBottom: 10,
   },
   postCard: {
     width: 180,
-    backgroundColor: COLORS.cardBg,
     borderRadius: 12,
-    borderColor: COLORS.border,
     borderWidth: 1,
     marginRight: 12,
     overflow: 'hidden',
@@ -343,12 +382,10 @@ const styles = StyleSheet.create({
   },
   postGymName: {
     fontSize: 10,
-    color: COLORS.primary,
     fontWeight: 'bold',
   },
   postTitle: {
     fontSize: 12,
-    color: COLORS.textPrimary,
     fontWeight: '600',
     marginTop: 2,
   },
@@ -357,18 +394,14 @@ const styles = StyleSheet.create({
   },
   emptyCard: {
     padding: 24,
-    backgroundColor: COLORS.cardBg,
     borderRadius: 12,
     alignItems: 'center',
   },
   emptyText: {
-    color: COLORS.textSecondary,
     fontSize: 14,
   },
   gymCard: {
-    backgroundColor: COLORS.cardBg,
     borderRadius: 16,
-    borderColor: COLORS.border,
     borderWidth: 1,
     marginBottom: 16,
     overflow: 'hidden',
@@ -389,7 +422,6 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 24,
     borderWidth: 2,
-    borderColor: COLORS.cardBg,
   },
   statusPillsRow: {
     position: 'absolute',
@@ -403,10 +435,15 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
   },
+  statusPillRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   statusPillText: {
     fontSize: 10,
     fontWeight: 'bold',
-    color: COLORS.textPrimary,
+    color: '#FFFFFF',
   },
   gymCardContent: {
     paddingTop: 24,
@@ -421,35 +458,30 @@ const styles = StyleSheet.create({
   gymTitle: {
     fontSize: 17,
     fontWeight: 'bold',
-    color: COLORS.textPrimary,
   },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   ratingText: {
     fontSize: 13,
     fontWeight: 'bold',
-    color: COLORS.primary,
   },
+  addressRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   gymAddress: {
     fontSize: 12,
-    color: COLORS.textSecondary,
-    marginTop: 4,
   },
   gymDesc: {
     fontSize: 13,
-    color: COLORS.textMuted,
     marginTop: 8,
     lineHeight: 18,
   },
   detailsBtn: {
     marginTop: 12,
     paddingVertical: 10,
-    backgroundColor: COLORS.primary,
     borderRadius: 8,
     alignItems: 'center',
     minHeight: 44, // AGENTS.md touch target rule
     justifyContent: 'center',
   },
   detailsBtnText: {
-    color: COLORS.bgDark,
     fontWeight: 'bold',
     fontSize: 13,
   },
@@ -461,7 +493,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: COLORS.bgDark,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '90%',
@@ -485,10 +516,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  closeBtnText: {
-    color: '#FFF',
-    fontSize: 16,
-  },
   modalHeaderInfo: {
     position: 'absolute',
     bottom: 12,
@@ -503,16 +530,13 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 28,
     borderWidth: 2,
-    borderColor: COLORS.primary,
   },
   modalGymTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: COLORS.textPrimary,
   },
   modalGymSub: {
     fontSize: 12,
-    color: '#FCE6B8',
     marginTop: 2,
   },
   modalBody: {
@@ -525,44 +549,41 @@ const styles = StyleSheet.create({
   },
   actionBtnCall: {
     flex: 1,
-    backgroundColor: COLORS.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     paddingVertical: 12,
     borderRadius: 8,
-    alignItems: 'center',
     minHeight: 44,
-    justifyContent: 'center',
   },
   actionBtnCallText: {
-    color: COLORS.bgDark,
     fontWeight: 'bold',
     fontSize: 14,
   },
   actionBtnNav: {
     flex: 1,
-    backgroundColor: COLORS.cardBg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     paddingVertical: 12,
     borderRadius: 8,
-    alignItems: 'center',
     minHeight: 44,
-    borderColor: COLORS.border,
     borderWidth: 1,
-    justifyContent: 'center',
   },
   actionBtnNavText: {
-    color: COLORS.textPrimary,
     fontWeight: 'bold',
     fontSize: 14,
   },
   modalSectionTitle: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: COLORS.primary,
     marginTop: 14,
     marginBottom: 6,
   },
   modalDesc: {
     fontSize: 13,
-    color: COLORS.textSecondary,
     lineHeight: 18,
   },
   chipsWrap: {
@@ -571,26 +592,22 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 6,
   },
+  chipRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   amenityChip: {
-    backgroundColor: COLORS.cardBg,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    borderColor: COLORS.border,
     borderWidth: 1,
   },
   amenityChipText: {
-    color: COLORS.textPrimary,
     fontSize: 12,
   },
   equipmentChip: {
-    backgroundColor: COLORS.cardBg,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
   },
   equipmentChipText: {
-    color: COLORS.textSecondary,
     fontSize: 12,
   },
 });

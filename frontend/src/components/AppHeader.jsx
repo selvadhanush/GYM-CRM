@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useSidebar } from '../context/SidebarContext';
 import { Search, Sun, Moon, Bell, Menu, ChevronDown, X, User } from 'lucide-react';
 import API from '../services/api';
+import { isH4Gym as checkIsH4Gym } from '../utils/gymConstants';
 
 const PAGE_TITLES = {
     '/dashboard': 'Dashboard Overview',
@@ -75,9 +76,8 @@ const AppHeader = ({ onThemeToggle, isDark }) => {
         fetchGyms();
     }, [user, activeDivision, selectedGymId]);
 
-    const normalizedGym = (user?.gymName || user?.gymId?.name || '').toUpperCase();
     const userGymId = user?.gymId?._id || user?.gymId || '';
-    const isH4User = user?.role === 'h4_admin' || normalizedGym === 'H4' || userGymId === '05a08fdf-7427-48a5-8b25-e18d5a5668cd' || (activeDivision === 'h4' && !['partner'].includes(user?.role));
+    const isH4User = user?.role === 'h4_admin' || checkIsH4Gym(user?.gymName || user?.gymId?.name, userGymId) || (activeDivision === 'h4' && !['partner'].includes(user?.role));
 
     // Search state
     const [searchQuery, setSearchQuery] = useState('');
@@ -179,7 +179,7 @@ const AppHeader = ({ onThemeToggle, isDark }) => {
                 </button>
                 <h1 className="page-title">{getPageTitle()}</h1>
 
-                {['superadmin', 'fitpass_admin', 'h4_admin'].includes(user?.role) && isH4User && (
+                {['superadmin', 'fitpass_admin', 'h4_admin', 'admin'].includes(user?.role) && isH4User && (
                     <div style={{ marginLeft: '0.75rem', display: 'flex', alignItems: 'center', position: 'relative' }}>
                         {user?.branchId ? (
                             <div style={{

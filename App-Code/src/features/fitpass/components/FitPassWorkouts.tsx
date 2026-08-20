@@ -71,7 +71,7 @@ export function FitPassWorkouts() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#FF5F1F" />
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
@@ -83,12 +83,12 @@ export function FitPassWorkouts() {
       <Card style={styles.streakCard}>
         <View style={{ flex: 1 }}>
           <View style={styles.badgeRow}>
-            <ShieldCheck size={14} color="#FF5F1F" />
+            <ShieldCheck size={14} color={theme.colors.primary} />
             <Text style={styles.badgeText}>FITPASS NETWORK FITNESS</Text>
           </View>
           <Text style={styles.streakTitle}>{streak} Days Multi-Gym Streak</Text>
         </View>
-        <Flame size={32} color="#FF5F1F" />
+        <Flame size={32} color={theme.colors.primary} />
       </Card>
 
       {!activePlan ? (
@@ -169,13 +169,13 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: theme.colors.background },
   content: { padding: theme.spacing.md, paddingBottom: 40 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
-  streakCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: theme.spacing.md, marginBottom: theme.spacing.md, borderLeftWidth: 4, borderLeftColor: '#FF5F1F' },
+  streakCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: theme.spacing.md, marginBottom: theme.spacing.md, borderLeftWidth: 4, borderLeftColor: theme.colors.primary },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
   badgeText: {
     fontFamily: fontFamilies.header,
     fontSize: 11,
     fontWeight: '800',
-    color: '#FF5F1F',
+    color: theme.colors.primary,
     letterSpacing: 0.5,
   },
   streakTitle: {
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
   },
   daySelector: { flexDirection: 'row', marginBottom: theme.spacing.md },
   dayButton: { paddingVertical: theme.spacing.sm, paddingHorizontal: theme.spacing.md, borderRadius: theme.radii.lg, borderWidth: 1, borderColor: theme.colors.border, marginRight: theme.spacing.xs, minWidth: 50, alignItems: 'center' },
-  dayActive: { backgroundColor: '#FF5F1F', borderColor: '#FF5F1F' },
+  dayActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
   dayButtonText: {
     fontFamily: fontFamilies.body,
     fontSize: 13,
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   dayButtonTextActive: {
-    color: '#ffffff',
+    color: theme.colors.card,
   },
   exercisesList: { gap: theme.spacing.sm },
   restDay: { alignItems: 'center', paddingVertical: 40, gap: theme.spacing.xs },
@@ -243,11 +243,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   textStrikethrough: { textDecorationLine: 'line-through', color: theme.colors.textMuted },
-  logButton: { backgroundColor: '#FF5F1F', paddingVertical: theme.spacing.md, borderRadius: theme.radii.md, alignItems: 'center', marginTop: theme.spacing.lg },
+  logButton: { backgroundColor: theme.colors.primary, paddingVertical: theme.spacing.md, borderRadius: theme.radii.md, alignItems: 'center', marginTop: theme.spacing.lg },
   logText: {
     fontFamily: fontFamilies.header,
     fontSize: 14,
-    color: '#ffffff',
+    color: theme.colors.card,
     fontWeight: '800',
     letterSpacing: 0.2,
   },

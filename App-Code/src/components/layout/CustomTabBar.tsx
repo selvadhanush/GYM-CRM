@@ -164,7 +164,7 @@ export const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, 
   };
 
   const getTabIconAndLabel = (routeName: string, focused: boolean) => {
-    const activeColor = portalType === 'h4' ? theme.colors.primary : '#2563EB';
+    const activeColor = portalType === 'h4' ? theme.colors.primary : theme.colors.fitpassAccent;
     const inactiveColor = theme.colors.textSecondary;
     const iconSize = 22;
 
@@ -254,13 +254,11 @@ export const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, 
             if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name);
           };
         return (
-            <TouchableOpacity key={route.key} onPress={onPress} style={[styles.tabItem, isFocused && [styles.tabItemActive, { 
-              backgroundColor: portalType === 'h4' 
-                ? (theme.dark ? '#3A3025' : '#FFF0EA') 
-                : (theme.dark ? '#1E3A5F' : '#EFF6FF') 
+            <TouchableOpacity key={route.key} onPress={onPress} style={[styles.tabItem, isFocused && [styles.tabItemActive, {
+              backgroundColor: portalType === 'h4' ? theme.colors.brandLight : theme.colors.fitpassAccentMuted,
             }]]} activeOpacity={0.8}>
               {icon}
-              {isFocused && <Text style={[styles.tabLabel, { color: portalType === 'h4' ? theme.colors.primary : '#2563EB' }]}>{label}</Text>}
+              {isFocused && <Text style={[styles.tabLabel, { color: portalType === 'h4' ? theme.colors.primary : theme.colors.fitpassAccent }]}>{label}</Text>}
             </TouchableOpacity>
           );
         })}
@@ -269,8 +267,8 @@ export const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, 
       <TouchableOpacity 
         style={[
           styles.plusButton, 
-          { 
-            backgroundColor: portalType === 'fitpass' ? '#2563EB' : theme.colors.primary,
+          {
+            backgroundColor: portalType === 'fitpass' ? theme.colors.fitpassAccent : theme.colors.primary,
             opacity: (modalVisible && portalType === 'h4') ? 0 : 1
           }
         ]} 

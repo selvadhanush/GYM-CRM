@@ -79,7 +79,7 @@ export function FitPassProfile() {
       <View style={styles.header}>
         <View style={styles.headerTitleContainer}>
           <View style={styles.headerIconWrap}>
-            <User size={18} color="#2563EB" strokeWidth={2.5} />
+            <User size={18} color={theme.colors.info} strokeWidth={2.5} />
           </View>
           <Text style={styles.headerTitle}>Account Profile</Text>
         </View>
@@ -109,7 +109,7 @@ export function FitPassProfile() {
             <View style={{ flex: 1 }}>
               <Text style={styles.memberName}>{user?.name ?? 'Member'}</Text>
               <View style={styles.verifiedChip}>
-                <BadgeCheck size={12} color="#10B981" />
+                <BadgeCheck size={12} color={theme.colors.success} />
                 <Text style={styles.verifiedChipText}>FITPASS PRO MEMBER</Text>
               </View>
             </View>
@@ -117,12 +117,12 @@ export function FitPassProfile() {
 
           <View style={styles.infoList}>
             <View style={styles.infoRow}>
-              <Mail size={13} color="#6B7280" />
+              <Mail size={13} color={theme.colors.textSecondary} />
               <Text style={styles.infoText}>{user?.email ?? '—'}</Text>
             </View>
             {user?.phone ? (
               <View style={styles.infoRow}>
-                <Phone size={13} color="#6B7280" />
+                <Phone size={13} color={theme.colors.textSecondary} />
                 <Text style={styles.infoText}>{user.phone}</Text>
               </View>
             ) : null}
@@ -155,13 +155,13 @@ export function FitPassProfile() {
         <View style={styles.settingsGroup}>
           <TouchableOpacity style={styles.settingsItem} onPress={handleOpenEdit} activeOpacity={0.7}>
             <View style={[styles.settingsIconWrap, { backgroundColor: '#EFF6FF' }]}>
-              <User size={18} color="#2563EB" />
+              <User size={18} color={theme.colors.info} />
             </View>
             <View style={styles.settingsTextWrap}>
               <Text style={styles.settingsLabel}>Edit Personal Details</Text>
               <Text style={styles.settingsSubLabel}>Update name, phone number, and email</Text>
             </View>
-            <ChevronRight size={16} color="#9CA3AF" />
+            <ChevronRight size={16} color={theme.colors.textMuted} />
           </TouchableOpacity>
 
           <View style={styles.settingsDivider} />
@@ -174,7 +174,7 @@ export function FitPassProfile() {
               <Text style={styles.settingsLabel}>Password & Security</Text>
               <Text style={styles.settingsSubLabel}>Change your log in credentials</Text>
             </View>
-            <ChevronRight size={16} color="#9CA3AF" />
+            <ChevronRight size={16} color={theme.colors.textMuted} />
           </TouchableOpacity>
         </View>
       </View>
@@ -186,7 +186,7 @@ export function FitPassProfile() {
 
       {/* Logout Action Button */}
       <TouchableOpacity style={styles.logoutCard} onPress={logout} activeOpacity={0.8}>
-        <LogOut size={18} color="#EF4444" />
+        <LogOut size={18} color={theme.colors.error} />
         <Text style={styles.logoutText}>Sign Out Account</Text>
       </TouchableOpacity>
 
@@ -198,12 +198,12 @@ export function FitPassProfile() {
           <View style={styles.premiumInputGroup}>
             <Text style={styles.premiumInputLabel}>FULL NAME *</Text>
             <View style={styles.premiumInputBox}>
-              <User size={16} color="#9CA3AF" style={styles.premiumInputIcon} />
+              <User size={16} color={theme.colors.textMuted} style={styles.premiumInputIcon} />
               <TextInput
                 value={profileName}
                 onChangeText={setProfileName}
                 placeholder="e.g. Rahul Sharma"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={theme.colors.textMuted}
                 style={styles.premiumTextInput}
               />
             </View>
@@ -212,12 +212,12 @@ export function FitPassProfile() {
           <View style={styles.premiumInputGroup}>
             <Text style={styles.premiumInputLabel}>CONTACT NUMBER *</Text>
             <View style={styles.premiumInputBox}>
-              <Phone size={16} color="#9CA3AF" style={styles.premiumInputIcon} />
+              <Phone size={16} color={theme.colors.textMuted} style={styles.premiumInputIcon} />
               <TextInput
                 value={profilePhone}
                 onChangeText={setProfilePhone}
                 placeholder="10-digit mobile number"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={theme.colors.textMuted}
                 keyboardType="phone-pad"
                 style={styles.premiumTextInput}
               />
@@ -227,12 +227,12 @@ export function FitPassProfile() {
           <View style={styles.premiumInputGroup}>
             <Text style={styles.premiumInputLabel}>EMAIL ADDRESS *</Text>
             <View style={styles.premiumInputBox}>
-              <Mail size={16} color="#9CA3AF" style={styles.premiumInputIcon} />
+              <Mail size={16} color={theme.colors.textMuted} style={styles.premiumInputIcon} />
               <TextInput
                 value={profileEmail}
                 onChangeText={setProfileEmail}
                 placeholder="client@mail.com"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={theme.colors.textMuted}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 style={styles.premiumTextInput}
@@ -243,12 +243,12 @@ export function FitPassProfile() {
           <View style={styles.premiumInputGroup}>
             <Text style={styles.premiumInputLabel}>NEW PASSWORD (OPTIONAL)</Text>
             <View style={styles.premiumInputBox}>
-              <Lock size={16} color="#9CA3AF" style={styles.premiumInputIcon} />
+              <Lock size={16} color={theme.colors.textMuted} style={styles.premiumInputIcon} />
               <TextInput
                 value={profilePassword}
                 onChangeText={setProfilePassword}
                 placeholder="Leave blank to keep current"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={theme.colors.textMuted}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 style={styles.premiumTextInput}
@@ -267,7 +267,7 @@ export function FitPassProfile() {
             activeOpacity={0.9}
           >
             <View style={styles.premiumSaveButtonContent}>
-              <Lock size={14} color="#FFFFFF" strokeWidth={2.5} style={{ marginRight: 6 }} />
+              <Lock size={14} color={theme.colors.card} strokeWidth={2.5} style={{ marginRight: 6 }} />
               <Text style={styles.premiumSaveButtonText}>
                 {updating ? 'SAVING CHANGES...' : 'SAVE CHANGES'}
               </Text>
@@ -280,7 +280,7 @@ export function FitPassProfile() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: theme.colors.background },
   content: { paddingHorizontal: 20, paddingTop: 40, paddingBottom: 100, gap: 20 },
 
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -297,15 +297,15 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.header,
     fontSize: 20,
     fontWeight: '800',
-    color: '#1F2937',
+    color: theme.colors.text,
   },
 
   // Member Pass Card Redesign
   memberCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: theme.colors.border,
     padding: 20,
     gap: 16,
     shadowColor: '#000',
@@ -315,10 +315,10 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   skeletonMemberCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: theme.colors.border,
     padding: 20,
   },
   memberCardTop: { flexDirection: 'row', alignItems: 'center', gap: 14 },
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     borderRadius: 27,
     backgroundColor: '#EFF6FF',
     borderWidth: 1.5,
-    borderColor: '#DBEAFE',
+    borderColor: theme.colors.info,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -336,13 +336,13 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.header,
     fontSize: 22,
     fontWeight: '900',
-    color: '#2563EB',
+    color: theme.colors.info,
   },
   memberName: {
     fontFamily: fontFamilies.header,
     fontSize: 18,
     fontWeight: '800',
-    color: '#1F2937',
+    color: theme.colors.text,
   },
   verifiedChip: {
     flexDirection: 'row',
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.header,
     fontSize: 8,
     fontWeight: '800',
-    color: '#10B981',
+    color: theme.colors.success,
     letterSpacing: 0.5,
   },
 
@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
   infoText: {
     fontFamily: fontFamilies.body,
     fontSize: 13,
-    color: '#4B5563',
+    color: theme.colors.textSecondary,
     fontWeight: '500',
   },
 
@@ -376,11 +376,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: theme.colors.background,
     borderRadius: 14,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: theme.colors.border,
     marginTop: 4,
   },
   passStat: { alignItems: 'center', gap: 3 },
@@ -388,30 +388,30 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.header,
     fontSize: 24,
     fontWeight: '900',
-    color: '#2563EB',
+    color: theme.colors.info,
   },
   passStatLabel: {
     fontFamily: fontFamilies.body,
     fontSize: 9,
-    color: '#9CA3AF',
+    color: theme.colors.textMuted,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
-  passStatDivider: { width: 1, height: 36, backgroundColor: '#E5E7EB' },
+  passStatDivider: { width: 1, height: 36, backgroundColor: theme.colors.border },
   passStatPlan: {
     fontFamily: fontFamilies.header,
     fontSize: 14,
     fontWeight: '800',
-    color: '#1F2937',
+    color: theme.colors.text,
   },
   passStatStatus: {
     fontFamily: fontFamilies.body,
     fontSize: 10,
-    color: '#9CA3AF',
+    color: theme.colors.textMuted,
     fontWeight: '600',
   },
   passStatStatusActive: {
-    color: '#10B981',
+    color: theme.colors.success,
   },
 
   // Settings Options
@@ -420,13 +420,13 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.header,
     fontSize: 16,
     fontWeight: '800',
-    color: '#374151',
+    color: theme.colors.text,
   },
   settingsGroup: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: theme.colors.border,
     overflow: 'hidden',
   },
   settingsItem: {
@@ -447,14 +447,14 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.header,
     fontSize: 14,
     fontWeight: '700',
-    color: '#1F2937',
+    color: theme.colors.text,
   },
   settingsSubLabel: {
     fontFamily: fontFamilies.body,
     fontSize: 11,
-    color: '#9CA3AF',
+    color: theme.colors.textMuted,
   },
-  settingsDivider: { height: 1, backgroundColor: '#F3F4F6' },
+  settingsDivider: { height: 1, backgroundColor: theme.colors.border },
 
   historySection: { marginTop: 8 },
 
@@ -475,7 +475,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.header,
     fontSize: 14,
     fontWeight: '800',
-    color: '#EF4444',
+    color: theme.colors.error,
   },
 
   // Redesigned Edit Details UI/UX - Premium Skeuomorphic soft card layout matching your screenshot
@@ -485,14 +485,14 @@ const styles = StyleSheet.create({
   premiumSubTitle: {
     fontFamily: fontFamilies.body,
     fontSize: 12,
-    color: '#6B7280',
+    color: theme.colors.textSecondary,
     marginBottom: 4,
   },
   premiumSectionCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.card,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: theme.colors.border,
     padding: 16,
     gap: 12,
   },
@@ -500,7 +500,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.header,
     fontSize: 11,
     fontWeight: '800',
-    color: '#9CA3AF',
+    color: theme.colors.textMuted,
     letterSpacing: 0.8,
     marginBottom: 4,
   },
@@ -511,16 +511,16 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.header,
     fontSize: 11,
     fontWeight: '800',
-    color: '#111827',
+    color: theme.colors.text,
     letterSpacing: 0.3,
   },
   premiumInputBox: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1.2,
-    borderColor: '#E5E7EB',
+    borderColor: theme.colors.border,
     borderRadius: 12,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: theme.colors.background,
     paddingHorizontal: 12,
     height: 48,
   },
@@ -531,7 +531,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: fontFamilies.body,
     fontSize: 14,
-    color: '#111827',
+    color: theme.colors.text,
     height: '100%',
     padding: 0,
   },
@@ -542,11 +542,11 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.header,
     fontSize: 9,
     fontWeight: '800',
-    color: '#2563EB',
+    color: theme.colors.info,
     letterSpacing: 0.5,
   },
   premiumSaveButton: {
-    backgroundColor: '#000000',
+    backgroundColor: theme.colors.primary,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.header,
     fontSize: 13,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: theme.colors.card,
     letterSpacing: 1.2,
   },
 });

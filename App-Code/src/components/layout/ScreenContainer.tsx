@@ -29,10 +29,12 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
     style,
   ];
 
+  const statusBarStyle = theme.dark ? 'light-content' : 'dark-content';
+
   if (loading) {
     return (
       <View style={[styles.container, styles.center, { paddingTop: insets.top }]}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle={statusBarStyle} backgroundColor={theme.colors.background} />
         <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
@@ -40,7 +42,7 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
 
   return (
     <View style={styles.outerContainer}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle={statusBarStyle} backgroundColor={theme.colors.background} />
       {scrollable ? (
         <ScrollView
           style={styles.scroll}

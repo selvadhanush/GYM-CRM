@@ -269,12 +269,12 @@ export function PartnerGymsList() {
                 <View style={styles.gridImgWrap}>
                   <Image source={{ uri: coverImg }} style={styles.gridImg} resizeMode="cover" />
                   <View style={styles.gridOverlayRating}>
-                    <Star size={10} color="#F59E0B" fill="#F59E0B" />
+                    <Star size={10} color={theme.colors.warning} fill={theme.colors.warning} />
                     <Text style={styles.gridOverlayRatingText}>{gym.averageRating ?? 4.8}</Text>
                   </View>
                   {gym.distance !== null && (
                     <View style={styles.distanceBadge}>
-                      <MapPin size={9} color="#FFFFFF" />
+                      <MapPin size={9} color={theme.colors.card} />
                       <Text style={styles.distanceBadgeText}>
                         {gym.distance < 1 
                           ? `${Math.round(gym.distance * 1000)}m` 
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.header,
     fontSize: 10,
     fontWeight: '900',
-    color: '#F59E0B',
+    color: theme.colors.warning,
   },
 
   gridBody: { padding: 10, gap: 6 },
@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.body,
     fontSize: 9,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: theme.colors.card,
   },
   locWarningBar: {
     backgroundColor: 'rgba(240,160,32,0.08)',
